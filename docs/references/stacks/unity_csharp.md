@@ -39,7 +39,7 @@
 | 엔진 참조 차단 설정 | `.asmdef` 의 `"noEngineReferences": true` |
 | 진입점 객체 | `BattleBootstrap` (씬의 유일한 `GameObject`) |
 | 명령 큐 | `BattleCommand` → `CommandQueue` (유닛당 대기 명령 1개, 틱 경계에서 처리) |
-| 자동 판단 | `AutoPilot` (규칙 모듈 소속, 명령 큐로 명령 생성) |
+| 자동 판단 | `AutoPilot` (규칙 모듈 소속, 대기 명령이 없을 때 그 틱에 직접 `BattleCommand` 를 만든다 — 명령 큐는 사용자 명령 전용) |
 | 밸런스 수치 주입 | `BalanceConfig` |
 | 상태 스냅샷 | `BattleSnapshot`/`UnitSnapshot` — `FillSnapshot(target)` 이 호출자 소유 버퍼에 값 복사, 읽기는 `IReadOnlyList<T>`·getter-only 프로퍼티 |
 | 틱 결과 통지 | `BattleSimulation.Step(List<BattleEvent> buffer)` — 호출자 소유 버퍼를 비우고 채움 (`BattleEvent` 는 `struct`). `Step` 1회마다 `BattleBootstrap` 이 뷰에 직접 전달 |
@@ -88,7 +88,7 @@
 
 | 논리명 | 이 스택의 표기 |
 |---|---|
-| 테스트 모듈 | `Tests/EditMode/TAoB.Combat.Tests.asmdef`, `Tests/EditMode/TAoB.Data.Tests.asmdef` — 둘 다 `includePlatforms: ["Editor"]`, `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `overrideReferences: true` + `precompiledReferences: ["nunit.framework.dll"]` |
+| 테스트 모듈 | `Tests/EditMode/Combat/TAoB.Combat.Tests.asmdef`, `Tests/EditMode/Data/TAoB.Data.Tests.asmdef`(Unity 는 폴더당 asmdef 1개) — 둘 다 `includePlatforms: ["Editor"]`, `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `overrideReferences: true` + `precompiledReferences: ["nunit.framework.dll"]` |
 | 테스트 선언 | `[Test]`, `[TestCase(...)]` |
 | 테스트 실행 명령 | `project_facts.md` §0 "테스트 실행" |
 | 커버리지 측정 | 테스트 실행 명령 + `-enableCodeCoverage -coverageResultsPath Game/CodeCoverage -coverageOptions "assemblyFilters:+TAoB.Combat;generateHtmlReport"` |

@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영)
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 구현·테스트 완료 (2026-09-11, 커밋 전 리뷰·재리뷰 지적 반영 완료 — 테스트 148개 통과·커버리지 98.9%, 커밋 승인 대기)
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -75,7 +75,7 @@
 **변경 파일** (`Game/Assets/_Project/`)
 - `Scripts/Combat/TAoB.Combat.asmdef` (`noEngineReferences: true`)
 - `Scripts/Combat/` — `Stats`, `UnitState`, `BattleSnapshot`/`UnitSnapshot`, `BattleEvent`, `SkillDefinition`, `Catalyst`(원석), `Magitool`(마도구), `EquipRules`, `DamageCalculator`, `AffinityTable`, `Formation`, `ActionGaugeScheduler`, `OverloadResolver`, `AutoPilot`, `BattleCommand`, `CommandQueue`, `BattleOutcomeRules`, `BalanceConfig`, `BattleSimulation`, `BattleResult`, `StateHasher`, `IRandom`/`SeededRandom`
-- `Tests/EditMode/TAoB.Combat.Tests.asmdef` + 규칙별 테스트 파일
+- `Tests/EditMode/Combat/TAoB.Combat.Tests.asmdef` + 규칙별 테스트 파일
 
 **결정**
 - **고정 틱**: 초당 10틱. `TicksPerSecond` 는 규칙 모듈 상수이며 밸런스 값이 아니므로 데이터 파일에 두지 않는다. 제한 시간·흩어짐 HP 감소 등 시간 규칙은 모두 틱 단위로 계산한다.
@@ -87,7 +87,7 @@
   - 틱 1회 = `Step(List<BattleEvent> buffer)` 1회. 시뮬레이션은 호출자가 넘긴 버퍼를 비우고 그 틱의 이벤트를 채운다(틱당 할당 없음). `BattleEvent` 는 `struct`(종류·주체·대상·수치).
   - `FillSnapshot(BattleSnapshot target)` 은 호출자 소유 스냅샷 버퍼에 현재 값을 값 복사한다(유닛 10명 × 필드 몇 개, 할당 없음). 표시 계층은 직전·현재 두 버퍼를 번갈아 써서 보간한다.
   - 표시에 필요한 계산값(HP, 게이지, 상태 = 정상/흩어짐/빈사, 과부하 위험 단계 0~3, 장비 내구력, 기술 재사용 대기)은 Combat 이 스냅샷에 담고, 피해·자해량·과부하 결과는 이벤트로 낸다. 표시 계층은 규칙을 다시 계산하지 않는다.
-- **명령 경로 단일화**: `BattleCommand` 종류 = `BasicAttack(유닛)` · `UseSkill(유닛)` · `Overload(유닛)` · `Rescue(구조자, 대상)` · `Retreat`. 모든 명령은 `CommandQueue` 를 거쳐 틱 경계에서 처리한다.
+- **명령 경로 단일화**: `BattleCommand` 종류 = `BasicAttack(유닛)` · `UseSkill(유닛)` · `Overload(유닛)` · `Rescue(구조자, 대상)` · `Retreat`. 사용자 명령은 `CommandQueue` 를 거쳐 틱 경계에서 처리하고, 대기 명령이 없으면 자동 판단이 그 틱에 명령을 만들어 같은 실행 경로(`ActionResolver`)로 처리한다.
   - 자동 판단: 게이지가 찬 유닛에 대기 명령이 없으면 Combat 소속 `AutoPilot` 이 명령을 만든다.
     - 아군: `BasicAttack` 만 만든다. 고유 기술·과부하·구조는 사용자 입력 전용이다(개입의 가치를 선명하게 검증하기 위한 제안 — 사용자 조정 가능).
     - 적·보스: 기술 재사용 대기가 끝났으면 `UseSkill`, 아니면 `BasicAttack` 을 만든다. 적은 `Overload`·`Rescue` 를 쓰지 않는다.
@@ -100,8 +100,8 @@
   - 상성 3단계, 진형 앞열·뒷열 2줄
   - 마도구 2축: RES 미달 → 사용 시 부족분 비례 자해, 임계 이하 → 장착 불가 / MND 미달 → 효과 배율 감소
   - 원석(내구력 없음, MND 상한) vs 마도구(전투당 내구력 소모)
-  - HP 0 → 빈사(전투 중 행동 불가, 결과에 집계 — 부활은 슬라이스 밖)
-  - 과부하: 성공 / 흩어짐(행동 불가 + 틱당 HP 감소, `Rescue` 로 해제) / 폭주(무작위 대상 피해 + 자해) / 한계돌파(MND 상한 상승)
+  - HP 0 → 빈사(전투 중 행동 불가, 결과에 집계 — 부활은 슬라이스 밖). 흩어진 채 승패가 정해지면 그 틱에 빈사로 확정하고 승패를 다시 판정(사용자 결정 2026-09-11)
+  - 과부하: 성공 / 흩어짐(행동 불가 + 틱당 HP 감소, `Rescue` 로 해제) / 폭주(무작위 대상 피해 + 자해) / 한계돌파(성공과 같은 피해 + MND 상한 상승, 사용자 결정 2026-09-11)
 - **고유 기술**: 캐릭터당 `SkillDefinition` 1개(피해 배율, 대상 규칙 = 앞열 우선·최저 HP·전체 중 하나, 과부하 가능 여부, 재사용 대기 틱). 값은 데이터 파일 필드로 받는다.
 - **승패 판정** (`BattleOutcomeRules`, 한 틱에 여러 조건이 성립하면 위에서부터 우선 — 순서는 제안, 사용자 조정 가능):
   | 순위 | 결과 | 조건 |
@@ -115,7 +115,7 @@
 - 임시 직업 3종(기획서 4-4 확정 전 가칭): 기사(앞열·RES), 마법사(뒷열·MND·과부하), 초감각 인간(SPD·크리티컬).
 
 **검증**
-- `project_facts.md` §0 "테스트 실행" 명령으로 EditMode 테스트 전부 통과(에디터 종료 상태).
+- `project_facts.md` §0 "테스트 실행" 명령으로 EditMode 테스트 전부 통과(에디터 종료 상태). ✅ 완료(2026-09-11)
 - 필수 테스트 케이스:
   - 결정론: 같은 시드 + 같은 틱별 명령 스크립트로 2회 실행 → `BattleResult` 동일
   - 배속 무관: 같은 명령 스크립트를 1틱씩 호출 vs 여러 틱 묶어 호출 → `BattleResult` 동일
@@ -126,7 +126,7 @@
   - 공식: `DamageCalculator` 의 상성·진형·크리티컬·방어 감소 결합값, `SkillDefinition` 대상 규칙 3종 각각, 마도구 사용 시 내구력 감소와 0 일 때 효과 상실, 원석 출력이 MND 상한에서 잘림
   - 명령: 게이지 미충전 시 대기 후 충전 틱에 실행, 새 명령이 대기 명령을 대체, 빈사·흩어짐 유닛 명령 거부, 재사용 대기 중 `UseSkill` 거부, 재사용 대기 만료 1틱 전 거부·만료 틱 수락
   - `StateHasher`: 같은 상태 → 같은 해시, 정수 필드 하나만 달라도 다른 해시
-- 커버리지 도구로 `TAoB.Combat` 라인 커버리지 80% 이상.
+- 커버리지 도구로 `TAoB.Combat` 라인 커버리지 80% 이상. ✅ 98.9%(731/739줄, 메서드 97.6%) — 테스트 148개 전부 통과(재리뷰 반영 후 재측정)
 - `/plan-review --code` 후 커밋(메시지 승인).
 
 ## Phase 3 — 밸런스 데이터 외부화
@@ -135,7 +135,7 @@
 **변경 파일**
 - `Game/Assets/_Project/Resources/Data/` — `balance.json`(`BalanceConfig` 전 항목), `characters.json`(아군 3·적 3·보스 1, 스탯·직업·`SkillDefinition`·장비), `equipment.json`(원석 2 + 마도구 5), `stage_slice.json`(웨이브 2개, 제한 시간(초), `Precondition`)
 - `Game/Assets/_Project/Scripts/Data/` — `TAoB.Data.asmdef` + DTO + `GameDataLoader`
-- `Game/Assets/_Project/Tests/EditMode/TAoB.Data.Tests.asmdef` + 로더 테스트
+- `Game/Assets/_Project/Tests/EditMode/Data/TAoB.Data.Tests.asmdef` + 로더 테스트
 
 **결정**
 - `JsonUtility` 호환 구조(딕셔너리 대신 배열).
@@ -144,7 +144,7 @@
   - 필수 필드 누락: DTO 필드 초기값을 센티널(예: -1)로 두고 검사. `JsonUtility` 가 누락 필드에 초기값을 유지하는지는 로더 첫 테스트로 확인한다.
   - 음수·0 불가 값
   - 존재하지 않는 ID 참조
-  - 상한 초과: 제한 시간 ≤ 600초, 웨이브 ≤ 5, 웨이브당 적 ≤ 5, 확률 0~10000, 과부하 확률표 합 = 10000. 상한은 로더 상수(밸런스 값 아님).
+  - 상한 초과: 제한 시간 ≤ `BattleSetup.MaxTimeLimitTicks`(600초), 스탯·장비·밸런스 수치 ≤ `CombatScale.MaxValue`, 배율 ≤ `CombatScale.MaxPermille`, 확률 0~10000, 과부하 확률표 합 = 10000 — 이 상한들은 규칙 모듈 생성자가 정본이며 로더는 같은 상수로 먼저 걸러 파일명·필드명을 붙인다. 웨이브 ≤ 5, 웨이브당 적 ≤ 5 는 로더 상수(밸런스 값 아님).
 
 **검증**
 - 로더 EditMode 테스트: 정상 파일 로드 1 + 필드 누락·음수·미존재 ID 각 1 + 상한 규칙 5종(제한 시간, 웨이브 수, 웨이브당 적 수, 확률 범위, 과부하 확률표 합) 각 1.
@@ -232,3 +232,27 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
 - 2026-09-11: `.claude/plans/app-icon-campaign.plan.md`(이전 iOS 프로젝트 잔재, 다른 회사 앱 내부 경로 포함)는 공개 저장소에 올리지 않기로 하고 `.gitignore` 로 제외. 파일은 로컬에 유지. `CLAUDE.md` 도 사용자 요청으로 같은 방식으로 제외.
 - 2026-09-11: Phase 0 설치 주체를 "사용자 수행"에서 "Claude 수행"으로 변경. 사용자가 직접 설치를 요청했고, 파일 4종(이름·출처·크기)을 제시한 뒤 다운로드 허가와 약관(Unity 서비스 약관, Android SDK 라이선스) 동의를 받았다. 로그인·라이선스 활성화는 사용자가 직접 수행. Hub 명령줄의 첫 시도에서는 템플릿 파일명을 잘못 찾아 빈 프로젝트가 생겼고, 이 폴더는 삭제하지 않고 스크래치 폴더로 옮긴 뒤 Universal 2D 템플릿으로 다시 생성.
 - 2026-09-11 **Phase 0 커밋 전 `/plan-review --code` (축소 scope: security·quality·comments, PASS — CRITICAL 0 · HIGH 0 · MEDIUM 1 반영 · comments REVISE 5 반영)**: 계획서 모듈 ID 중복을 project_facts 참조로 교체, `.gitattributes` 의 `.asmdef` 를 JSON 제목으로 분리, Context·Phase 0 검증·Known Pitfalls 를 완료 사실에 맞춰 갱신. arch·perf·test 는 코드 없는 템플릿 설정 파일이라 사용자 선택으로 생략(보고서에 DEGRADED 기록).
+- 2026-09-11 **Phase 2 구현 중 확정한 세부 규칙** (계획서에 없던 빈칸을 채운 것):
+  - 파일 구성: 관련 규칙끼리 묶었다. `Equipment.cs`(Catalyst·Magitool·EquipRules), `TurnRules.cs`(ActionGaugeScheduler·AutoPilot·TargetSelector). 행동 처리는 `ActionResolver` 로 분리해 `BattleSimulation` 을 400줄 아래로 유지. `CombatScale`·`OverloadTier`·`UnitSetup`·`BattleSetup` 추가.
+  - 크리티컬 확률 = 기본 확률 + SPD × 계수(만분율). 확률이 0 또는 10000 이면 난수를 쓰지 않는다 — 결과가 확정인 판정이 난수 순서를 흔들지 않게 하려는 것.
+  - 과부하 초과 비율 = (원석 위력 × 과부하 배율 − MND) ÷ MND(‰). 위험 단계 = 확률표 구간 번호(최대 3).
+  - 폭주: 시전자를 뺀 공격 가능한 전원(아군 포함, ID 순) 중 난수로 1명. 피해 배율 = 기술 배율 × 폭주 배율, 크리티컬 없음. 자해 = 최대 HP × 자해 배율 + 마도구 반발.
+  - 게이지: 넘친 양은 보존(단 최대치의 2배에서 멈춤 — 한 틱 1행동이라 동작 차이 없이 int 넘침만 막음). 같은 틱 행동 순서는 SPD 내림차순 → ID 오름차순. 구조 뒤 구조자 게이지에서 추가 차감(음수 허용 = 다음 행동이 늦어짐).
+  - 마도구: 행동 1회에 한 번만 사용(대상 수와 무관), 반발 자해는 공격 뒤 적용. RES 부족으로 장착 불가인 편성은 `BattleSetup` 생성 시 예외.
+  - 틱 처리 순서: 후퇴 확인 → 흩어짐 HP 감소 → 재사용 대기 감소 → 게이지 충전 → 행동 → 웨이브 전환 → 승패 판정.
+  - 흩어짐 종료 처리는 구현 규칙의 "HP 0 → 빈사" 항목이 정본(리뷰 반영으로 결과 집계만 하던 방식을 대체).
+  - `Game/Assets/Settings/UniversalRP.asset` 은 에디터가 URP 17.3 형식(12→13)으로 자동 업그레이드했다. 값 변경은 없으며 커밋에 포함.
+  - 커버리지 측정 패키지 `com.unity.testtools.codecoverage` 1.3.0 추가(사용자 다운로드 허가).
+- 2026-09-11 **Phase 2 커밋 전 `/plan-review --code` (코드 7 scope + 설정 4 + 문서 2, PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 8)** 반영:
+  - arch: 흩어짐 종료 처리 통일(구현 규칙, 사용자 결정) / 코드에만 있던 규칙을 기록 — 최소 피해는 `BalanceConfig.MinimumDamage` 로 이동, 흩어진 유닛도 공격 대상(행동만 불가), 한계돌파는 피해 + MND 상승(사용자 결정).
+  - security: 곱셈 넘침 방지(`CombatScale.ClampToInt`, 데미지 계산은 단계마다 int 범위에서 멈춤) / 수치 상한 `CombatScale.MaxValue`(1,000,000)·`MaxPermille`(100,000)·`BattleSetup.MaxTimeLimitTicks`(6000틱)를 생성자에서 검증.
+  - perf: 대상 선택의 정렬 제거 — ID 순으로 미리 정렬한 배열을 쓴다.
+  - test: 크리티컬 확정 분기(0%·100% 난수 미사용), 넘친 게이지 보존, 같은 틱 행동 순서, 흩어짐 종료 처리, 수치 상한 테스트 추가.
+  - lang: 스냅샷 유닛 목록을 읽기 전용 래퍼로 노출. quality: `Gauge` → `ActionGauge`(용어집), `IsBoss` 를 스냅샷에 노출(보스 표시용). comments: 이유 주석 2개 추가.
+  - arch(설정): 테스트를 `Tests/EditMode/Combat/` 로 옮겨 Phase 3 `TAoB.Data.Tests` 와의 폴더 충돌을 막음. 명령 큐는 사용자 명령 전용이고 자동 판단은 같은 틱에 직접 명령을 만든다는 사실을 결정·스택 문서에 반영.
+  - comments(문서): 검증 첫 항목 완료 표시, Status 의 Phase 순서 정리.
+  - 기각: "배속 묶음 테스트는 항상 통과한다"는 arch 메모 — 규칙 모듈이 프레임·시계에 의존하게 되는 회귀를 막는 가드로 유지 / "`.cs.meta` 에 MonoImporter 블록이 없다"는 quality 메모 — Unity 6 에디터가 직접 생성한 형식.
+- 2026-09-11 **Phase 2 재리뷰 (HIGH 1 · comments REVISE 2, 나머지 scope 해소 확인)** 반영:
+  - test: 게이지 2배 상한이 테스트로 검증되지 않음 → `ActionGaugeCapTests` 추가(SPD 1,000,000·게이지 최대 1로 6000틱 동안 매 틱 행동). 상한을 잠시 끈 상태에서 실패(6000 기대, 3853)하는 것을 확인한 뒤 되돌림.
+  - comments(코드): `DamageCalculator.Scale` 주석의 이유를 "long 넘침 방지"에서 "마지막 int 변환 보호"로 정정 — 수치 상한 안에서는 long 이 넘치지 않는다.
+  - comments(문서): 테스트 개수 147 → 148 정정. arch(설정): README 용어집 「명령 큐」 정의를 자동 판단이 같은 틱에 명령을 만드는 방식에 맞춤.
