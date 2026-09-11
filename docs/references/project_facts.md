@@ -18,7 +18,10 @@
 | 저장소 레이아웃 | `Game/` Unity 프로젝트 · `Game/Assets/_Project/` 자체 코드·데이터 · `docs/references/` 리뷰 표준 · 루트 `*.md` 기획 문서 |
 | 코드 위치 | 규칙 모듈 `Game/Assets/_Project/Scripts/Combat/` · 데이터 로더 `Scripts/Data/` · 표시 계층 `Scripts/View/` · 테스트 `Game/Assets/_Project/Tests/EditMode/` |
 | 검증 방식 | 규칙 모듈·데이터 로더 = EditMode 자동 테스트(규칙 모듈 커버리지 80% 이상) · 표시 계층 = 활성 계획서의 수동 시나리오 |
-| Unity 실행 파일 | `C:\Program Files\Unity\Hub\Editor\<버전>\Editor\Unity.exe` — `<버전>` 은 `Game/ProjectSettings/ProjectVersion.txt` 의 `m_EditorVersion` |
+| Unity 실행 파일 | `E:\Unity\Editors\<버전>\Editor\Unity.exe` — `<버전>` 은 `Game/ProjectSettings/ProjectVersion.txt` 의 `m_EditorVersion` |
+| Unity Hub 명령줄 | Hub 는 winget MSIX 로 설치됨. 실행 파일 = `(Get-AppxPackage UnityTechnologies.UnityHub).InstallLocation` + `\app\Unity Hub.exe`, 호출 형식 `& "<Unity Hub.exe>" -- --headless <명령>`. Hub 에 내장된 `app\resources\cli\unity.exe` 는 WindowsApps 권한 제한으로 직접 실행 불가 |
+| 라이선스 | Unity Personal — Hub 로그인 시 자동 활성화. 라이선스 파일은 MSIX 가상화 폴더(`%LOCALAPPDATA%\Packages\UnityTechnologies.UnityHub_*\LocalCache\Local\Unity\licenses`)에 있지만 batchmode 에디터가 정상 인식함(2026-09-11 확인) |
+| Android 모듈 ID (6000.3.24f1) | `android`, `android-sdk-ndk-tools`, `android-open-jdk-17.0.18+8` — OpenJDK ID 에 버전이 붙는다 |
 | 테스트 실행 | 에디터를 닫은 상태에서 `"<Unity.exe>" -batchmode -projectPath Game -runTests -testPlatform EditMode -testResults Game/results-editmode.xml` |
 | 커밋 규칙 | Conventional Commits, 메시지 한국어, 커밋 전 사용자 승인 (CLAUDE.md) |
 | 보안 주의 | 릴리스 서명 키(`*.keystore`, `*.jks`)와 그 비밀번호는 저장소·코드에 두지 않는다 |

@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 (git·.gitignore·기획서 v0.6 완료, Unity 설치 대기) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영)
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영)
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -12,7 +12,7 @@
 
 현재 상태(2026-09-10):
 - git 저장소 초기화됨(커밋 전). `.gitignore`, 기획서 v0.6, `docs/references/` 9종 작성 완료.
-- Unity 미설치 — Phase 0 의 사용자 설치 대기.
+- Unity 설치·`Game/` 프로젝트 생성 완료(2026-09-11) — Phase 0 결정 참조.
 - `.claude/` 와 `CLAUDE.md` 는 다른 iOS 프로젝트에서 복사된 것. 참조 문서는 새로 작성했고 SKILL.md 는 에이전트 이름만 고쳤다.
 - Unity 최신 LTS = **6.3 LTS**(2027-12까지 지원).
 
@@ -24,14 +24,15 @@
 - `The_Age_of_Bastards_게임기획서_v0.6.md` (v0.5 복사 후 갱신)
 
 **결정**
-- 사용자 수행(Claude는 설치 파일 다운로드·실행 불가): Unity Hub 설치 → Unity 6.3 LTS + Android Build Support(OpenJDK, SDK & NDK) 모듈 → Hub에서 Personal 라이선스 활성화.
-- Claude 수행: `git init`, Unity 표준 `.gitignore`(+ `*.keystore`, `*.jks`, `fastlane/.env`), `Unity.exe -batchmode -createProject Game` 로 프로젝트 생성(Universal 2D 템플릿이 CLI로 안 되면 Hub에서 사용자가 생성).
+- 설치(2026-09-11, 사용자 다운로드 허가·약관 동의 후 Claude 수행): winget 으로 Unity Hub → Hub 명령줄로 에디터·Android 모듈 설치. 경로·버전·모듈 ID·Hub 명령줄 사용법의 정본은 `docs/references/project_facts.md` §0.
+- 사용자 수행: Unity 계정 로그인과 Personal 라이선스 활성화(비밀번호 입력은 Claude 불가).
+- Claude 수행: `git init`, Unity 표준 `.gitignore`(+ `*.keystore`, `*.jks`, `fastlane/.env`), `Unity.exe -batchmode -quit -nographics -createProject Game -cloneFromTemplate <에디터>\Data\Resources\PackageManager\ProjectTemplates\com.unity.template.2d-cross-platform-2d-6.1.6.tgz` 로 프로젝트 생성. 이 파일의 패키지 이름은 `com.unity.template.universal-2d`(Universal 2D, URP 2D Renderer, test-framework·ugui 포함)이다. 파일명에 "universal" 이 없어 처음엔 템플릿 없이 빈 프로젝트가 생겼고, 그 폴더는 삭제 대신 스크래치 폴더로 옮겨 두었다.
 - 기획서 v0.6: 10장 Unity 확정, 7장 조작 방식 "가로 고정", 13장 첫 수직 슬라이스 = 이 계획의 범위, 15장 미결 5번 삭제.
 - 초기 커밋은 메시지 제시 → 사용자 승인 후 실행.
 
 **검증**
-- `Unity.exe -batchmode -quit -projectPath Game -logFile -` 가 에러 없이 종료.
-- `git status` 에 `Library/`, `Temp/` 가 잡히지 않음.
+- `Unity.exe -batchmode -quit -projectPath Game -logFile -` 가 에러 없이 종료. ✅ 완료(2026-09-11, exit 0)
+- `git status` 에 `Library/`, `Temp/` 가 잡히지 않음. ✅ 완료(2026-09-11)
 
 ## Phase 1 — 리뷰 하네스(참조 문서) 구축
 **목표**: `/plan-review` 가 이 프로젝트에서 BLOCKED 없이 실행된다.
@@ -203,7 +204,6 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
 ## Known Pitfalls
 - Unity 에디터가 프로젝트를 열고 있으면 batchmode 테스트가 프로젝트 잠금으로 실패 → 테스트 실행 전 에디터 종료(또는 에디터 Test Runner 사용).
 - `.meta` 파일은 반드시 커밋(누락 시 참조 깨짐).
-- 프로젝트 `.claude/plans/app-icon-campaign.plan.md` 는 iOS 프로젝트 잔재. 변경 파일이 겹치지 않아 scope 추론에 영향은 없지만 혼동 방지를 위해 착수 시 사용자에게 이동/삭제 여부 확인.
 
 ## 결정 로그
 - 2026-09-10: 엔진 Unity(Live2D 공식 지원) 확정. Godot 은 텍스트 씬으로 AI 협업이 편하나 Live2D 모바일 미검증으로 기각. Unity 에디터 수작업 부담은 "씬에 부트스트랩 1개 + 코드 생성" 결정으로 완화.
@@ -229,3 +229,6 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - 렌즈 밖 메모 반영: 시나리오 7 "입력 없이" 조건 / `StateHasher` FNV-1a 고정 / 설정집 v1.1 12장에 7-5 재능 축 미결 추가.
   - 기각: `.gitignore` 의 `fastlane/.env` 잔재 지적(CLAUDE.md 보안 주의가 명시, 무해) / Combat 파일 분할 계획 없음 지적(목록이 이미 타입당 파일 단위).
   - 사용자 결정으로 반영 안 함: 기획서 v0.6 본문 버전 라벨·변경 기록 `YYYY-MM-DD` 행(comments REVISE 2건).
+- 2026-09-11: `.claude/plans/app-icon-campaign.plan.md`(이전 iOS 프로젝트 잔재, 다른 회사 앱 내부 경로 포함)는 공개 저장소에 올리지 않기로 하고 `.gitignore` 로 제외. 파일은 로컬에 유지. `CLAUDE.md` 도 사용자 요청으로 같은 방식으로 제외.
+- 2026-09-11: Phase 0 설치 주체를 "사용자 수행"에서 "Claude 수행"으로 변경. 사용자가 직접 설치를 요청했고, 파일 4종(이름·출처·크기)을 제시한 뒤 다운로드 허가와 약관(Unity 서비스 약관, Android SDK 라이선스) 동의를 받았다. 로그인·라이선스 활성화는 사용자가 직접 수행. Hub 명령줄의 첫 시도에서는 템플릿 파일명을 잘못 찾아 빈 프로젝트가 생겼고, 이 폴더는 삭제하지 않고 스크래치 폴더로 옮긴 뒤 Universal 2D 템플릿으로 다시 생성.
+- 2026-09-11 **Phase 0 커밋 전 `/plan-review --code` (축소 scope: security·quality·comments, PASS — CRITICAL 0 · HIGH 0 · MEDIUM 1 반영 · comments REVISE 5 반영)**: 계획서 모듈 ID 중복을 project_facts 참조로 교체, `.gitattributes` 의 `.asmdef` 를 JSON 제목으로 분리, Context·Phase 0 검증·Known Pitfalls 를 완료 사실에 맞춰 갱신. arch·perf·test 는 코드 없는 템플릿 설정 파일이라 사용자 선택으로 생략(보고서에 DEGRADED 기록).

@@ -1,0 +1,31 @@
+# 줄바꿈: 저장소는 LF 로 통일 (Unity YAML·C#·문서 모두 LF 를 문제없이 읽음)
+* text=auto eol=lf
+
+# C# 코드 diff 가독성
+*.cs text eol=lf diff=csharp
+
+# Unity 직렬화 파일 (YAML)
+*.unity text eol=lf
+*.prefab text eol=lf
+*.asset text eol=lf
+*.meta text eol=lf
+*.mat text eol=lf
+*.anim text eol=lf
+*.controller text eol=lf
+
+# 어셈블리 정의 (JSON)
+*.asmdef text eol=lf
+
+# 바이너리
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.psd binary
+*.ttf binary
+*.otf binary
+*.wav binary
+*.mp3 binary
+*.ogg binary
+*.fbx binary
+*.tgz binary
+*.dll binary
