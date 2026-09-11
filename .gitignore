@@ -1,0 +1,61 @@
+# Unity (프로젝트 루트: Game/) — .meta 파일은 반드시 커밋한다
+/Game/[Ll]ibrary/
+/Game/[Tt]emp/
+/Game/[Oo]bj/
+/Game/[Bb]uild/
+/Game/[Bb]uilds/
+/Game/[Ll]ogs/
+/Game/[Uu]ser[Ss]ettings/
+/Game/[Mm]emoryCaptures/
+/Game/[Rr]ecordings/
+/Game/Assets/Plugins/Editor/JetBrains*
+/Game/.vs/
+/Game/.vscode/
+/Game/.idea/
+/Game/.gradle/
+/Game/ExportedObj/
+/Game/*.csproj
+/Game/*.unityproj
+/Game/*.sln
+/Game/*.slnx
+/Game/*.suo
+/Game/*.tmp
+/Game/*.user
+/Game/*.userprefs
+/Game/*.pidb
+/Game/*.booproj
+/Game/*.svd
+/Game/*.pdb
+/Game/*.mdb
+/Game/*.opendb
+/Game/*.VC.db
+/Game/*.pidb.meta
+/Game/*.pdb.meta
+/Game/*.mdb.meta
+/Game/sysinfo.txt
+/Game/crashlytics-build.properties
+/Game/[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# 빌드 산출물
+/Game/*.apk
+/Game/*.aab
+/Game/*.unitypackage
+
+# 테스트·커버리지 결과
+/Game/results-*.xml
+/Game/CodeCoverage/
+
+# 서명 키·자격증명 (절대 커밋 금지)
+*.keystore
+*.jks
+fastlane/.env
+
+# OS·도구
+.DS_Store
+Thumbs.db
+.claude/settings.local.json
+
+# 로컬 전용 (사용자 결정: 저장소에 올리지 않음)
+CLAUDE.md
+# 이전 iOS 프로젝트 잔재 — 다른 프로젝트 내부 정보가 담겨 있어 커밋 제외
+.claude/plans/app-icon-campaign.plan.md
