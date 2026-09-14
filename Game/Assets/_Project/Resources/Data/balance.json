@@ -1,0 +1,37 @@
+{
+  "defenseK": 100,
+  "weakAffinityPermille": 750,
+  "normalAffinityPermille": 1000,
+  "strongAffinityPermille": 1250,
+  "frontDamageTakenPermille": 1000,
+  "backDamageTakenPermille": 800,
+  "critBaseChance": 500,
+  "critChancePerSpd": 20,
+  "critMultiplierPermille": 1500,
+  "minimumDamage": 1,
+  "resSelfDamagePerShortfall": 2,
+  "equipBlockResShortfall": 20,
+  "mndPenaltyPerShortfallPermille": 25,
+  "minMndEffectPermille": 200,
+  "actionGaugeMax": 1000,
+  "scatterHpLossPerTick": 5,
+  "rescueExtraGauge": 200,
+  "overloadPowerPermille": 1500,
+  "runawayDamagePermille": 1000,
+  "runawaySelfDamagePermille": 200,
+  "breakthroughMndGain": 10,
+  "overloadTiers": [
+    { "maxExcessPermille": 500, "successChance": 4000, "scatterChance": 3000, "runawayChance": 2000, "breakthroughChance": 1000 },
+    { "maxExcessPermille": 1000, "successChance": 3000, "scatterChance": 3000, "runawayChance": 3000, "breakthroughChance": 1000 },
+    { "maxExcessPermille": 2000, "successChance": 2000, "scatterChance": 4000, "runawayChance": 3500, "breakthroughChance": 500 },
+    { "successChance": 1000, "scatterChance": 4500, "runawayChance": 4400, "breakthroughChance": 100 }
+  ],
+  "affinities": [
+    { "attacker": "Knight", "defender": "Perceptive", "level": "Strong" },
+    { "attacker": "Perceptive", "defender": "Mage", "level": "Strong" },
+    { "attacker": "Mage", "defender": "Knight", "level": "Strong" },
+    { "attacker": "Perceptive", "defender": "Knight", "level": "Weak" },
+    { "attacker": "Mage", "defender": "Perceptive", "level": "Weak" },
+    { "attacker": "Knight", "defender": "Mage", "level": "Weak" }
+  ]
+}

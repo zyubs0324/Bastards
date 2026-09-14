@@ -1,0 +1,9 @@
+{
+  "timeLimitSeconds": 120,
+  "precondition": "NoAllyDowned",
+  "allyIds": [1, 2, 3],
+  "waves": [
+    { "enemyIds": [101, 102, 103] },
+    { "enemyIds": [201] }
+  ]
+}

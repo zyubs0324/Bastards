@@ -1,0 +1,46 @@
+{
+  "characters": [
+    {
+      "id": 1, "name": "기사", "side": "Ally", "job": "Knight", "row": "Front",
+      "stats": { "atk": 40, "def": 30, "hp": 600, "spd": 90, "mnd": 20, "res": 60 },
+      "skill": { "powerPermille": 1600, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
+      "catalystId": "", "magitoolId": "tool_iron_band"
+    },
+    {
+      "id": 2, "name": "마법사", "side": "Ally", "job": "Mage", "row": "Back",
+      "stats": { "atk": 55, "def": 10, "hp": 380, "spd": 100, "mnd": 90, "res": 25 },
+      "skill": { "powerPermille": 1800, "targetRule": "All", "canOverload": true, "cooldownTicks": 80 },
+      "catalystId": "cat_clear", "magitoolId": ""
+    },
+    {
+      "id": 3, "name": "초감각 인간", "side": "Ally", "job": "Perceptive", "row": "Front",
+      "stats": { "atk": 48, "def": 15, "hp": 450, "spd": 130, "mnd": 40, "res": 35 },
+      "skill": { "powerPermille": 1400, "targetRule": "LowestHp", "canOverload": false, "cooldownTicks": 40 },
+      "catalystId": "", "magitoolId": "tool_wind_ring"
+    },
+    {
+      "id": 101, "name": "들개", "side": "Enemy", "job": "Perceptive", "row": "Front",
+      "stats": { "atk": 30, "def": 10, "hp": 260, "spd": 110, "mnd": 10, "res": 10 },
+      "skill": { "powerPermille": 1300, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 50 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
+      "id": 102, "name": "탈영병", "side": "Enemy", "job": "Knight", "row": "Front",
+      "stats": { "atk": 34, "def": 20, "hp": 320, "spd": 85, "mnd": 10, "res": 30 },
+      "skill": { "powerPermille": 1500, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
+      "id": 103, "name": "떠돌이 주술사", "side": "Enemy", "job": "Mage", "row": "Back",
+      "stats": { "atk": 42, "def": 8, "hp": 220, "spd": 95, "mnd": 60, "res": 10 },
+      "skill": { "powerPermille": 1500, "targetRule": "All", "canOverload": false, "cooldownTicks": 90 },
+      "catalystId": "cat_rough", "magitoolId": ""
+    },
+    {
+      "id": 201, "name": "반역 기사단장", "side": "Enemy", "job": "Knight", "row": "Front", "isBoss": true,
+      "stats": { "atk": 60, "def": 40, "hp": 1500, "spd": 80, "mnd": 30, "res": 80 },
+      "skill": { "powerPermille": 2000, "targetRule": "LowestHp", "canOverload": false, "cooldownTicks": 70 },
+      "catalystId": "", "magitoolId": "tool_captain_blade"
+    }
+  ]
+}

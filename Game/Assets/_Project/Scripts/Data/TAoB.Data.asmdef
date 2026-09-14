@@ -1,0 +1,16 @@
+{
+    "name": "TAoB.Data",
+    "rootNamespace": "TAoB.Data",
+    "references": [
+        "TAoB.Combat"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 구현·테스트 완료 (2026-09-11, 커밋 전 리뷰·재리뷰 지적 반영 완료 — 테스트 148개 통과·커버리지 98.9%, 커밋 승인 대기)
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 구현·테스트 완료 (2026-09-14 — 커밋 전 리뷰 지적 반영, 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, 커밋 승인 대기)
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -133,22 +133,25 @@
 **목표**: 수치를 코드 수정 없이 텍스트 파일로 바꿀 수 있다.
 
 **변경 파일**
-- `Game/Assets/_Project/Resources/Data/` — `balance.json`(`BalanceConfig` 전 항목), `characters.json`(아군 3·적 3·보스 1, 스탯·직업·`SkillDefinition`·장비), `equipment.json`(원석 2 + 마도구 5), `stage_slice.json`(웨이브 2개, 제한 시간(초), `Precondition`)
-- `Game/Assets/_Project/Scripts/Data/` — `TAoB.Data.asmdef` + DTO + `GameDataLoader`
-- `Game/Assets/_Project/Tests/EditMode/Data/TAoB.Data.Tests.asmdef` + 로더 테스트
+- `Game/Assets/_Project/Resources/Data/` — `balance.json`(`BalanceConfig` 전 항목 + 상성표), `characters.json`(아군 3·적 3·보스 1, 이름·스탯·직업·진형·`SkillDefinition`·장비 ID), `equipment.json`(원석 2 + 마도구 5, 이름 포함), `stage_slice.json`(제한 시간(초)·`Precondition`·아군 ID·웨이브 2개)
+- `Game/Assets/_Project/Scripts/Data/` — `TAoB.Data.asmdef`, `Dtos`, `FieldCheck`, `BalanceReader`·`EquipmentReader`·`CharacterReader`·`StageReader`, `GameData`(`CharacterData`·`EquipmentCatalog`·`StageData`), `GameDataLoader`(`DataFiles`·`GameDataFiles`), `GameDataException`
+- `Game/Assets/_Project/Tests/EditMode/Data/` — `TAoB.Data.Tests.asmdef`, `JsonUtilityBehaviourTests`, `DataValidationTests`, `ResourceFilesTests`, `TestSupport/TestJson`
 
 **결정**
-- `JsonUtility` 호환 구조(딕셔너리 대신 배열).
+- `JsonUtility` 호환 구조(딕셔너리 대신 배열, 최상위는 항상 객체). 열거형은 이름 문자열(`"Knight"`)로 쓰고 로더가 대소문자까지 정확히 대조한다.
 - 로더는 별도 `TAoB.Data` 어셈블리에 둔다(참조 방향 View → Data → Combat). DTO 를 Combat 자체 타입(`BalanceConfig` 등)으로 변환해 넘긴다.
-- **로드 시점 검증** — 하나라도 실패하면 로드를 중단하고 파일명·필드명·값을 오류에 담는다:
-  - 필수 필드 누락: DTO 필드 초기값을 센티널(예: -1)로 두고 검사. `JsonUtility` 가 누락 필드에 초기값을 유지하는지는 로더 첫 테스트로 확인한다.
-  - 음수·0 불가 값
-  - 존재하지 않는 ID 참조
-  - 상한 초과: 제한 시간 ≤ `BattleSetup.MaxTimeLimitTicks`(600초), 스탯·장비·밸런스 수치 ≤ `CombatScale.MaxValue`, 배율 ≤ `CombatScale.MaxPermille`, 확률 0~10000, 과부하 확률표 합 = 10000 — 이 상한들은 규칙 모듈 생성자가 정본이며 로더는 같은 상수로 먼저 걸러 파일명·필드명을 붙인다. 웨이브 ≤ 5, 웨이브당 적 ≤ 5 는 로더 상수(밸런스 값 아님).
+- **파일 접근과 해석 분리**: `GameDataLoader.LoadFromResources()` 는 네 파일 본문을 `GameDataFiles` 로 묶어 `Parse()` 에 넘긴다. 검증 테스트는 문자열만으로 `Parse()` 를 돌리고, 실제 파일은 별도 스모크 테스트가 로드한다.
+- **로드 시점 검증** — 하나라도 실패하면 `GameDataException(파일명, 필드 경로, 사유)` 으로 중단한다(예: `characters.json — characters[2].stats.hp: 필드가 없습니다`):
+  - 필수 필드 누락: 정수 DTO 필드 초기값을 -1 로 두고 검사. `JsonUtility` 는 배열 요소 안에서도 빠진 필드의 초기값을 유지한다(확인 완료, `JsonUtilityBehaviourTests` 가 고정). 빠진 객체는 초기값이 채워진 새 인스턴스, 빠진 배열·문자열은 null.
+  - `bool` 은 누락을 구분할 수 없으므로 **생략 = false** 가 파일 규칙(`isBoss`, `canOverload`). 장비 ID 문자열은 비어 있거나 빠지면 "장비 없음".
+  - 음수·0 불가 값, 존재하지 않는 ID 참조(장비 ID 는 문자열, 캐릭터 ID 는 정수), ID 중복, 진영 불일치, 같은 캐릭터 이중 배치, RES 부족으로 장착 불가.
+  - 상한 초과: 제한 시간 ≤ `BattleSetup.MaxTimeLimitTicks`(600초), 스탯·장비 수치 ≤ `CombatScale.MaxValue`, 배율 ≤ `CombatScale.MaxPermille`, 확률 0~10000, 과부하 확률표 합 = 10000 — 로더는 같은 상수로 먼저 걸러 파일명·필드명을 붙인다. **밸런스 21개 값의 범위는 `BalanceConfig` 생성자만 안다**: 로더는 누락만 검사하고, 생성자가 던진 예외의 매개변수 이름(= JSON 키)을 필드명으로 옮긴다(하한을 두 곳에 적지 않기 위함).
+  - 배열 크기 상한(로더 상수, 밸런스 값 아님): 아군·웨이브·웨이브당 적 ≤ 5(`StageReader`), 캐릭터 ≤ 50(`CharacterReader`), 원석·마도구 ≤ 50(`EquipmentReader`), 과부하 구간 ≤ 10, 상성표 ≤ 직업 수²(`BalanceReader`).
+- **과부하 확률표 표기**: 마지막 구간은 상한이 없으므로 `maxExcessPermille` 을 쓰지 않는다(쓰면 오류). 나머지 구간은 오름차순.
 
 **검증**
-- 로더 EditMode 테스트: 정상 파일 로드 1 + 필드 누락·음수·미존재 ID 각 1 + 상한 규칙 5종(제한 시간, 웨이브 수, 웨이브당 적 수, 확률 범위, 과부하 확률표 합) 각 1.
-- 사용자가 `balance.json` 의 K 값을 바꾸고 재생했을 때 데미지 숫자 변화 확인.
+- 로더 EditMode 테스트: 정상 파일 로드 1 + 필드 누락·음수·미존재 ID 각 1 + 상한 규칙 5종(제한 시간, 웨이브 수, 웨이브당 적 수, 확률 범위, 과부하 확률표 합) 각 1. ✅ 42개(실제 파일 로드 + 실제 편성으로 입력 없이 전투가 끝나는 스모크 포함), `TAoB.Data` 라인 커버리지 98.3%
+- 사용자가 `balance.json` 의 K 값을 바꾸고 재생했을 때 데미지 숫자 변화 확인. → 화면이 필요하므로 Phase 4 시나리오에서 수행.
 
 ## Phase 4 — 전투 화면
 **목표**: 가로 화면에서 전투를 보고 터치로 개입할 수 있다.
@@ -164,7 +167,7 @@
 - **이벤트 전달**: `Step()` 1회가 끝날 때마다 `BattleBootstrap` 이 이벤트 버퍼를 곧바로 뷰들에 직접 호출로 넘긴 뒤 다음 `Step()` 을 부른다. 한 프레임에 여러 틱을 돌려도 이벤트가 덮여 사라지지 않는다. 전투 이벤트에는 구독(발행자) 구조를 두지 않는다.
 - **표시 갱신**: 스냅샷 값이 바뀐 요소만 텍스트를 갱신한다(TMP `SetText` 수치 오버로드). 데미지 숫자·이펙트는 `PopupPool` 로 재사용한다.
 - **재시작**: `BattleRoot` 를 파괴하고 `BattleSimulation` 을 새로 만든다. `PopupPool` 은 파괴하지 않고 전부 회수한다. 버튼 리스너 등 이벤트 구독은 `BattleRoot` 하위 객체만 하고 각자의 `OnDestroy` 에서 해제한다.
-- 그래픽은 색 네모 + 직업 글자. HP 바·행동 게이지 바·데미지 숫자·과부하 위험 단계 표시·빈사 표시.
+- 그래픽은 색 네모 + 직업 글자. HP 바·행동 게이지 바·데미지 숫자·과부하 위험 단계 표시·빈사 표시·보스 표시(`UnitSnapshot.IsBoss`).
 - uGUI + TextMeshPro, 기준 해상도 1920×1080 가로 고정, Scale With Screen Size, 버튼 터치 영역 넉넉히.
 - 한글 폰트: 기본 폰트는 한글 미지원 → Noto Sans KR(OFL). 폰트 파일 다운로드는 사용자 승인 후.
 - **개입 바**: 캐릭터별 고유 기술 버튼 3(`UseSkill`) + 과부하 버튼(마법사, 누를 때마다 `Overload` 명령 1회) + 구조 버튼(흩어짐 아군이 있을 때만 활성, `Rescue`) + 후퇴(`Retreat`). 배속 1x/2x. 기본 공격은 자동 전용이라 버튼이 없다.
@@ -256,3 +259,17 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - test: 게이지 2배 상한이 테스트로 검증되지 않음 → `ActionGaugeCapTests` 추가(SPD 1,000,000·게이지 최대 1로 6000틱 동안 매 틱 행동). 상한을 잠시 끈 상태에서 실패(6000 기대, 3853)하는 것을 확인한 뒤 되돌림.
   - comments(코드): `DamageCalculator.Scale` 주석의 이유를 "long 넘침 방지"에서 "마지막 int 변환 보호"로 정정 — 수치 상한 안에서는 long 이 넘치지 않는다.
   - comments(문서): 테스트 개수 147 → 148 정정. arch(설정): README 용어집 「명령 큐」 정의를 자동 판단이 같은 틱에 명령을 만드는 방식에 맞춤.
+- 2026-09-11 **Phase 3 구현 중 확정한 세부 규칙** (계획서에 없던 빈칸을 채운 것):
+  - 상성표(`affinities`)는 `balance.json` 에 둔다 — 상성 배율과 같은 파일에서 함께 조정하기 위함. 등록하지 않은 조합은 보통.
+  - 캐릭터·장비에 표시 이름(`name`)을 넣는다. Phase 4 화면이 쓴다.
+  - 스테이지가 `allyIds` 로 아군 편성을 고른다. 덱세팅이 생기면 이 부분만 바뀐다.
+  - 파일별 리더(`BalanceReader` 등)로 나누고, 규칙 모듈 생성자의 검증 실패(`ArgumentException`)는 `FieldCheck.Build` 가 파일명·필드명을 붙여 다시 던진다.
+  - 실제 데이터 첫 값: 마법사(MND 90)의 맑은 원석(위력 120)은 과부하 출력 180 → 초과 1000‰ 로 위험 단계 1(`OverloadResolver.RiskLevel`, 0~3). 초감각 인간은 RES 35 로 요구 RES 40 의 바람 반지를 써 사용마다 자해 10(부족 5 × 2). 재미 판정(Phase 5)에서 조정한다.
+- 2026-09-14 **Phase 3 커밋 전 `/plan-review --code` (코드 7 scope + 설정 4 + 문서 2, PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 1 · MEDIUM 7 · LOW 1 · REVISE 1)** 반영:
+  - security: 캐릭터·장비·과부하 구간·상성표 배열에 로더 상한 상수 추가(위 결정).
+  - arch: 밸런스 21개 값의 하한이 로더와 생성자에 이중으로 적혀 있던 것을 제거 — 로더는 누락만 검사, 범위는 생성자 예외의 매개변수 이름으로 필드명 복원(위 결정). quality LOW(`V` 약어)도 같이 해소.
+  - test: 원석 미존재 ID·장비 ID 중복·웨이브 수·웨이브당 적 수의 상한 통과·과부하 구간 수 상한·밸런스 누락/하한 테스트 추가. 실제 파일 스모크는 개수 대신 불변식(편성 ID 전부 해석)으로 완화.
+  - comments(문서): 위험 단계 "2단계" → 1 로 정정(`RiskLevel` 은 0부터). arch(설정) 지적 반영으로 Phase 4 그래픽 항목에 보스 표시 명시.
+  - 렌즈 밖 메모 반영: `EnumName<T>` 제약 `struct, Enum` / 정수 배열은 `Ints` 로 분리(null 검사 제거) / 캐릭터 조회를 `CharacterData.Find` 하나로.
+  - 재리뷰(arch·security·test): 지적 전부 해소 확인. 추가 반영 — JSON 키 = `BalanceConfig` 생성자 매개변수 이름 규약을 21개 전부 리플렉션으로 고정하는 테스트(arch MEDIUM), 과부하 구간 정확히 10개 통과 테스트(test MEDIUM). arch 가 새로 낸 "과부하 구간·상성표 상한이 계획서에 없음" HIGH 는 같은 라운드에서 이미 결정에 적혀 있어 해당 없음.
+  - 기각: 진영 일치·이중 배치 검사를 Combat 공개 함수로 올리라는 arch MEDIUM — 한 줄짜리 구조 불변식이고 로더 쪽은 필드 경로 표시가 목적이라 P6(규모 보정) 위반 / `isBoss` 소비처 없음(arch·설정) — Phase 2 결정으로 스냅샷에 노출한 표시용 값, 소비처는 Phase 4 / `Parse(null)` 의 `ArgumentNullException` — 호출자 버그 계약.

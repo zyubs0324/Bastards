@@ -1,0 +1,13 @@
+{
+  "catalysts": [
+    { "id": "cat_rough", "name": "거친 원석", "power": 60 },
+    { "id": "cat_clear", "name": "맑은 원석", "power": 120 }
+  ],
+  "magitools": [
+    { "id": "tool_iron_band", "name": "무쇠 팔찌", "atkBonus": 15, "requiredRes": 40, "requiredMnd": 10, "maxDurability": 40, "durabilityCostPerUse": 1 },
+    { "id": "tool_wind_ring", "name": "바람 반지", "atkBonus": 12, "requiredRes": 40, "requiredMnd": 20, "maxDurability": 30, "durabilityCostPerUse": 1 },
+    { "id": "tool_ember_glove", "name": "불씨 장갑", "atkBonus": 25, "requiredRes": 70, "requiredMnd": 30, "maxDurability": 20, "durabilityCostPerUse": 1 },
+    { "id": "tool_sage_staff", "name": "현자의 지팡이", "atkBonus": 20, "requiredRes": 30, "requiredMnd": 80, "maxDurability": 25, "durabilityCostPerUse": 1 },
+    { "id": "tool_captain_blade", "name": "단장의 검", "atkBonus": 35, "requiredRes": 80, "requiredMnd": 30, "maxDurability": 50, "durabilityCostPerUse": 1 }
+  ]
+}
