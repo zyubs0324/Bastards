@@ -13,16 +13,18 @@
 | 엔진 / 언어 | Unity 6.3 LTS / C# |
 | 개발 형태 | 1인(비개발자) + AI 협업 |
 | 현재 단계 | 첫 수직 슬라이스 — 전투 1판 프로토타입. 계획: `.claude/plans/vertical-slice.plan.md` |
+| 이어받기 문서 | `docs/HANDOFF.md` — 새 대화에서 먼저 읽는다. 진행 상태·다음 할 일·문서 지도를 담고, 사실은 이 문서를 가리킨다 |
+| 편의 스크립트 | `Tools/run-tests.ps1`(테스트·커버리지), `Tools/run-editor-tool.ps1 -Tool scene\|tmp\|smoke`(에디터 도구). 아래 "테스트 실행" 명령을 그대로 실행한다. PowerShell 5.1 이 BOM 없는 파일을 ANSI 로 읽어 한글이 깨지므로 UTF-8 BOM 으로 저장한다 |
 | 기획 정본 | 저장소 루트의 가장 높은 버전 `The_Age_of_Bastards_게임기획서_v*.md` · `The_Age_of_Bastards_세계관_설정집_v*.md` |
 | 폐기 문서 | `PROJECT_CONTEXT_백업.md` — 이전 컨셉. 리뷰 근거로 쓰지 않는다 |
-| 저장소 레이아웃 | `Game/` Unity 프로젝트 · `Game/Assets/_Project/` 자체 코드·데이터 · `docs/references/` 리뷰 표준 · 루트 `*.md` 기획 문서 |
+| 저장소 레이아웃 | `Game/` Unity 프로젝트 · `Game/Assets/_Project/` 자체 코드·데이터 · `docs/references/` 리뷰 표준 · `docs/HANDOFF.md` 이어받기 · `Tools/` 실행 스크립트 · 루트 `*.md` 기획 문서 |
 | 코드 위치 | 규칙 모듈 `Game/Assets/_Project/Scripts/Combat/` · 데이터 로더 `Scripts/Data/` · 표시 계층 `Scripts/View/` · 테스트 `Game/Assets/_Project/Tests/EditMode/Combat/`(규칙 모듈)·`Tests/EditMode/Data/`(데이터 로더)·`Tests/EditMode/View/`(표시 계층 중 엔진 비의존 부분: 틱 드라이버·배치·문구) · 에디터 도구 `Game/Assets/_Project/Editor/` |
 | 검증 방식 | 규칙 모듈·데이터 로더 = EditMode 자동 테스트(규칙 모듈 커버리지 80% 이상) · 표시 계층 = 활성 계획서의 수동 시나리오 + 배치모드 플레이 스모크(`-executeMethod TAoB.EditorTools.PlayModeSmoke.Run`, `-quit`·`-nographics` 없이 — 6초 플레이 후 오류 0건이면 exit 0) |
 | Unity 실행 파일 | `E:\Unity\Editors\<버전>\Editor\Unity.exe` — `<버전>` 은 `Game/ProjectSettings/ProjectVersion.txt` 의 `m_EditorVersion` |
 | Unity Hub 명령줄 | Hub 는 winget MSIX 로 설치됨. 실행 파일 = `(Get-AppxPackage UnityTechnologies.UnityHub).InstallLocation` + `\app\Unity Hub.exe`, 호출 형식 `& "<Unity Hub.exe>" -- --headless <명령>`. Hub 에 내장된 `app\resources\cli\unity.exe` 는 WindowsApps 권한 제한으로 직접 실행 불가 |
 | 라이선스 | Unity Personal — Hub 로그인 시 자동 활성화. 라이선스 파일은 MSIX 가상화 폴더(`%LOCALAPPDATA%\Packages\UnityTechnologies.UnityHub_*\LocalCache\Local\Unity\licenses`)에 있지만 batchmode 에디터가 정상 인식함(2026-09-11 확인) |
 | Android 모듈 ID (6000.3.24f1) | `android`, `android-sdk-ndk-tools`, `android-open-jdk-17.0.18+8` — OpenJDK ID 에 버전이 붙는다 |
-| 테스트 실행 | 에디터를 닫은 상태에서 `"<Unity.exe>" -batchmode -projectPath Game -runTests -testPlatform EditMode -testResults Game/results-editmode.xml` — `-quit` 는 붙이지 않는다. PowerShell 에서 `Start-Process -Wait` 를 쓰면 Unity 보조 프로세스까지 기다려 멈춘 것처럼 보이므로 `-PassThru` 후 `WaitForExit()` 로 본체만 기다린다. 컴파일 오류가 있으면 결과 파일 없이 종료된다 |
+| 테스트 실행 | 에디터를 닫은 상태에서 `"<Unity.exe>" -batchmode -projectPath Game -runTests -testPlatform EditMode -testResults Game/results-editmode.xml` — `-quit` 는 붙이지 않는다. PowerShell 에서 `Start-Process -Wait` 를 쓰면 Unity 보조 프로세스까지 기다려 멈춘 것처럼 보이므로 `-PassThru` 후 `WaitForExit()` 로 본체만 기다린다. 컴파일 오류가 있으면 결과 파일 없이 종료된다. `-PassThru` 로 받은 프로세스의 `ExitCode` 는 비어 돌아오는 경우가 있어 성공 판정에 쓰지 않는다 — 결과 XML 이나 도구가 로그에 남긴 완료 표시로 판정한다 |
 | 커밋 규칙 | Conventional Commits, 메시지 한국어, 커밋 전 사용자 승인 (CLAUDE.md) |
 | 보안 주의 | 릴리스 서명 키(`*.keystore`, `*.jks`)와 그 비밀번호는 저장소·코드에 두지 않는다 |
 | CLAUDE.md 참고 | 「프로젝트 스택」의 fastlane·`MARKETING_VERSION` 줄은 이전 프로젝트 잔재로 이 프로젝트에 적용되지 않는다. 이 문서가 우선한다 |
