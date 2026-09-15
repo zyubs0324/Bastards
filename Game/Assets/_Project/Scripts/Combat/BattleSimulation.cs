@@ -212,7 +212,7 @@ namespace TAoB.Combat
 
         private static bool CanOverload(UnitState unit)
         {
-            return unit.Setup.Catalyst != null && unit.Setup.Skill.CanOverload;
+            return OverloadResolver.CanOverload(unit.Setup.Catalyst, unit.Setup.Skill);
         }
 
         private bool IsRescueTarget(UnitState rescuer, int targetId)

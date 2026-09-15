@@ -1,0 +1,20 @@
+{
+    "name": "TAoB.View",
+    "rootNamespace": "TAoB.View",
+    "references": [
+        "TAoB.Combat",
+        "TAoB.Data",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

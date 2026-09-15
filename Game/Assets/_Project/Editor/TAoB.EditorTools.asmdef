@@ -1,0 +1,19 @@
+{
+    "name": "TAoB.EditorTools",
+    "rootNamespace": "TAoB.EditorTools",
+    "references": [
+        "TAoB.View",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

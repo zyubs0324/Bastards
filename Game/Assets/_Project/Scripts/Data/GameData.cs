@@ -104,6 +104,12 @@ namespace TAoB.Data
             return new UnitSetup(Id, Side, Job, Row, Stats, Skill, Catalyst?.Catalyst, Magitool?.Magitool, IsBoss);
         }
 
+        /// <summary>장비만 바꾼 사본(개발용 장비 교체). 장착 가능 여부는 검사하지 않는다 — 호출자가 <see cref="EquipRules.CanEquip"/> 으로 거른다.</summary>
+        public CharacterData WithEquipment(CatalystData catalyst, MagitoolData magitool)
+        {
+            return new CharacterData(Id, Name, Side, Job, Row, Stats, Skill, catalyst, magitool, IsBoss);
+        }
+
         /// <summary>없으면 null. 캐릭터는 열 명 안팎이라 선형 탐색으로 충분하다.</summary>
         public static CharacterData Find(IReadOnlyList<CharacterData> characters, int id)
         {
@@ -161,21 +167,37 @@ namespace TAoB.Data
         /// <summary>스테이지 편성으로 전투 입력을 만든다. 로더가 이미 검증했으므로 여기서는 실패하지 않아야 한다.</summary>
         public BattleSetup CreateBattleSetup()
         {
+            return CreateBattleSetup(null);
+        }
+
+        /// <summary>
+        /// ID 가 겹치는 캐릭터를 <paramref name="replacements"/> 의 것으로 바꿔 전투 입력을 만든다(개발용 장비 교체).
+        /// 바꾼 캐릭터가 장착 불가면 <see cref="BattleSetup"/> 생성자가 예외를 던진다.
+        /// </summary>
+        public BattleSetup CreateBattleSetup(IReadOnlyDictionary<int, CharacterData> replacements)
+        {
             var waves = new List<IReadOnlyList<UnitSetup>>(Stage.Waves.Count);
             for (int i = 0; i < Stage.Waves.Count; i++)
             {
-                waves.Add(ToUnits(Stage.Waves[i]));
+                waves.Add(ToUnits(Stage.Waves[i], replacements));
             }
 
-            return new BattleSetup(Balance, Affinity, ToUnits(Stage.AllyIds), waves, Stage.TimeLimitTicks, Stage.Precondition);
+            return new BattleSetup(Balance, Affinity, ToUnits(Stage.AllyIds, replacements), waves, Stage.TimeLimitTicks, Stage.Precondition);
         }
 
-        private IReadOnlyList<UnitSetup> ToUnits(IReadOnlyList<int> ids)
+        /// <summary>편성에 실제로 들어가는 캐릭터(교체본이 있으면 그것).</summary>
+        public CharacterData ResolveCharacter(int id, IReadOnlyDictionary<int, CharacterData> replacements)
+        {
+            if (replacements != null && replacements.TryGetValue(id, out CharacterData replaced)) return replaced;
+            return FindCharacter(id);
+        }
+
+        private IReadOnlyList<UnitSetup> ToUnits(IReadOnlyList<int> ids, IReadOnlyDictionary<int, CharacterData> replacements)
         {
             var units = new List<UnitSetup>(ids.Count);
             for (int i = 0; i < ids.Count; i++)
             {
-                units.Add(FindCharacter(ids[i]).ToUnitSetup());
+                units.Add(ResolveCharacter(ids[i], replacements).ToUnitSetup());
             }
 
             return units;

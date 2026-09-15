@@ -88,10 +88,10 @@
 
 | 논리명 | 이 스택의 표기 |
 |---|---|
-| 테스트 모듈 | `Tests/EditMode/Combat/TAoB.Combat.Tests.asmdef`, `Tests/EditMode/Data/TAoB.Data.Tests.asmdef`(Unity 는 폴더당 asmdef 1개) — 둘 다 `includePlatforms: ["Editor"]`, `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `overrideReferences: true` + `precompiledReferences: ["nunit.framework.dll"]` |
+| 테스트 모듈 | `Tests/EditMode/Combat/TAoB.Combat.Tests.asmdef`, `Tests/EditMode/Data/TAoB.Data.Tests.asmdef`, `Tests/EditMode/View/TAoB.View.Tests.asmdef`(Unity 는 폴더당 asmdef 1개) — 모두 `includePlatforms: ["Editor"]`, `defineConstraints: ["UNITY_INCLUDE_TESTS"]`, `overrideReferences: true` + `precompiledReferences: ["nunit.framework.dll"]` |
 | 테스트 선언 | `[Test]`, `[TestCase(...)]` |
 | 테스트 실행 명령 | `project_facts.md` §0 "테스트 실행" |
-| 커버리지 측정 | 테스트 실행 명령 + `-enableCodeCoverage -coverageResultsPath Game/CodeCoverage -coverageOptions "assemblyFilters:+TAoB.Combat;generateHtmlReport"` |
+| 커버리지 측정 | 테스트 실행 명령 + `-enableCodeCoverage -coverageResultsPath Game/CodeCoverage -coverageOptions "assemblyFilters:+TAoB.Combat,+TAoB.Data,+TAoB.View;generateHtmlReport"` |
 | 난수 대체 | 고정 수열을 돌려주는 테스트용 `IRandom` 구현 |
 | 수동 시나리오 | 활성 계획 문서의 해당 Phase "검증" 목록 |
 

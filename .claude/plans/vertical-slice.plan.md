@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 구현·테스트 완료 (2026-09-14 — 커밋 전 리뷰 지적 반영, 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, 커밋 승인 대기)
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 완료 (2026-09-14, 커밋 c07139e — 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, `/plan-review --code` 재리뷰 후 PASS) · Phase 4 구현 완료 (2026-09-15 — 커밋 전 리뷰 지적 반영, 테스트 214개 통과, 플레이 스모크 오류 0건, 수동 시나리오·커밋 승인 대기)
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -157,24 +157,36 @@
 **목표**: 가로 화면에서 전투를 보고 터치로 개입할 수 있다.
 
 **변경 파일**
-- `Game/Assets/_Project/Scripts/View/TAoB.View.asmdef` — `BattleBootstrap`, `UnitView`, `BattleHud`, `InterventionBar`, `ResultPanel`, `DebugLoadoutPanel`, `PopupPool`
-- `Game/Assets/_Project/Scenes/Battle.unity` (오브젝트는 `BattleBootstrap` 1개)
-- `Game/Assets/_Project/Fonts/` — 한글 OFL 폰트 TMP 에셋
+- `Game/Assets/_Project/Scripts/View/TAoB.View.asmdef` — `BattleBootstrap`, `UnitView`, `BattleHud`, `InterventionBar`, `ResultPanel`, `DebugLoadoutPanel`, `PopupPool`, `UiFactory`(uGUI 생성), `TickDriver`, `BattleLayout`, `UiText`, `RescueSelector`
+- `Game/Assets/_Project/Editor/TAoB.EditorTools.asmdef` — `ProjectSetupTools`(TMP 리소스 가져오기·전투 씬 생성), `PlayModeSmoke`(배치모드 플레이 스모크)
+- `Game/Assets/_Project/Tests/EditMode/View/TAoB.View.Tests.asmdef` — 틱 드라이버·배치·문구 테스트(엔진 비의존 부분만)
+- `Game/Assets/_Project/Scenes/Battle.unity` (오브젝트는 `BattleBootstrap` 1개, 씬 생성 도구가 만든다)
+- `Game/Assets/_Project/Fonts/` — `NanumGothic-Regular.ttf` + `OFL.txt`
+- `Game/Assets/TextMesh Pro/` — TMP 필수 리소스(설정·기본 폰트·셰이더, 도구로 가져옴)
+- `Game/ProjectSettings/EditorBuildSettings.asset` — `Battle.unity` 를 유일한 빌드 씬으로 등록(씬 생성 도구가 목록을 대체한다)
+- `Scripts/Data/GameData.cs` — `CharacterData.WithEquipment`, `CreateBattleSetup(교체 목록)`, `ResolveCharacter`(개발용 장비 교체 경로)
+- `Scripts/Combat/OverloadResolver.cs` — `CanOverload(원석, 기술)` 공개(과부하 가능 판정의 정본을 표시 계층과 공유)
 
 **결정**
-- 씬에는 `BattleBootstrap` 만 두고, 전투 표시 객체는 코드로 하나의 `BattleRoot` 아래에 생성한다(`PopupPool` 만 예외로 `BattleBootstrap` 직속) → 에디터 수작업·씬 YAML 충돌 최소화.
+- 씬에는 `BattleBootstrap` 만 두고, 전투 표시 객체는 코드로 하나의 `BattleRoot` 아래에 생성한다(`PopupPool` 만 예외로 캔버스 직속 = `BattleRoot` 형제) → 에디터 수작업·씬 YAML 충돌 최소화.
 - **틱 드라이버**: `BattleBootstrap.Update` 가 누적 시간 × 10 × 배속만큼 `Step()` 을 호출한다. 프레임당 최대 20틱, 넘치는 틱은 다음 프레임으로 넘긴다. 배속은 호출 횟수만 바꾸고 규칙 모듈에 전달하지 않는다.
 - **이벤트 전달**: `Step()` 1회가 끝날 때마다 `BattleBootstrap` 이 이벤트 버퍼를 곧바로 뷰들에 직접 호출로 넘긴 뒤 다음 `Step()` 을 부른다. 한 프레임에 여러 틱을 돌려도 이벤트가 덮여 사라지지 않는다. 전투 이벤트에는 구독(발행자) 구조를 두지 않는다.
 - **표시 갱신**: 스냅샷 값이 바뀐 요소만 텍스트를 갱신한다(TMP `SetText` 수치 오버로드). 데미지 숫자·이펙트는 `PopupPool` 로 재사용한다.
 - **재시작**: `BattleRoot` 를 파괴하고 `BattleSimulation` 을 새로 만든다. `PopupPool` 은 파괴하지 않고 전부 회수한다. 버튼 리스너 등 이벤트 구독은 `BattleRoot` 하위 객체만 하고 각자의 `OnDestroy` 에서 해제한다.
 - 그래픽은 색 네모 + 직업 글자. HP 바·행동 게이지 바·데미지 숫자·과부하 위험 단계 표시·빈사 표시·보스 표시(`UnitSnapshot.IsBoss`).
 - uGUI + TextMeshPro, 기준 해상도 1920×1080 가로 고정, Scale With Screen Size, 버튼 터치 영역 넉넉히.
-- 한글 폰트: 기본 폰트는 한글 미지원 → Noto Sans KR(OFL). 폰트 파일 다운로드는 사용자 승인 후.
+- 한글 폰트: 기본 폰트는 한글 미지원 → **Nanum Gothic**(OFL, 고정 TTF 2.0MB, 사용자 승인 2026-09-14). TMP 폰트 에셋은 굽지 않고 `BattleBootstrap` 이 실행 시 동적 아틀라스로 만든다(필요한 글자만 넣음). 폰트 참조는 씬의 `[SerializeField]` 필드에 두고 씬 생성 도구가 채운다.
+- **씬 생성·TMP 리소스는 에디터 도구**(`ProjectSetupTools`, 메뉴 `TAoB/…` 또는 `-executeMethod`)가 만든다. 카메라는 `BattleBootstrap` 과 같은 객체에 붙여 씬 객체를 하나로 유지한다(오버레이 캔버스라 카메라는 배경색만 담당).
+- 입력: 프로젝트가 Input System 전용이라 `EventSystem` 에 `InputSystemUIInputModule` 을 붙인다.
+- 구조 명령의 대상 선택: 구조자 = 정상 상태인 첫 아군, 대상 = 흩어진 첫 아군(선택 UI 없음, 프로토타입). 규칙을 `RescueSelector` 순수 함수로 빼 테스트로 고정하고, 버튼 활성 조건도 같은 함수를 쓴다.
+- **자동 검증 범위**: 표시 계층 중 엔진 비의존 부분(`TickDriver`·`BattleLayout`·`UiText`)만 EditMode 테스트. `MonoBehaviour` 는 배치모드 플레이 스모크(6초 실행, 오류 0건, 유닛 표시 생성 확인)로 켜자마자 터지는 실수만 거르고, 동작은 아래 수동 시나리오로 본다.
 - **개입 바**: 캐릭터별 고유 기술 버튼 3(`UseSkill`) + 과부하 버튼(마법사, 누를 때마다 `Overload` 명령 1회) + 구조 버튼(흩어짐 아군이 있을 때만 활성, `Rescue`) + 후퇴(`Retreat`). 배속 1x/2x. 기본 공격은 자동 전용이라 버튼이 없다.
 - 결과 화면: 승패 사유, 빈사자, 마도구 내구력 소모, 결과 해시, 재시작.
 - `DebugLoadoutPanel`: 캐릭터별 장비 교체 후 재시작(2축 규칙 체감용, 덱세팅 화면 아님). `#if UNITY_EDITOR || DEVELOPMENT_BUILD` 안에서만 생성한다.
 
-**검증** (에디터 수동 시나리오, 시드 고정으로 재현)
+**검증**
+- 자동: EditMode 테스트 전체 통과(✅ 214개, 2026-09-15 — 표시 계층 21개) · 배치모드 플레이 스모크 오류 0건(✅ 유닛 표시 7개 생성 확인).
+- 아래는 에디터 수동 시나리오(시드 고정으로 재현). 사용자가 `Assets/_Project/Scenes/Battle.unity` 를 열어 플레이한다.
 1. 기본 편성 승리 → 결과 화면
 2. 제한 시간 초과 → 자동 후퇴 패배
 3. 수동 후퇴
@@ -273,3 +285,20 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - 렌즈 밖 메모 반영: `EnumName<T>` 제약 `struct, Enum` / 정수 배열은 `Ints` 로 분리(null 검사 제거) / 캐릭터 조회를 `CharacterData.Find` 하나로.
   - 재리뷰(arch·security·test): 지적 전부 해소 확인. 추가 반영 — JSON 키 = `BalanceConfig` 생성자 매개변수 이름 규약을 21개 전부 리플렉션으로 고정하는 테스트(arch MEDIUM), 과부하 구간 정확히 10개 통과 테스트(test MEDIUM). arch 가 새로 낸 "과부하 구간·상성표 상한이 계획서에 없음" HIGH 는 같은 라운드에서 이미 결정에 적혀 있어 해당 없음.
   - 기각: 진영 일치·이중 배치 검사를 Combat 공개 함수로 올리라는 arch MEDIUM — 한 줄짜리 구조 불변식이고 로더 쪽은 필드 경로 표시가 목적이라 P6(규모 보정) 위반 / `isBoss` 소비처 없음(arch·설정) — Phase 2 결정으로 스냅샷에 노출한 표시용 값, 소비처는 Phase 4 / `Parse(null)` 의 `ArgumentNullException` — 호출자 버그 계약.
+- 2026-09-14 **Phase 4 구현 중 확정한 세부 규칙** (계획서에 없던 빈칸을 채운 것):
+  - 폰트를 Noto Sans KR 에서 Nanum Gothic 으로 변경(사용자 승인). Google Fonts 의 Noto Sans KR 은 가변 폰트(약 6MB)라 TMP 두께 처리가 불확실하고, Nanum Gothic 은 고정 TTF 2.0MB.
+  - TMP 필수 리소스(`Assets/TextMesh Pro/`, 4MB)는 에디터 도구로 가져와 커밋한다. batchmode 에서는 패키지 가져오기가 비동기라 `-quit` 없이 실행하고 완료 콜백에서 종료한다.
+  - 틱 드라이버는 초가 아니라 틱 수로 누적한다 — 0.1초씩 빼면 float 오차가 쌓여 40틱 뒤 1틱이 사라지는 것을 테스트가 잡았다.
+  - `UnitView` 는 직전·현재 스냅샷을 `alpha` 로 보간해 막대만 부드럽게 움직이고, 글자는 값이 바뀔 때만 `SetText` 수치 오버로드로 갱신한다. 막대는 스프라이트 없이 채움 폭(`sizeDelta.x`)으로 그린다(`Image.fillAmount` 는 스프라이트가 필요).
+  - 팝업 풀은 같은 자리에 같은 틱의 알림이 겹치면 위로 쌓는다. 라벨은 상수 문자열만 넘겨 프레임당 문자열 할당을 피한다.
+  - 개발용 장비 교체는 `GameData.CreateBattleSetup(교체 목록)` 으로 들어간다. 패널은 RES 부족으로 장착 불가인 마도구를 목록에서 빼므로 `BattleSetup` 예외가 나지 않는다.
+  - 배치모드 플레이 스모크(`PlayModeSmoke`)를 에디터 도구로 추가 — PlayMode 테스트(스택 §0 에서 범위 밖)가 아니라 실행 오류만 거르는 도구. batchmode 플레이는 도메인 재로드 없이 들어가므로 `Run()` 에서 바로 갱신 콜백을 등록한다.
+  - `Game/ProjectSettings/URPProjectSettings.asset`·`SceneTemplateSettings.json` 은 에디터가 자동 갱신·생성한 것으로 값 변경 없이 커밋에 포함.
+- 2026-09-15 **Phase 4 커밋 전 `/plan-review --code` (코드 7 scope + 설정 4 + 문서 2, PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 2 · MEDIUM 5 · LOW 2 · REVISE 1 · ADD 2)** 반영:
+  - arch: 흩어짐 피해 팝업이 `SourceId`(가해자 없음 = 비어 있음)를 읽어 화면 중앙에 겹치던 버그 → `TargetId` 로 수정 / 과부하 가능 판정을 표시 계층이 다시 구현하던 것을 `OverloadResolver.CanOverload` 공개로 통일(위 변경 파일) / 전투가 끝난 프레임은 보간을 1로 밀어 최종 상태를 그린다(중간값이 결과 화면 뒤에 남지 않게).
+  - perf: HP·행동 게이지 막대는 보간 결과가 바뀔 때만 폭을 다시 쓴다(레이아웃 갱신 절약).
+  - test: `RescueSelector` 추출 + 테스트 6개, `UiText.OverloadOutcome`·`Condition`·`WaveBanner`·`BattleLayout.JobColor` 테스트 추가(표시 계층 자동 검증 대상 전부 커버).
+  - lang: 버튼 배경 이미지를 `UiFactory.CreateButton` 이 `out` 으로 돌려주게 해 `targetGraphic as Image` 캐스트 제거. quality: 팝업·토스트 색 리터럴을 `BattleLayout` 상수로 모으고, 불리언에 `Is/Has/Was` 접두를 붙였다.
+  - comments: `PopupPool` 위치 서술 정정(진입점 직속 → 캔버스 직속), `UiFactory.CreateBar` 에 `Image.fillAmount` 를 못 쓰는 이유 추가, `ProjectSetupTools` 에 "다시 실행하면 씬·빌드 목록을 덮어쓴다" 경고 추가. arch(설정) 지적으로 `EditorBuildSettings.asset` 을 변경 파일에 명시.
+  - 기각: `SetText("{0:1}")` 이 잘못된 서식이라는 quality HIGH — TMP 는 .NET 서식이 아니라 자체 파서를 쓰고 `'1'~'9'` 를 소수 자릿수로 읽는다(엔진 소스 `TMP_Text.cs` 확인). `F1` 이 오히려 글자로 찍히므로 현행이 맞다. 세 리뷰어가 같이 오독했으므로 두 호출부에 이유 주석을 남겼다.
+  - 보류(렌즈 밖 메모): TMP 이모지 에셋이 `Resources` 에 남아 빌드에 포함되는 문제 — TMP 설정이 참조하므로 Phase 5 빌드 크기 확인 때 함께 본다. 템플릿 잔재 `Assets/Scenes/SampleScene.unity` 도 그때 정리.

@@ -16,6 +16,14 @@ namespace TAoB.Combat
         /// <summary>표시용 위험 단계의 최댓값(0~3).</summary>
         public const int MaxRiskLevel = 3;
 
+        /// <summary>
+        /// 과부하를 발동할 수 있는 장비·기술 조합인지. 표시 계층의 버튼 활성 조건과 명령 수락 조건이 갈리지 않도록 이 함수 하나를 쓴다.
+        /// </summary>
+        public static bool CanOverload(Catalyst catalyst, SkillDefinition skill)
+        {
+            return catalyst != null && skill != null && skill.CanOverload;
+        }
+
         public static int TierIndex(int excessPermille, BalanceConfig balance)
         {
             var tiers = balance.OverloadTiers;
