@@ -10,10 +10,12 @@ namespace TAoB.View
     internal sealed class BattleHud : MonoBehaviour
     {
         private const float BannerSeconds = 2f;
+        private const float CutinSeconds = 0.6f;
 
         private TMP_Text _wave;
         private TMP_Text _time;
         private TMP_Text _banner;
+        private TMP_Text _cutin;
         private Button _speed1;
         private Button _speed2;
         private Image _speed1Image;
@@ -22,6 +24,7 @@ namespace TAoB.View
         private int _lastWave = -1;
         private int _lastTick = -1;
         private float _bannerAge;
+        private float _cutinAge;
 
         public static BattleHud Create(Transform parent, TMP_FontAsset font, int timeLimitTicks, uint seed, Action<int> setSpeed)
         {
@@ -48,6 +51,10 @@ namespace TAoB.View
 
             _banner = UiFactory.CreateText(transform, "Banner", font, "", 48f, Color.white, new Vector2(0f, 380f), new Vector2(1000f, 70f));
             _banner.gameObject.SetActive(false);
+
+            // 웨이브·결과 배너와 겹치지 않는 별도 슬롯(계획서 Phase 4.5 — 연속 발동 시 서로 덮어쓰지 않게).
+            _cutin = UiFactory.CreateText(transform, "Cutin", font, "", 40f, BattleLayout.OverloadColor, new Vector2(0f, 300f), new Vector2(1000f, 60f));
+            _cutin.gameObject.SetActive(false);
         }
 
         public void Apply(BattleSnapshot snapshot)
@@ -82,11 +89,27 @@ namespace TAoB.View
             _bannerAge = 0f;
         }
 
+        /// <summary>기술 컷인 전용 슬롯. 문구는 전투 시작 때 캐릭터별로 한 번 만든 것만 넘긴다(계획서 Phase 4.5).</summary>
+        public void ShowCutin(string text)
+        {
+            _cutin.text = text;
+            _cutin.gameObject.SetActive(true);
+            _cutinAge = 0f;
+        }
+
         private void Update()
         {
-            if (!_banner.gameObject.activeSelf) return;
-            _bannerAge += Time.deltaTime;
-            if (_bannerAge >= BannerSeconds) _banner.gameObject.SetActive(false);
+            if (_banner.gameObject.activeSelf)
+            {
+                _bannerAge += Time.deltaTime;
+                if (_bannerAge >= BannerSeconds) _banner.gameObject.SetActive(false);
+            }
+
+            if (_cutin.gameObject.activeSelf)
+            {
+                _cutinAge += Time.deltaTime;
+                if (_cutinAge >= CutinSeconds) _cutin.gameObject.SetActive(false);
+            }
         }
 
         private void OnDestroy()

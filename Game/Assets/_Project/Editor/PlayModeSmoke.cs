@@ -91,17 +91,18 @@ namespace TAoB.EditorTools
                 return;
             }
 
-            Transform root = bootstrap.transform.Find("Canvas/BattleRoot");
+            // 유닛 표시는 BattleRoot 바로 아래가 아니라 전장 층(Field) 아래에 있다(계획서 Phase 4.5).
+            Transform field = bootstrap.transform.Find("Canvas/BattleRoot/Field");
             int units = 0;
-            if (root != null)
+            if (field != null)
             {
-                for (int i = 0; i < root.childCount; i++)
+                for (int i = 0; i < field.childCount; i++)
                 {
-                    if (root.GetChild(i).name.StartsWith("Unit ")) units++;
+                    if (field.GetChild(i).name.StartsWith("Unit ")) units++;
                 }
             }
 
-            if (units == 0) Debug.LogError("[스모크] BattleRoot 아래에 유닛 표시가 없습니다.");
+            if (units == 0) Debug.LogError("[스모크] Field 아래에 유닛 표시가 없습니다.");
             else Debug.Log($"[스모크] 유닛 표시 {units}개 생성됨");
         }
     }

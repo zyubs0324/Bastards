@@ -38,5 +38,15 @@ namespace TAoB.View
         {
             _pendingTicks = 0f;
         }
+
+        /// <summary>
+        /// <see cref="Advance"/> 가 돌려준 틱 중 이번 프레임에 실행하지 못한 만큼을 되돌린다(짧은 멈춤이 틱 루프 중간에 걸릴 때 사용).
+        /// 틱을 잃지 않고 다음 프레임에 이어서 처리하기 위함이다.
+        /// </summary>
+        public void RestoreTicks(int count)
+        {
+            if (count <= 0) return;
+            _pendingTicks += count;
+        }
     }
 }

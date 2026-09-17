@@ -16,6 +16,12 @@ namespace TAoB.View
         private const float RowSpacing = 215f;
         private const float FieldCenterY = 40f;
 
+        /// <summary>배경의 하늘·바닥 경계 y좌표(유닛 발밑 바로 아래).</summary>
+        public const float GroundTopY = -60f;
+
+        /// <summary>배경을 화면보다 크게 그려, 화면 흔들림 진폭 안에서는 가장자리가 드러나지 않게 한다.</summary>
+        public const float BackgroundOverscan = 40f;
+
         public static readonly Color DownedColor = new Color(0.3f, 0.3f, 0.3f);
         public static readonly Color BossFrameColor = new Color(1f, 0.85f, 0.2f);
         public static readonly Color PanelColor = new Color(0.08f, 0.08f, 0.1f, 0.85f);
@@ -25,6 +31,11 @@ namespace TAoB.View
         public static readonly Color ButtonDisabledColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
         public static readonly Color FaintTextColor = new Color(0.7f, 0.7f, 0.7f);
         public static readonly Color ToastColor = new Color(1f, 0.9f, 0.6f);
+
+        // 배경(계획서 Phase 4.5) — 검은 허공 대신 하늘·바닥 두 색 띠와 경계선을 그린다.
+        public static readonly Color SkyColor = new Color(0.16f, 0.2f, 0.28f);
+        public static readonly Color GroundColor = new Color(0.1f, 0.12f, 0.14f);
+        public static readonly Color GroundLineColor = new Color(0.28f, 0.32f, 0.38f);
 
         // 이벤트 팝업 색. 종류를 색으로 구분해 한 화면에 여러 알림이 떠도 읽히게 한다.
         public static readonly Color DamageColor = Color.white;

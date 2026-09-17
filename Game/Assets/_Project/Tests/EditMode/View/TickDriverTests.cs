@@ -65,5 +65,18 @@ namespace TAoB.View.Tests
             Assert.AreEqual(0, driver.Advance(-1f, 1));
             Assert.AreEqual(1, driver.Advance(0.05f, 1));
         }
+
+        /// <summary>짧은 멈춤이 틱 루프 중간에 걸려 일부만 실행했을 때, 나머지를 되돌리면 다음 프레임에 이어진다(계획서 Phase 4.5).</summary>
+        [Test]
+        public void RestoreTicks_CarriesUnexecutedTicksToNextFrame()
+        {
+            var driver = new TickDriver(10);
+
+            Assert.AreEqual(3, driver.Advance(0.3f, 1), "3틱 요청");
+            driver.RestoreTicks(2); // 1틱만 실행했다고 가정하고 나머지 2틱을 되돌린다.
+
+            Assert.AreEqual(2, driver.Advance(0f, 1), "되돌린 2틱이 이어서 나온다");
+            Assert.AreEqual(0, driver.Advance(0f, 1));
+        }
     }
 }

@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 완료 (2026-09-14, 커밋 c07139e — 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, `/plan-review --code` 재리뷰 후 PASS) · Phase 4 구현 완료 (2026-09-15 — 커밋 전 리뷰 지적 반영, 테스트 214개 통과, 플레이 스모크 오류 0건, 수동 시나리오·커밋 승인 대기)
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 완료 (2026-09-14, 커밋 c07139e — 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, `/plan-review --code` 재리뷰 후 PASS) · Phase 4 구현 완료 (2026-09-15 — 커밋 전 리뷰 지적 반영, 테스트 214개 통과, 플레이 스모크 오류 0건, 커밋 5250269) · Phase 4.5 연출 보강 구현 완료 (2026-09-15 계획, 2026-09-17 구현 — 에디터가 사용자 PC 에서 너무 느려 시연을 빌드로 전환. 테스트 226개 통과·플레이 스모크 오류 0건, 커밋 전 `/plan-review --code` PROCEED-WITH-FIXES 반영 완료, 커밋 승인 대기) · Phase 5 빌드 도구 계획 추가
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -186,7 +186,7 @@
 
 **검증**
 - 자동: EditMode 테스트 전체 통과(✅ 214개, 2026-09-15 — 표시 계층 21개) · 배치모드 플레이 스모크 오류 0건(✅ 유닛 표시 7개 생성 확인).
-- 아래는 에디터 수동 시나리오(시드 고정으로 재현). 사용자가 `Assets/_Project/Scenes/Battle.unity` 를 열어 플레이한다.
+- 아래는 수동 시나리오(시드 고정으로 재현). 사용자 PC 에서 에디터가 너무 느려 Phase 5 의 exe·APK 에서 수행한다(결정 로그 2026-09-15). 시나리오 8 은 Phase 5 에서 플레이 스모크로 자동화한다.
 1. 기본 편성 승리 → 결과 화면
 2. 제한 시간 초과 → 자동 후퇴 패배
 3. 수동 후퇴
@@ -196,21 +196,91 @@
 7. 입력 없이(자동만) 배속 2x 로 돌린 결과 해시가 1x 와 동일(같은 시드)
 8. 재시작 5회 후 씬의 `GameObject` 수가 첫 전투와 동일
 
-## Phase 5 — 안드로이드 빌드 & 재미 판정
-**목표**: 사용자 폰에서 플레이해 계속 갈지 판단한다.
+## Phase 4.5 — 연출 보강 (그림 없이 움직임만)
+**목표**: 아트 에셋 없이 코드만으로 공격·피격·빈사·과부하가 눈에 보이는 전투 화면.
+
+**변경 파일** (`Game/Assets/_Project/`)
+- `Scripts/View/MotionCurves.cs` (신규) — 엔진 비의존 순수 함수: 돌진·흔들림·튀어오름·맥동·숨쉬기 곡선(경과 시간 → 오프셋/배율)
+- `Scripts/View/UnitView.cs` — 연출 상태와 `PlayLunge`·`PlayHit`·`PlaySelfDamageFlash`·`PlayDowned`·`ResetDownedPose` 진입점. 움직이는 것은 네모 박스(`_box`)뿐이고 막대·글자는 고정
+- `Scripts/View/BattleEffects.cs` (신규) — 이벤트 → 연출 대응 전담(가해자 틱당 첫 피해 판정, 짧은 멈춤 타이머, 화면 흔들림·컷인 트리거, 크리티컬 판정 `IsCriticalDamage` 단일화). `BattleBootstrap.Dispatch` 는 팝업 처리 뒤 `BattleEffects.Handle(e)` 한 줄만 부른다
+- `Scripts/View/ScreenShake.cs` (신규) — 전장 층(`Field`)을 감쇠하며 흔든다
+- `Scripts/View/BattleBootstrap.cs` — `BattleRoot` 아래 `Field`(배경·유닛) 층 생성, `BattleEffects` 연결, 짧은 멈춤 중 틱 루프 생략(전투 종료 후에도 연출은 계속 흐름)
+- `Scripts/View/PopupPool.cs` — 튀어오르는 배율 곡선
+- `Scripts/View/BattleHud.cs` — 기술 컷인 전용 글자(웨이브·결과 배너와 별도 슬롯)
+- `Scripts/View/BattleLayout.cs` — 배경(하늘·바닥·경계선) 색과 위치 상수
+- `Scripts/View/TickDriver.cs` — `RestoreTicks`(짧은 멈춤이 틱 루프 중간에 걸릴 때 미실행 틱을 되돌림)
+- `Editor/PlayModeSmoke.cs` — `Field` 층 도입으로 유닛 표시 경로가 `BattleRoot/Field` 로 바뀌어 `CheckHierarchy` 갱신
+- `Tests/EditMode/View/MotionCurvesTests.cs` (신규), `Tests/EditMode/View/TickDriverTests.cs`(`RestoreTicks` 테스트)
+
+**결정**
+- 규칙 모듈(`TAoB.Combat`)·데이터(`TAoB.Data`)는 건드리지 않는다. 연출은 `BattleEvent`·스냅샷을 소비만 하므로 결정론·배속 무관 테스트가 그대로 유효하다.
+- 이벤트 → 연출:
+  | 입력 | 연출 |
+  |---|---|
+  | `Damage` 가해자(같은 틱 첫 피해만) | 상대 진영 쪽으로 돌진 후 복귀 |
+  | `Damage` 피격자 | 흰색 번쩍임 + 좌우 흔들림. 크리티컬이면 흔들림 크게 + 화면 흔들림 + 짧은 멈춤 |
+  | `SelfDamage` | 주황 번쩍임 |
+  | `Downed` | 박스가 기울며 가라앉음 + 약한 화면 흔들림 + 짧은 멈춤 |
+  | `Rescued` | 빈사 자세(기울기·가라앉음)를 되돌린다 |
+  | 스냅샷 `Condition == Scattered` | 흩어진 동안 박스가 잘게 떨림 |
+  | 스냅샷 `OverloadRisk > 0` | 위험 단계가 높을수록 빨라지는 맥동 |
+  | `OverloadResolved` 폭주·한계돌파 | 화면 흔들림 |
+  | `ActionStarted` 아군 `UseSkill` | 상단 컷인 배너 "{이름} 고유 기술!" (문구는 전투 시작 때 캐릭터별로 한 번 만든다) |
+  | 상시(정상 상태) | 유닛마다 위상을 달리한 위아래 숨쉬기 |
+- 연출 수치(지속 시간·진폭)는 규칙 밸런스가 아니라 표시 상수이므로 `balance.json` 에 두지 않는다. 색·위치처럼 여러 파일이 같이 쓰는 값만 `BattleLayout` 에 모으고, 한 파일에서만 쓰는 지속 시간·진폭·주파수는 그 파일의 `private const` 로 둔다(`PopupPool` 의 기존 `Lifetime`·`RiseSpeed` 와 같은 방식 — 코드 리뷰로 확정, 최초 계획의 "전부 BattleLayout" 방침을 대체).
+- **층 분리**: `BattleRoot` 아래 첫 자식으로 전체 화면 `Field` 층을 두고 배경과 유닛 표시를 그 아래에 만든다. 화면 흔들림은 `Field` 만 움직인다 — HUD·개입 바·결과 화면은 흔들리지 않아 버튼을 누르는 위치가 어긋나지 않는다. 팝업은 흔들리지 않는 좌표에 뜨지만 흔들림 진폭(≤12px)·지속(≤0.25초)이 짧아 어긋남을 허용한다. 배경 띠는 화면보다 흔들림 진폭만큼 크게 만들어 가장자리가 드러나지 않게 한다.
+- **짧은 멈춤**: 멈춤 시간이 남아 있으면 그 프레임은 `TickDriver.Advance` 를 부르지 않고 틱 루프를 건너뛴다. 틱 도중 멈춤이 걸리면 그 프레임의 남은 틱 루프를 즉시 끊는다(누적 틱은 다음 프레임에 이어서 처리). 틱 결과는 벽시계와 무관하므로 해시가 바뀌지 않는다. 멈춤 중에도 연출 애니메이션은 흐른다. 멈춤 타이머는 `BattleEffects` 가 갖고 `StartBattle` 에서 초기화한다.
+- **정지 조건**: 모든 일회성 연출(돌진·피격·번쩍임·화면 흔들림·컷인)은 지속 시간이 지나면 원위치·원래 색으로 정확히 되돌리고, 이후 프레임에는 그 속성을 쓰지 않는다. 계속 도는 것은 숨쉬기·흩어짐 떨림·과부하 맥동뿐이며 해당 상태가 끝나면 멈춘다.
+- **전투 종료 후에도 연출은 끝까지 재생**: `BattleBootstrap.Update` 는 전투가 끝나도(`_isEnded`) 틱 루프(`RunTick`)만 멈추고, `BattleEffects.Tick`·`ScreenShake.Tick`·`UnitView.Apply` 는 계속 부른다. 마지막 틱에 시작된 빈사 연출·화면 흔들림·짧은 멈춤이 시작하자마자 멈추지 않고 끝까지 재생되게 하기 위함(코드 리뷰 반영 — 최초 계획은 "이후 프레임은 다시 그리지 않는다"였으나 이 성질이 연출과 충돌해 대체).
+- **색 소유권**: `_box.color` 는 `UnitView` 한 곳만 쓴다. 매 프레임 기준색(상태별: 정상 = 직업색, 빈사 = `DownedColor`)을 정하고 번쩍임은 그 위에 보간해 덮는다 — 번쩍임이 끝나면 자동으로 기준색이 된다.
+- 팝업 겹침 처리는 2026-09-14 결정("같은 자리·같은 틱이면 위로 쌓기")을 그대로 두고, 등장 배율 곡선만 추가한다.
+- 흔들림 방향은 난수 대신 시간 기반 사인 곡선을 쓴다(`UnityEngine.Random` 불사용 — 재현성과 규칙 난수 분리).
+- 할당 없음: 연출 상태는 유닛당 float 몇 개, 프레임 갱신에서 문자열·컬렉션을 만들지 않는다. 박스 이동은 위치·회전·배율만 바꾸고 크기(`sizeDelta`)는 건드리지 않는다 — 행동 게이지 막대가 이미 매 프레임 폭을 바꾸므로 캔버스 갱신 빈도는 늘지 않는다.
+
+**검증**
+- `MotionCurvesTests` — 곡선 5종 각각:
+  - 돌진·튀어오름: t=0 에서 원위치(튀어오름은 배율 1), 지속 시간 이상에서 원위치, 중간에 최대값
+  - 흔들림: 지속 시간 이상에서 정확히 0, 뒤 구간 최대 진폭 < 앞 구간 최대 진폭
+  - 맥동: 위험 단계 0 이면 항상 배율 1, 단계가 높을수록 주기가 짧음, 배율 범위 1.0~1.08
+  - 숨쉬기: 한 주기 뒤 같은 값(주기성), 위상이 다르면 같은 시각 값이 다름, 진폭 상한 이내
+  - 지속 시간 0 이하: 세 곡선(돌진·튀어오름·흔들림) 모두 예외 없이 원위치·기본값
+- EditMode 테스트 전체 통과(✅ 226개, 2026-09-17) · 플레이 스모크 오류 0건(✅ 유닛 표시 7개 생성 확인).
+- Phase 5 PC 빌드 자동 캡처 스크린샷으로 배경·박스 이동·번쩍임을 확인한다(에디터 GUI 대신).
+- 수동(exe·APK, Phase 4 시나리오와 함께): 9. 크리티컬 때 전장만 흔들리고 버튼은 고정 · 기술 버튼을 누르면 컷인 문구 표시 · 과부하 위험 단계에 따라 맥동이 빨라짐 · 빈사 유닛이 기울어진 채 멈춤 · 재시작 직후 멈춤·흔들림이 남아 있지 않음.
+
+## Phase 5 — 빌드 & 재미 판정
+**목표**: 에디터를 열지 않고 사용자 폰(APK)과 PC(exe)에서 플레이해 계속 갈지 판단한다.
 
 **변경 파일**
-- `Game/ProjectSettings/` (Player Settings: 가로 고정, 패키지명, 최소 API)
+- `Game/Assets/_Project/Editor/BuildTools.cs` (신규) — `BuildAndroid()`·`BuildWindows()`. `BuildOptions.Development`, 씬 목록은 `EditorBuildSettings`. 출력 `Game/Builds/Android/TAoB-slice.apk`·`Game/Builds/Windows/TAoB.exe`(`.gitignore` 의 `/Game/[Bb]uilds/` 로 이미 제외)
+- `Game/Assets/_Project/Editor/PlayModeSmoke.cs` — 재시작 5회 뒤 `GameObject` 수 비교 추가(Phase 4 시나리오 8 자동화)
+- `Game/Assets/_Project/Scripts/View/BattleBootstrap.cs` — `Restart` 를 스모크가 부를 수 있게 공개 · `Awake` 에서 `#if DEVELOPMENT_BUILD` 로 자기 객체에 `DevCapture` 부착(`DebugLoadoutPanel` 과 같은 구역화)
+- `Game/Assets/_Project/Scripts/View/DevCapture.cs` (신규, `DEVELOPMENT_BUILD` 전용) — 실행 인자 `-captureShots <폴더>` 가 있을 때만 몇 장 찍고 종료
+- `Tools/run-editor-tool.ps1` — `-Tool apk|win` 추가
+- `Game/ProjectSettings/ProjectSettings.asset` — 패키지명(Android·Standalone 둘 다)·제품명, 세로 자동 회전 끄기
+- `docs/HANDOFF.md` — 다음 할 일을 Phase 4.5·빌드 경로에 맞춰 갱신
+- `Game/Assets/Scenes/SampleScene.unity`(+`.meta`) 삭제 — 템플릿 잔재
 - 기획서 v0.6 13장·4-1 (판정 결과 반영)
 
 **결정**
-- Development Build 로 디버그 서명 APK 를 만든다(디버그 패널 포함, 릴리스 키스토어는 출시 단계에서). 패키지명은 빌드 직전 사용자 확인.
+- Development Build + Unity 기본 디버그 서명(키스토어 파일을 만들지 않음 — 저장소에 비밀 정보 없음). 릴리스 키스토어는 출시 단계에서.
+- 스크립팅 백엔드는 현행 IL2CPP·ARM64 유지 — Mono 는 ARMv7(32비트) 전용이라 32비트 앱을 지원하지 않는 최신 기기에 설치되지 않을 수 있다.
+- 화면 방향: 현재 `defaultScreenOrientation: 4`(자동 회전)에 세로가 허용돼 있다 → 자동 회전은 유지하되 `allowedAutorotateToPortrait`·`PortraitUpsideDown` 을 0 으로(가로 두 방향만).
+- 패키지명 `com.ageofbastards.slice`(시험판 전용 임시 ID — 정식 출시 ID 는 출시 단계에서 새로 정한다), 제품명 `TAoB 시험판`(사용자 결정 2026-09-15). 템플릿 기본값(Android `com.DefaultCompany.urp_2d` · Standalone `com.DefaultCompany.2D-URP` · 제품명 `Game`)을 모두 대체한다.
+- **빌드 도구 실행**: `apk`·`win` 은 `-quit -nographics` 로 실행하고, 제한 시간 기본값을 3600초로 둔다(첫 IL2CPP 빌드가 기존 기본 300초를 넘기기 쉬움). `BuildTools` 는 `BuildReport.summary.result` 가 `Succeeded` 일 때만 로그에 `[빌드] 성공 <경로> <바이트>` 를 남기고, 실패하면 오류 요약을 로그에 남긴 뒤 종료 코드 1 로 끝낸다. 스크립트는 기존 도구처럼 이 완료 표시로 성공을 판정한다.
+- **`DevCapture`**: 캡처 시각은 2·5·9초. `ScreenCapture.CaptureScreenshot` 은 프레임 끝에 비동기로 파일을 쓰므로, 마지막 캡처 뒤 1초 이상 지나서 `Application.Quit()` 한다. 폴더 인자가 없거나 비었으면 아무것도 하지 않는다.
+- **재시작 스모크(시나리오 8)**: 한 프레임에 여러 번 부르지 않는다 — `Destroy` 가 프레임 끝에 처리되기 때문. 순서: 첫 전투 시작 → 1초 대기 → 기준 개수 측정 → (`Restart` → 2프레임 대기 → 개수 측정) × 5 → 모두 기준과 같으면 통과. 개수는 `PopupPool` 하위를 뺀 씬 전체 `GameObject` 수다. 팝업 풀은 전투 진행에 따라 커질 수 있고 재시작 누수 검사 대상이 아니기 때문이다.
+- Windows 개발 빌드를 PC 시연판으로 겸한다(에디터보다 가벼움). 설치는 USB 디버깅 없이 APK 파일을 폰으로 옮겨 직접 설치(사용자 환경 2026-09-15).
+- TMP 이모지 에셋(Phase 4 보류)은 APK 크기를 보고 판단한다 — 수 MB 미만이면 그대로 둔다.
 - 재미 판정 질문: ① 개입하고 싶은 순간이 있었나 ② 자동만 볼 때 지루했나 ③ 과부하에 긴장감이 있었나 ④ 장비 교체가 결과를 바꿨나 ⑤ 한 판 길이가 적당했나.
 
 **검증**
-- USB 설치 후 Phase 4 시나리오 1·2·5를 폰에서 재현.
-- 같은 시드로 입력 없이(자동만) 돌린 결과 해시가 에디터와 폰에서 같음.
-- 질문 답변을 기획서에 기록하고, 다음 단계(덱세팅 추가 / 규칙 수정 / 방향 전환)를 사용자와 결정.
+- 스모크: 오류 0건 + 재시작 5회 뒤 `GameObject` 수가 첫 전투와 같음.
+- `run-editor-tool.ps1 -Tool win` 성공 → `TAoB.exe -captureShots <폴더>` 스크린샷을 Claude 가 열어 확인.
+- `run-editor-tool.ps1 -Tool apk` 성공, APK 크기 기록.
+- 사용자: APK 설치 후 Phase 4 시나리오 1~6 과 Phase 4.5 시나리오 9 를 폰(또는 exe)에서 수행. 시나리오 7 은 배속 무관 자동 테스트가 보장하므로 결과 해시 확인 1회로 대체.
+- 같은 시드로 입력 없이 돌린 결과 해시가 exe 와 폰에서 같음.
+- 질문 답변을 기획서에 기록하고, 다음 단계(덱세팅 추가 / 규칙 수정 / 무료 스프라이트 / 방향 전환)를 사용자와 결정.
 
 ## 범위 밖 (이번 계획에서 안 함)
 Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스토리·컷씬, iOS 빌드, 스토어 계정.
@@ -302,3 +372,23 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - comments: `PopupPool` 위치 서술 정정(진입점 직속 → 캔버스 직속), `UiFactory.CreateBar` 에 `Image.fillAmount` 를 못 쓰는 이유 추가, `ProjectSetupTools` 에 "다시 실행하면 씬·빌드 목록을 덮어쓴다" 경고 추가. arch(설정) 지적으로 `EditorBuildSettings.asset` 을 변경 파일에 명시.
   - 기각: `SetText("{0:1}")` 이 잘못된 서식이라는 quality HIGH — TMP 는 .NET 서식이 아니라 자체 파서를 쓰고 `'1'~'9'` 를 소수 자릿수로 읽는다(엔진 소스 `TMP_Text.cs` 확인). `F1` 이 오히려 글자로 찍히므로 현행이 맞다. 세 리뷰어가 같이 오독했으므로 두 호출부에 이유 주석을 남겼다.
   - 보류(렌즈 밖 메모): TMP 이모지 에셋이 `Resources` 에 남아 빌드에 포함되는 문제 — TMP 설정이 참조하므로 Phase 5 빌드 크기 확인 때 함께 본다. 템플릿 잔재 `Assets/Scenes/SampleScene.unity` 도 그때 정리.
+- 2026-09-15: **시연 경로를 에디터에서 빌드로 전환, Phase 4.5 연출 보강 신설**(사용자 결정). 사용자 PC(i7-10700 · 16GB · GT 1030)에서 에디터가 너무 느려 수동 시나리오를 진행하지 못했고, 색 네모와 글자만으로는 재미를 판정할 수 없었다. "그래픽 = 색 네모"와 범위 밖의 픽셀아트는 그대로 두고, 코드로 만든 움직임(돌진·번쩍임·흔들림·컷인)만 범위에 넣는다. 수동 시나리오는 exe·APK 에서 진행하고, 시나리오 8 은 스모크로 자동화한다. 기각: 무료 스프라이트 적용(사용자가 연출 우선 선택), 시연 연기 후 기획 작업.
+- 2026-09-17 **Phase 4.5 구현 중 확정한 세부 규칙** (계획서에 없던 빈칸을 채운 것): 흔들림·컷인·연출 수치는 각 소비 파일의 `private const` 로 둔다(위 결정 갱신 반영). `BattleEffects.IsCriticalDamage(e)` 를 크리티컬 판정의 유일한 해석 지점으로 두고 팝업·연출 양쪽이 같이 쓴다.
+- 2026-09-17 **Phase 4.5 커밋 전 `/plan-review --code` (코드 7 scope + 설정 1(security) + 문서 1(comments), PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 2 · MEDIUM 4 · LOW 2 · REVISE 9)** 반영:
+  - arch·lang(HIGH): 전투 종료 게이트(`_isEnded`)가 연출까지 막아 마지막 틱의 화면 흔들림·빈사 연출이 시작하자마자 멈추던 문제 → `BattleBootstrap.Update` 는 틱 루프만 `_isEnded` 로 막고 `BattleEffects.Tick`·`ScreenShake.Tick`·`UnitView.Apply` 는 계속 부름(위 결정 신설) / 구조(Rescue) 후 빈사 자세가 영구히 남던 문제 → `BattleEffects.Handle` 에 `Rescued` 케이스 추가, `UnitView.ResetDownedPose` 신설.
+  - arch(MEDIUM): 연출 수치 정본이 계획(BattleLayout)과 코드(각 파일 로컬 상수)가 어긋남 → 코드 쪽(기존 `PopupPool` 관례와 일치)을 정본으로 삼아 결정 갱신 / 크리티컬 판정(`e.Detail==1`)이 두 스위치에 중복 → `BattleEffects.IsCriticalDamage` 로 단일화.
+  - quality(MEDIUM): `UnitView.UpdateBoxMotion` 이 5개 연출을 한 함수에 몰아넣어 64줄 → `ApplyLunge`·`ApplyHitFlash`·`ApplyConditionMotion`·`ApplyOverloadPulse`·`ApplyDowned` 로 분리, `UpdateBoxMotion` 은 호출 순서만 남김.
+  - quality(LOW): 위상 오프셋 매직 넘버(`0.9137f`·`1.7f`) → `BreathePhaseIdMultiplier`·`ScatterYPhaseOffset` 로 명명.
+  - test(MEDIUM): `MotionCurves.Lunge`/`Pop`/`Shake` 의 `duration<=0` 경계 미검증 → `ZeroOrNegativeDuration_ReturnsBaseline` 테스트 추가.
+  - comments(REVISE, 코드 3건): `BattleBootstrap.cs` 짧은 멈춤 주석의 인과가 반대로 적힘(벽시계가 아니라 틱 루프가 멈춘다) / `UnitView.cs` "이 메서드만 `_box` 를 쓴다" 과장(생성은 `Build` 담당) / `ScreenShake.cs` "더 강한" → "더 강하거나 같은"(실제 비교가 `>=`) — 모두 정정.
+  - comments(REVISE, 문서 6건): 위 항목들 계획서 반영, Status 줄 "계획 추가" → "구현 완료" 로 정정, `BattleLayout.cs` 변경 파일 설명을 배경 상수로 한정, `UnitView.cs` 변경 파일의 `PlayFlash` 오타를 `PlaySelfDamageFlash` 로 정정, `Editor/PlayModeSmoke.cs` 를 Phase 4.5 변경 파일에 추가(Field 층 도입에 따른 필수 변경), `docs/HANDOFF.md` "다음에 할 일" 을 구현 완료 상태에 맞게 갱신.
+  - perf(LOW): `StartBattle` 마다 컷인 델리게이트·딕셔너리 재생성 — 재시작 단위 1회성 할당이라 조치 불요(YAGNI, 리뷰어도 동의).
+  - security: 코드·설정(.meta) 버킷 모두 발견 없음(PASS).
+  - 렌즈 밖 메모 반영: `TickDriver.RestoreTicks` 에 음수 입력 방어(`count<=0` 이면 무시) 추가.
+  - 기각: `BattleEffects`·`ScreenShake` 의 "틱당 첫 피해 판정" 로직에 EditMode 테스트가 없다는 lang 렌즈 밖 메모 — 두 타입 모두 `internal` 이라 테스트 접근에는 `RescueSelector` 처럼 공개 순수 함수로 승격해야 하는데, 이번 라운드에서 새 CRITICAL/HIGH 로 지적되지 않았고 로직이 한 줄짜리 딕셔너리 비교라 P6(규모 보정) 위반 — Phase 5 이후 재발동 빈도가 문제로 드러나면 재검토.
+- 2026-09-15 **Phase 4.5·5 계획 `/plan-review` (PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 4 · MEDIUM 8 · LOW 1 · REVISE 3)** 반영:
+  - arch·lang: 화면 흔들림이 `BattleRoot` 전체(버튼 포함)를 흔들고 팝업과 어긋나는 문제 → `Field` 층 분리 / `DevCapture` 생성 경로 → `BattleBootstrap.Awake` 구역화 / `Advance(0)` 로는 누적 틱이 돌아 멈춤이 안 됨 → 틱 루프 생략·즉시 중단 / 재시작 때 멈춤·흔들림 잔여 → `StartBattle` 초기화.
+  - lang: `CaptureScreenshot` 비동기 저장 → 마지막 캡처 1초 뒤 종료. lang·test: `Destroy` 지연과 팝업 풀 성장으로 재시작 개수 비교가 흔들림 → 프레임 대기 순서·풀 제외 규칙.
+  - perf: 일회성 연출·화면 흔들림의 정지 조건 명시. quality: `Dispatch` 비대화 → `BattleEffects` 분리, 박스 색 쓰기 경로 단일화(렌즈 밖 메모).
+  - test: 곡선 5종 각각의 검증 항목, 연출 수동 시나리오 9 추가. comments: 팝업 겹침 결정과의 모순 정리, Standalone 식별자 명시, `HANDOFF.md` 갱신을 변경 파일에 추가. arch 렌즈 밖 메모: 빌드 제한 시간·완료 표시, 시나리오 8 서술 시제.
+  - 기각: 상시 숨쉬기·맥동이 캔버스를 매 프레임 더럽힌다는 perf MEDIUM — 행동 게이지 막대가 이미 매 프레임 폭을 바꾸므로 "변화 없는 프레임"은 원래 없고, 유닛 7개의 위치·배율 변경은 새 갱신 종류를 만들지 않는다(크기 불변 결정으로 레이아웃 재계산도 없음). 하위 캔버스 분리는 규모 대비 과함.

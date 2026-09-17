@@ -43,6 +43,8 @@ namespace TAoB.View
         private BattleHud _hud;
         private InterventionBar _bar;
         private ResultPanel _result;
+        private ScreenShake _screenShake;
+        private BattleEffects _effects;
         private int _speed = 1;
         private bool _isEnded;
 
@@ -63,20 +65,33 @@ namespace TAoB.View
 
         private void Update()
         {
-            if (_isEnded) return;
+            // 전투가 끝나도 연출(짧은 멈춤·화면 흔들림·박스 애니메이션)은 계속 흘려보내 끝까지 재생한다.
+            // 틱 루프(RunTick)만 막는다 — 그렇지 않으면 마지막 틱의 화면 흔들림·빈사 연출이 시작하자마자 멈춰 버린다(리뷰 반영).
+            float dt = Time.deltaTime;
+            _effects.Tick(dt);
+            _screenShake.Tick(dt);
 
-            int ticks = _driver.Advance(Time.deltaTime, _speed);
-            for (int i = 0; i < ticks; i++)
+            // 짧은 멈춤(계획서 Phase 4.5): 남은 시간 동안은 틱 루프를 건너뛴다. 틱 루프만 멈추고 연출은 dt 로 계속 흐른다.
+            if (!_isEnded && !_effects.IsHitStopped)
             {
-                RunTick();
-                if (_isEnded) break;
+                int ticks = _driver.Advance(dt, _speed);
+                int executed = 0;
+                for (int i = 0; i < ticks; i++)
+                {
+                    RunTick();
+                    executed = i + 1;
+                    if (_isEnded || _effects.IsHitStopped) break;
+                }
+
+                // 멈춤이 틱 루프 중간에 걸려 다 돌지 못했으면, 실행하지 못한 만큼을 되돌려 틱을 잃지 않는다.
+                if (executed < ticks) _driver.RestoreTicks(ticks - executed);
             }
 
-            // 전투가 끝난 프레임은 보간을 끝까지 밀어 최종 상태를 그린다. 이후 프레임은 위에서 막혀 다시 그리지 않는다.
+            // 전투가 끝나면 보간을 끝까지 밀어 최종 상태로 고정한다. 이후 프레임에도 계속 그려서 연출이 끝까지 재생되게 한다.
             float alpha = _isEnded ? 1f : _driver.Alpha;
             for (int i = 0; i < _current.Units.Count; i++)
             {
-                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha);
+                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha, dt);
             }
 
             _hud.Apply(_current);
@@ -114,11 +129,23 @@ namespace TAoB.View
             RectTransform root = UiFactory.CreateStretched(_canvas.transform, "BattleRoot");
             _root = root.gameObject;
             _viewById.Clear();
-            PlaceGroup(root, _data.Stage.AllyIds);
-            for (int i = 0; i < _data.Stage.Waves.Count; i++) PlaceGroup(root, _data.Stage.Waves[i]);
+
+            // 전장 층(계획서 Phase 4.5): 배경·유닛만 이 아래에 둔다. 화면 흔들림은 이 층만 흔들어 HUD·버튼은 고정한다.
+            RectTransform field = UiFactory.CreateStretched(root, "Field");
+            CreateBackground(field);
+            PlaceGroup(field, _data.Stage.AllyIds);
+            for (int i = 0; i < _data.Stage.Waves.Count; i++) PlaceGroup(field, _data.Stage.Waves[i]);
 
             var allies = new List<CharacterData>(_data.Stage.AllyIds.Count);
-            for (int i = 0; i < _data.Stage.AllyIds.Count; i++) allies.Add(_data.ResolveCharacter(_data.Stage.AllyIds[i], _replacements));
+            var cutinText = new Dictionary<int, string>(_data.Stage.AllyIds.Count);
+            for (int i = 0; i < _data.Stage.AllyIds.Count; i++)
+            {
+                CharacterData ally = _data.ResolveCharacter(_data.Stage.AllyIds[i], _replacements);
+                allies.Add(ally);
+
+                // 컷인 문구는 전투 시작 때 한 번만 만든다(계획서 결정 — 프레임마다 문자열을 만들지 않기 위함).
+                cutinText[ally.Id] = ally.Name + " 고유 기술!";
+            }
 
             _hud = BattleHud.Create(root, _font, _data.Stage.TimeLimitTicks, Seed, _setSpeed);
             _hud.SetSpeed(_speed);
@@ -128,9 +155,31 @@ namespace TAoB.View
 #endif
             _result = ResultPanel.Create(root, _font, _restart);
 
+            _screenShake = new ScreenShake(field);
+            _effects = new BattleEffects(_viewById, _screenShake, text => _hud.ShowCutin(text), cutinText);
+
             // 팝업은 항상 맨 위에 그린다.
             _popups.transform.SetAsLastSibling();
             _hud.ShowBanner(UiText.WaveBanner(0, _data.Stage.Waves.Count));
+        }
+
+        /// <summary>스프라이트 없이 하늘·바닥 색 띠와 경계선을 그린다. 화면 흔들림 진폭보다 크게 만들어 가장자리가 드러나지 않게 한다.</summary>
+        private static void CreateBackground(Transform field)
+        {
+            float top = BattleLayout.Height / 2f;
+            float bottom = -BattleLayout.Height / 2f;
+            float groundTop = BattleLayout.GroundTopY;
+            float width = BattleLayout.Width + BattleLayout.BackgroundOverscan * 2f;
+
+            float skyHeight = top - groundTop + BattleLayout.BackgroundOverscan;
+            float skyCenterY = (top + groundTop) / 2f;
+            UiFactory.CreateImage(field, "Sky", new Vector2(0f, skyCenterY), new Vector2(width, skyHeight), BattleLayout.SkyColor);
+
+            float groundHeight = groundTop - bottom + BattleLayout.BackgroundOverscan;
+            float groundCenterY = (groundTop + bottom) / 2f;
+            UiFactory.CreateImage(field, "Ground", new Vector2(0f, groundCenterY), new Vector2(width, groundHeight), BattleLayout.GroundColor);
+
+            UiFactory.CreateImage(field, "GroundLine", new Vector2(0f, groundTop), new Vector2(width, 4f), BattleLayout.GroundLineColor);
         }
 
         /// <summary>같은 진영·같은 열끼리 위에서 아래로 세운다. 자리 수를 먼저 세어야 가운데 정렬이 된다.</summary>
@@ -161,47 +210,54 @@ namespace TAoB.View
             for (int i = 0; i < events.Count; i++)
             {
                 BattleEvent e = events[i];
-                switch (e.Kind)
-                {
-                    case BattleEventKind.Damage:
-                        bool isCritical = e.Detail == 1;
-                        _popups.ShowNumber(
-                            PositionOf(e.TargetId), e.Value,
-                            isCritical ? BattleLayout.CriticalColor : BattleLayout.DamageColor,
-                            isCritical ? 1.4f : 1f);
-                        break;
-                    case BattleEventKind.SelfDamage:
-                        _popups.ShowNumber(PositionOf(e.TargetId), e.Value, BattleLayout.SelfDamageColor, 0.9f);
-                        break;
-                    case BattleEventKind.ScatterDamage:
-                        // 흩어짐 피해는 가해자가 없어 SourceId 가 비어 있다. 맞은 유닛은 TargetId 에 담긴다.
-                        _popups.ShowNumber(PositionOf(e.TargetId), e.Value, BattleLayout.ScatterDamageColor, 0.7f);
-                        break;
-                    case BattleEventKind.Downed:
-                        _popups.ShowLabel(PositionOf(e.TargetId), "빈사", BattleLayout.DownedTextColor, 1.2f);
-                        break;
-                    case BattleEventKind.OverloadResolved:
-                        _popups.ShowLabel(PositionOf(e.SourceId), UiText.OverloadOutcome((OverloadOutcome)e.Detail), BattleLayout.OverloadColor, 1.3f);
-                        break;
-                    case BattleEventKind.Breakthrough:
-                        _popups.ShowNumber(PositionOf(e.SourceId), e.Value, BattleLayout.BreakthroughColor, 1f);
-                        break;
-                    case BattleEventKind.Rescued:
-                        _popups.ShowLabel(PositionOf(e.TargetId), "구조!", BattleLayout.RescuedColor, 1.1f);
-                        break;
-                    case BattleEventKind.CommandFallback:
-                        _popups.ShowLabel(PositionOf(e.SourceId), "명령 취소", BattleLayout.FallbackColor, 0.8f);
-                        break;
-                    case BattleEventKind.MagitoolDepleted:
-                        _popups.ShowLabel(PositionOf(e.SourceId), "내구력 소진", BattleLayout.MagitoolColor, 0.9f);
-                        break;
-                    case BattleEventKind.WaveStarted:
-                        _hud.ShowBanner(UiText.WaveBanner(e.Value, _sim.WaveCount));
-                        break;
-                    case BattleEventKind.BattleEnded:
-                        _hud.ShowBanner(UiText.Outcome((BattleOutcome)e.Detail));
-                        break;
-                }
+                DispatchPopup(e);
+                _effects.Handle(e);
+            }
+        }
+
+        /// <summary>이벤트별 팝업만 담당한다. 연출(돌진·흔들림 등)은 <see cref="BattleEffects"/> 가 맡는다.</summary>
+        private void DispatchPopup(BattleEvent e)
+        {
+            switch (e.Kind)
+            {
+                case BattleEventKind.Damage:
+                    bool isCritical = BattleEffects.IsCriticalDamage(e);
+                    _popups.ShowNumber(
+                        PositionOf(e.TargetId), e.Value,
+                        isCritical ? BattleLayout.CriticalColor : BattleLayout.DamageColor,
+                        isCritical ? 1.4f : 1f);
+                    break;
+                case BattleEventKind.SelfDamage:
+                    _popups.ShowNumber(PositionOf(e.TargetId), e.Value, BattleLayout.SelfDamageColor, 0.9f);
+                    break;
+                case BattleEventKind.ScatterDamage:
+                    // 흩어짐 피해는 가해자가 없어 SourceId 가 비어 있다. 맞은 유닛은 TargetId 에 담긴다.
+                    _popups.ShowNumber(PositionOf(e.TargetId), e.Value, BattleLayout.ScatterDamageColor, 0.7f);
+                    break;
+                case BattleEventKind.Downed:
+                    _popups.ShowLabel(PositionOf(e.TargetId), "빈사", BattleLayout.DownedTextColor, 1.2f);
+                    break;
+                case BattleEventKind.OverloadResolved:
+                    _popups.ShowLabel(PositionOf(e.SourceId), UiText.OverloadOutcome((OverloadOutcome)e.Detail), BattleLayout.OverloadColor, 1.3f);
+                    break;
+                case BattleEventKind.Breakthrough:
+                    _popups.ShowNumber(PositionOf(e.SourceId), e.Value, BattleLayout.BreakthroughColor, 1f);
+                    break;
+                case BattleEventKind.Rescued:
+                    _popups.ShowLabel(PositionOf(e.TargetId), "구조!", BattleLayout.RescuedColor, 1.1f);
+                    break;
+                case BattleEventKind.CommandFallback:
+                    _popups.ShowLabel(PositionOf(e.SourceId), "명령 취소", BattleLayout.FallbackColor, 0.8f);
+                    break;
+                case BattleEventKind.MagitoolDepleted:
+                    _popups.ShowLabel(PositionOf(e.SourceId), "내구력 소진", BattleLayout.MagitoolColor, 0.9f);
+                    break;
+                case BattleEventKind.WaveStarted:
+                    _hud.ShowBanner(UiText.WaveBanner(e.Value, _sim.WaveCount));
+                    break;
+                case BattleEventKind.BattleEnded:
+                    _hud.ShowBanner(UiText.Outcome((BattleOutcome)e.Detail));
+                    break;
             }
         }
 

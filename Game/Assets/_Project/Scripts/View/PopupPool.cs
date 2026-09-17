@@ -14,6 +14,8 @@ namespace TAoB.View
         private const float RiseSpeed = 70f;
         private const float FadeStart = 0.5f;
         private const float StackOffset = 30f;
+        private const float PopDuration = 0.2f;
+        private const float PopPeakScale = 1.3f;
 
         private sealed class Popup
         {
@@ -21,6 +23,7 @@ namespace TAoB.View
             public TMP_Text Text;
             public Vector2 Origin;
             public float Age;
+            public float BaseScale;
         }
 
         private readonly List<Popup> _active = new List<Popup>(32);
@@ -75,6 +78,7 @@ namespace TAoB.View
             Popup popup = _free.Count > 0 ? _free.Pop() : Make();
             popup.Age = 0f;
             popup.Origin = position;
+            popup.BaseScale = scale;
             popup.Rect.anchoredPosition = position + new Vector2(0f, stacked * StackOffset);
             popup.Rect.localScale = Vector3.one * scale;
             popup.Text.color = color;
@@ -99,6 +103,11 @@ namespace TAoB.View
 
                 Vector2 current = popup.Rect.anchoredPosition;
                 popup.Rect.anchoredPosition = new Vector2(current.x, current.y + RiseSpeed * dt);
+
+                // 등장 직후 살짝 커졌다가 정착한다(튀어오름). 나머지 수명 동안은 BaseScale 그대로다.
+                float pop = MotionCurves.Pop(popup.Age, PopDuration, PopPeakScale);
+                popup.Rect.localScale = Vector3.one * (popup.BaseScale * pop);
+
                 if (popup.Age > FadeStart)
                 {
                     Color color = popup.Text.color;
