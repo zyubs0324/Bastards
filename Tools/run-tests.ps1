@@ -75,7 +75,8 @@ if (-not (Test-Path $results)) {
     exit 1
 }
 
-[xml]$x = Get-Content -LiteralPath $results -Raw
+# 결과 XML 은 UTF-8 이다. PowerShell 5.1 의 Get-Content 기본값(ANSI)으로 읽으면 한글(제품명 등)이 깨져 XML 변환이 실패한다.
+[xml]$x = Get-Content -LiteralPath $results -Raw -Encoding UTF8
 "테스트 {0}개 — 통과 {1} · 실패 {2}" -f $x.'test-run'.total, $x.'test-run'.passed, $x.'test-run'.failed
 foreach ($c in $x.SelectNodes("//test-case[@result='Failed']")) {
     "- {0}`n    {1}" -f $c.fullname, ((($c.failure.message.'#cdata-section') -replace '\s+', ' ').Trim())

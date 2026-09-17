@@ -1,7 +1,7 @@
 # 첫 수직 슬라이스(전투 프로토타입) 착수 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 완료 (2026-09-14, 커밋 c07139e — 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, `/plan-review --code` 재리뷰 후 PASS) · Phase 4 구현 완료 (2026-09-15 — 커밋 전 리뷰 지적 반영, 테스트 214개 통과, 플레이 스모크 오류 0건, 커밋 5250269) · Phase 4.5 연출 보강 구현 완료 (2026-09-15 계획, 2026-09-17 구현 — 에디터가 사용자 PC 에서 너무 느려 시연을 빌드로 전환. 테스트 226개 통과·플레이 스모크 오류 0건, 커밋 전 `/plan-review --code` PROCEED-WITH-FIXES 반영 완료, 커밋 승인 대기) · Phase 5 빌드 도구 계획 추가
+**Status**: 진행 중 — Phase 0 완료 (2026-09-11: Unity 6000.3.24f1 + Android 모듈 설치, `Game/` Universal 2D 프로젝트 생성, batchmode 열기 검증 exit 0, 캐시 폴더 git 제외 확인) · Phase 1 완료 (1차 `/plan-review` 와 첫 커밋 전 `/plan-review --code` 모두 PROCEED-WITH-FIXES, 지적 전부 결정에 반영) · Phase 2 완료 (2026-09-11, 커밋 8681f3b — 테스트 148개 통과·커버리지 98.9%, `/plan-review --code` 재리뷰 후 PASS) · Phase 3 완료 (2026-09-14, 커밋 c07139e — 테스트 190개 통과, `TAoB.Data` 커버리지 98.3%, `/plan-review --code` 재리뷰 후 PASS) · Phase 4 구현 완료 (2026-09-15 — 커밋 전 리뷰 지적 반영, 테스트 214개 통과, 플레이 스모크 오류 0건, 커밋 5250269) · Phase 4.5 연출 보강 구현 완료 (2026-09-15 계획, 2026-09-17 구현 — 에디터가 사용자 PC 에서 너무 느려 시연을 빌드로 전환. 테스트 226개 통과·플레이 스모크 오류 0건, 커밋 전 `/plan-review --code` PROCEED-WITH-FIXES 반영 완료, 커밋 승인 대기) · Phase 5 빌드 도구 구현 완료 (2026-09-17 — Windows 163MB·APK 45MB 빌드 성공, 스모크 재시작 누수 검사 통과, 커밋 전 `/plan-review --code` 반영 완료, 커밋 승인 대기) · 다음 = 사용자 폰 설치·재미 판정
 
 ## Context
 기획서 v0.5·설정집 v1.1 정리 후 사용자가 "제작 착수 가능한가"를 물음. 결론: 게임 전체가 아니라 **전투 1판짜리 수직 슬라이스**로 재미("자동 전투를 보다가 개입하는 게 재밌나")를 먼저 검증한다. 동료 100·마도구 200·거점 설계는 검증 후로 미룬다.
@@ -254,12 +254,14 @@
 **변경 파일**
 - `Game/Assets/_Project/Editor/BuildTools.cs` (신규) — `BuildAndroid()`·`BuildWindows()`. `BuildOptions.Development`, 씬 목록은 `EditorBuildSettings`. 출력 `Game/Builds/Android/TAoB-slice.apk`·`Game/Builds/Windows/TAoB.exe`(`.gitignore` 의 `/Game/[Bb]uilds/` 로 이미 제외)
 - `Game/Assets/_Project/Editor/PlayModeSmoke.cs` — 재시작 5회 뒤 `GameObject` 수 비교 추가(Phase 4 시나리오 8 자동화)
-- `Game/Assets/_Project/Scripts/View/BattleBootstrap.cs` — `Restart` 를 스모크가 부를 수 있게 공개 · `Awake` 에서 `#if DEVELOPMENT_BUILD` 로 자기 객체에 `DevCapture` 부착(`DebugLoadoutPanel` 과 같은 구역화)
-- `Game/Assets/_Project/Scripts/View/DevCapture.cs` (신규, `DEVELOPMENT_BUILD` 전용) — 실행 인자 `-captureShots <폴더>` 가 있을 때만 몇 장 찍고 종료
+- `Game/Assets/_Project/Scripts/View/BattleBootstrap.cs` — `Restart` 를 스모크가 부를 수 있게 공개 · `Awake` 에서 `#if UNITY_EDITOR || DEVELOPMENT_BUILD` 로 자기 객체에 `DevCapture` 부착(`DebugLoadoutPanel` 과 같은 구역화)
+- `Game/Assets/_Project/Scripts/View/DevCapture.cs` (신규, `UNITY_EDITOR || DEVELOPMENT_BUILD` — 에디터에서도 컴파일돼 테스트·스모크가 컴파일 오류를 먼저 잡는다, 릴리스 제외) — 실행 인자 `-captureShots <폴더>` 가 있을 때만 몇 장 찍고 종료
 - `Tools/run-editor-tool.ps1` — `-Tool apk|win` 추가
+- `Tools/run-tests.ps1` — 결과 XML 을 UTF-8 로 읽도록 수정(제품명 한글화로 드러난 문제, 아래 결정 로그)
+- `Game/Assets/_Project/Scripts/View/BattleLayout.cs` — `GroundTopY` 를 -60 → -190(바닥선이 아래열 유닛을 가로지르던 것, 캡처로 발견)
 - `Game/ProjectSettings/ProjectSettings.asset` — 패키지명(Android·Standalone 둘 다)·제품명, 세로 자동 회전 끄기
-- `docs/HANDOFF.md` — 다음 할 일을 Phase 4.5·빌드 경로에 맞춰 갱신
-- `Game/Assets/Scenes/SampleScene.unity`(+`.meta`) 삭제 — 템플릿 잔재
+- `docs/HANDOFF.md`·`docs/references/project_facts.md` — 다음 할 일·편의 스크립트 목록 갱신
+- `Game/Assets/Scenes/`(`SampleScene.unity`·`.meta`·폴더 `Scenes.meta`) 삭제 — 템플릿 잔재
 - 기획서 v0.6 13장·4-1 (판정 결과 반영)
 
 **결정**
@@ -267,17 +269,17 @@
 - 스크립팅 백엔드는 현행 IL2CPP·ARM64 유지 — Mono 는 ARMv7(32비트) 전용이라 32비트 앱을 지원하지 않는 최신 기기에 설치되지 않을 수 있다.
 - 화면 방향: 현재 `defaultScreenOrientation: 4`(자동 회전)에 세로가 허용돼 있다 → 자동 회전은 유지하되 `allowedAutorotateToPortrait`·`PortraitUpsideDown` 을 0 으로(가로 두 방향만).
 - 패키지명 `com.ageofbastards.slice`(시험판 전용 임시 ID — 정식 출시 ID 는 출시 단계에서 새로 정한다), 제품명 `TAoB 시험판`(사용자 결정 2026-09-15). 템플릿 기본값(Android `com.DefaultCompany.urp_2d` · Standalone `com.DefaultCompany.2D-URP` · 제품명 `Game`)을 모두 대체한다.
-- **빌드 도구 실행**: `apk`·`win` 은 `-quit -nographics` 로 실행하고, 제한 시간 기본값을 3600초로 둔다(첫 IL2CPP 빌드가 기존 기본 300초를 넘기기 쉬움). `BuildTools` 는 `BuildReport.summary.result` 가 `Succeeded` 일 때만 로그에 `[빌드] 성공 <경로> <바이트>` 를 남기고, 실패하면 오류 요약을 로그에 남긴 뒤 종료 코드 1 로 끝낸다. 스크립트는 기존 도구처럼 이 완료 표시로 성공을 판정한다.
-- **`DevCapture`**: 캡처 시각은 2·5·9초. `ScreenCapture.CaptureScreenshot` 은 프레임 끝에 비동기로 파일을 쓰므로, 마지막 캡처 뒤 1초 이상 지나서 `Application.Quit()` 한다. 폴더 인자가 없거나 비었으면 아무것도 하지 않는다.
-- **재시작 스모크(시나리오 8)**: 한 프레임에 여러 번 부르지 않는다 — `Destroy` 가 프레임 끝에 처리되기 때문. 순서: 첫 전투 시작 → 1초 대기 → 기준 개수 측정 → (`Restart` → 2프레임 대기 → 개수 측정) × 5 → 모두 기준과 같으면 통과. 개수는 `PopupPool` 하위를 뺀 씬 전체 `GameObject` 수다. 팝업 풀은 전투 진행에 따라 커질 수 있고 재시작 누수 검사 대상이 아니기 때문이다.
+- **빌드 도구 실행**: `apk`·`win` 은 `-quit -nographics` 로 실행하고, 제한 시간 기본값을 3600초로 둔다(첫 IL2CPP 빌드가 기존 기본 300초를 넘기기 쉬움). `BuildTools` 는 `BuildReport.summary.result` 가 `Succeeded` 일 때만 로그에 `[빌드] 성공 <경로> — <MB>MB, <분>분` 을 남기고, 실패·예외면 `[빌드] 실패 — <사유>` 를 남긴 뒤 종료 코드 1 로 끝낸다. 스크립트는 기존 도구처럼 이 완료 표시로 성공을 판정한다.
+- **`DevCapture`**: 캡처 시각은 2·5·9초. `ScreenCapture.CaptureScreenshot` 은 프레임 끝에 비동기로 파일을 쓰므로, 마지막 캡처 뒤 1초 이상 지나서 `Application.Quit()` 한다. 폴더 인자가 없거나 비었으면 아무것도 하지 않는다. 캡처 모드일 때만 `Application.runInBackground = true` — 프로젝트 기본값(꺼짐)이면 창이 포커스를 잃는 순간 멈춰 캡처가 끊긴다(실측).
+- **재시작 스모크(시나리오 8)**: 한 프레임에 여러 번 부르지 않는다 — `Destroy` 가 프레임 끝에 처리되기 때문. 순서: 첫 전투 시작 → 1초 대기 → 기준 개수 측정 → (`Restart` → 2프레임 대기 → 개수 측정) × 5 → 모두 기준과 같으면 통과. 개수는 `PopupPool` 하위를 뺀 씬 전체 `GameObject` 수다. 팝업 풀은 전투 진행에 따라 커질 수 있고 재시작 누수 검사 대상이 아니기 때문이다. 제한 시간(6초) 안에 5회를 다 못 돌면 "미완료" 오류로 실패시킨다 — 검사를 안 한 것을 통과로 보고하지 않기 위함.
 - Windows 개발 빌드를 PC 시연판으로 겸한다(에디터보다 가벼움). 설치는 USB 디버깅 없이 APK 파일을 폰으로 옮겨 직접 설치(사용자 환경 2026-09-15).
 - TMP 이모지 에셋(Phase 4 보류)은 APK 크기를 보고 판단한다 — 수 MB 미만이면 그대로 둔다.
 - 재미 판정 질문: ① 개입하고 싶은 순간이 있었나 ② 자동만 볼 때 지루했나 ③ 과부하에 긴장감이 있었나 ④ 장비 교체가 결과를 바꿨나 ⑤ 한 판 길이가 적당했나.
 
 **검증**
-- 스모크: 오류 0건 + 재시작 5회 뒤 `GameObject` 수가 첫 전투와 같음.
-- `run-editor-tool.ps1 -Tool win` 성공 → `TAoB.exe -captureShots <폴더>` 스크린샷을 Claude 가 열어 확인.
-- `run-editor-tool.ps1 -Tool apk` 성공, APK 크기 기록.
+- 스모크: 오류 0건 + 재시작 5회 뒤 `GameObject` 수가 첫 전투와 같음. ✅ 2026-09-17 — 기준 167개, 5회 뒤 167개(Phase 4 시나리오 8 완료)
+- `run-editor-tool.ps1 -Tool win` 성공 → `TAoB.exe -captureShots <폴더>` 스크린샷을 Claude 가 열어 확인. ✅ 163MB. 배경·빈사 기울기·피격 흰 번쩍임·자해 주황 번쩍임·크리티컬 노란 숫자 확인(Phase 4.5 검증의 캡처 항목 완료)
+- `run-editor-tool.ps1 -Tool apk` 성공, APK 크기 기록. ✅ 2026-09-17 — 45MB, 11.6분(첫 IL2CPP 빌드). TMP 이모지 에셋은 APK 대비 무시할 크기라 그대로 둔다(Phase 4 보류 항목 종결).
 - 사용자: APK 설치 후 Phase 4 시나리오 1~6 과 Phase 4.5 시나리오 9 를 폰(또는 exe)에서 수행. 시나리오 7 은 배속 무관 자동 테스트가 보장하므로 결과 해시 확인 1회로 대체.
 - 같은 시드로 입력 없이 돌린 결과 해시가 exe 와 폰에서 같음.
 - 질문 답변을 기획서에 기록하고, 다음 단계(덱세팅 추가 / 규칙 수정 / 무료 스프라이트 / 방향 전환)를 사용자와 결정.
@@ -392,3 +394,22 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - perf: 일회성 연출·화면 흔들림의 정지 조건 명시. quality: `Dispatch` 비대화 → `BattleEffects` 분리, 박스 색 쓰기 경로 단일화(렌즈 밖 메모).
   - test: 곡선 5종 각각의 검증 항목, 연출 수동 시나리오 9 추가. comments: 팝업 겹침 결정과의 모순 정리, Standalone 식별자 명시, `HANDOFF.md` 갱신을 변경 파일에 추가. arch 렌즈 밖 메모: 빌드 제한 시간·완료 표시, 시나리오 8 서술 시제.
   - 기각: 상시 숨쉬기·맥동이 캔버스를 매 프레임 더럽힌다는 perf MEDIUM — 행동 게이지 막대가 이미 매 프레임 폭을 바꾸므로 "변화 없는 프레임"은 원래 없고, 유닛 7개의 위치·배율 변경은 새 갱신 종류를 만들지 않는다(크기 불변 결정으로 레이아웃 재계산도 없음). 하위 캔버스 분리는 규모 대비 과함.
+- 2026-09-17 **Phase 5 구현 중 확정한 세부 규칙·발견** (계획서에 없던 빈칸을 채운 것):
+  - 제품명을 한글(`TAoB 시험판`)로 바꾸자 EditMode 결과 XML 최상위 스위트 이름에 한글이 들어갔고, `run-tests.ps1` 이 PowerShell 5.1 기본값(ANSI)으로 읽어 XML 변환이 실패했다(테스트 자체는 전부 통과). 스크립트를 `-Encoding UTF8` 로 고쳤다. Unity 는 `ProjectSettings.asset` 의 한글 제품명을 `"TAoB \uC2DC\uD5D8\uD310"` 로 다시 직렬화한다(값 동일).
+  - 첫 캡처에서 바닥선(`GroundTopY` -60)이 아래열 유닛 박스를 가로지르는 것을 발견 → -190(아래열 유닛의 가장 낮은 글자 약 -180 아래)으로 옮겼다. 에디터 없이 레이아웃 실수를 잡은 첫 사례.
+  - 두 번째 캡처가 9초 샷 전에 멈춰 60초 시간 초과로 강제 종료됨 — 창이 포커스를 잃어 플레이어가 멈춘 것(`runInBackground: 0`). 캡처 모드에서만 켜도록 `DevCapture` 에 반영(위 결정 갱신). 프로젝트 전체 설정은 바꾸지 않는다(모바일 백그라운드 동작에 영향이 없도록).
+  - `SampleScene` 삭제 시 폴더 메타(`Game/Assets/Scenes.meta`)도 함께 지웠다 — 남기면 Unity 가 빈 폴더 메타 경고를 낸다.
+  - 안드로이드 빌드가 `Game/Assets/Settings/` 의 URP 에셋 3개(셰이더 키워드 사전 필터 값)와 `ProjectSettings.asset` 의 `m_BuildTargetBatching` 을 다시 써넣었다. 에디터·파이프라인 자동 갱신이라 값 변경을 검토한 뒤 커밋에 포함한다(Phase 2 URP 자동 업그레이드 선례). Unity 6 빌드 임시 폴더 `Game/.utmp/` 는 `.gitignore` 에 추가.
+  - `BuildSummary.totalSize` 는 안드로이드에서 854MB 로 찍혔지만 실제 APK 는 45MB — 중간 산출물 합계라 로그를 실제 파일 크기로 바꿨다.
+  - 빌드 후 에디터의 활성 빌드 타깃이 Android 로 남는다. 다음 `win` 빌드가 다시 전환한다(자동, 전환 시 재임포트로 시간이 더 걸림).
+- 2026-09-17 **Phase 5 커밋 전 `/plan-review --code` (코드 7 scope + 설정 2(security·perf) + 스크립트 3(quality·security·comments) + 문서 1(comments), PROCEED-WITH-FIXES — CRITICAL 0 · HIGH 2 · MEDIUM 5 · LOW 1 · REVISE 7)** 반영:
+  - test·lang(HIGH), arch(MEDIUM): 재시작 누수 검사가 6초 안에 끝나지 않아도 오류 0건이면 스모크가 성공으로 끝남 → 종료 시 검사 미완료면 `[스모크] 재시작 검사 미완료` 오류로 실패(위 결정 갱신).
+  - arch(MEDIUM)·comments(REVISE): `DevCapture` 가 `DEVELOPMENT_BUILD` 전용이라 에디터에서 컴파일되지 않아 컴파일 오류가 11분짜리 APK 빌드에서야 드러남, 주석은 "디버그 패널과 같은 구역화"라 적혀 어긋남 → `UNITY_EDITOR || DEVELOPMENT_BUILD` 로 통일(인자가 없으면 아무것도 하지 않으므로 에디터 동작 불변).
+  - lang(MEDIUM): 빌드 중 예외 시 실패 표시가 남지 않음 → `BuildTools.Build` 를 try/catch 로 감싸 `[빌드] 실패 — 예외 …` 로 통일.
+  - quality(LOW): `"PopupPool"` 이름 문자열이 `PopupPool.cs`·`PlayModeSmoke.cs` 에 중복 → `BattleLayout.PopupPoolName`(공개 상수 — `PopupPool` 이 `internal` 이라 에디터 어셈블리에서 볼 수 없음).
+  - comments(REVISE): `BuildTools` "약 18배" → 실측값(854MB 대 45MB)으로, 스크립트 도움말 "수십 분" → 실측 약 12분, 제한 시간 주석의 IL2CPP 서술을 apk 에 한정(Windows 는 Mono), 계획서 Status 줄·빌드 로그 형식 서술(`<바이트>` → MB·분)·`HANDOFF.md` 마지막 커밋과 다음 할 일 갱신.
+  - security(코드·설정·스크립트)·perf(코드·설정)·quality(스크립트): 발견 없음. perf(설정)는 URP `m_Prefilter*` 변경이 대부분 스트립을 켜는 방향이라 셰이더 변형·APK 크기를 줄인다고 URP 소스로 확인.
+  - 기각: `SwitchActiveBuildTarget` 뒤 도메인 재로드로 빌드가 조용히 끊겨 성공으로 오인된다는 lang HIGH — 스크립트는 `BuildPlayer` 성공 뒤에만 찍히는 `[빌드] 성공` 표시로 판정하므로 끊기면 실패로 나온다. 실제로 활성 타깃이 Windows 인 상태에서 apk 빌드가 전환·완료됐다(45MB 산출).
+  - 기각: 팝업 풀 하위 누수를 못 잡는다는 test MEDIUM — 풀은 설계상 파괴하지 않고 회수만 하며, 크기는 재시작 횟수가 아니라 동시 팝업 수(사전 생성 24)에 묶인다. 재시작마다 늘어나는 경로가 없다.
+  - 기각: TMP 서브메시 같은 일시 객체로 개수가 흔들려 오탐이 난다는 lang MEDIUM — 두 번 실측 모두 167=167 이고, 흔들리더라도 결과는 거짓 통과가 아니라 시끄러운 실패다. 재발하면 그때 `BattleRoot` 하위만 세는 방식으로 바꾼다.
+  - 기각: `GroundTopY` 회귀 테스트 추가 test MEDIUM — `UnitView` 의 글자 오프셋(비공개 리터럴)을 공개 상수로 끌어내야 하는 규모에 비해, 이번에 도입한 exe 자동 캡처가 같은 종류의 레이아웃 실수를 잡는다(P6 규모 보정).

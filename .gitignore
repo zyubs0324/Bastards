@@ -8,6 +8,7 @@
 /Game/[Uu]ser[Ss]ettings/
 /Game/[Mm]emoryCaptures/
 /Game/[Rr]ecordings/
+/Game/.utmp/
 /Game/Assets/Plugins/Editor/JetBrains*
 /Game/.vs/
 /Game/.vscode/

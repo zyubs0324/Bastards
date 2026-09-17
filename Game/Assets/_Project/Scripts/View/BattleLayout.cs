@@ -16,11 +16,16 @@ namespace TAoB.View
         private const float RowSpacing = 215f;
         private const float FieldCenterY = 40f;
 
-        /// <summary>배경의 하늘·바닥 경계 y좌표(유닛 발밑 바로 아래).</summary>
-        public const float GroundTopY = -60f;
+        /// <summary>
+        /// 배경의 하늘·바닥 경계 y좌표. 아래열 유닛의 가장 낮은 글자(내구력 표시, 약 -180)보다 아래여야 선이 유닛을 가로지르지 않는다.
+        /// </summary>
+        public const float GroundTopY = -190f;
 
         /// <summary>배경을 화면보다 크게 그려, 화면 흔들림 진폭 안에서는 가장자리가 드러나지 않게 한다.</summary>
         public const float BackgroundOverscan = 40f;
+
+        /// <summary>팝업 풀 객체 이름. 플레이 스모크의 재시작 누수 검사가 이 이름 아래를 개수에서 빼므로 한 곳에서 정한다.</summary>
+        public const string PopupPoolName = "PopupPool";
 
         public static readonly Color DownedColor = new Color(0.3f, 0.3f, 0.3f);
         public static readonly Color BossFrameColor = new Color(1f, 0.85f, 0.2f);

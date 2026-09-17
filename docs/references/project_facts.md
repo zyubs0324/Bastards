@@ -14,7 +14,7 @@
 | 개발 형태 | 1인(비개발자) + AI 협업 |
 | 현재 단계 | 첫 수직 슬라이스 — 전투 1판 프로토타입. 계획: `.claude/plans/vertical-slice.plan.md` |
 | 이어받기 문서 | `docs/HANDOFF.md` — 새 대화에서 먼저 읽는다. 진행 상태·다음 할 일·문서 지도를 담고, 사실은 이 문서를 가리킨다 |
-| 편의 스크립트 | `Tools/run-tests.ps1`(테스트·커버리지), `Tools/run-editor-tool.ps1 -Tool scene\|tmp\|smoke`(에디터 도구). 아래 "테스트 실행" 명령을 그대로 실행한다. PowerShell 5.1 이 BOM 없는 파일을 ANSI 로 읽어 한글이 깨지므로 UTF-8 BOM 으로 저장한다 |
+| 편의 스크립트 | `Tools/run-tests.ps1`(테스트·커버리지), `Tools/run-editor-tool.ps1 -Tool scene\|tmp\|smoke\|win\|apk`(에디터 도구·개발 빌드 — 산출물 `Game/Builds/`, git 제외). 아래 "테스트 실행" 명령을 그대로 실행한다. PowerShell 5.1 이 BOM 없는 파일을 ANSI 로 읽어 한글이 깨지므로 UTF-8 BOM 으로 저장한다 |
 | 기획 정본 | 저장소 루트의 가장 높은 버전 `The_Age_of_Bastards_게임기획서_v*.md` · `The_Age_of_Bastards_세계관_설정집_v*.md` |
 | 폐기 문서 | `PROJECT_CONTEXT_백업.md` — 이전 컨셉. 리뷰 근거로 쓰지 않는다 |
 | 저장소 레이아웃 | `Game/` Unity 프로젝트 · `Game/Assets/_Project/` 자체 코드·데이터 · `docs/references/` 리뷰 표준 · `docs/HANDOFF.md` 이어받기 · `Tools/` 실행 스크립트 · 루트 `*.md` 기획 문서 |

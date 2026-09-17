@@ -61,6 +61,11 @@ namespace TAoB.View
             UiFactory.CreateEventSystem(transform);
             _popups = PopupPool.Create(_canvas.transform, _font, PopupPrewarm);
             StartBattle();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 실행 인자 `-captureShots <폴더>` 가 있을 때만 스크린샷을 남긴다(계획서 Phase 5). 디버그 패널과 같은 조건으로 구역화.
+            DevCapture.AttachIfRequested(gameObject);
+#endif
         }
 
         private void Update()
@@ -282,7 +287,11 @@ namespace TAoB.View
             _replacements[id] = character;
         }
 
-        private void Restart()
+        /// <summary>
+        /// 전투를 처음부터 다시 시작한다. 결과 화면·디버그 패널 버튼이 쓰고, 플레이 스모크의 재시작 누수 검사도 부른다(계획서 Phase 5).
+        /// <see cref="Destroy"/> 는 프레임 끝에 처리되므로, 호출한 쪽이 개수를 셀 때는 몇 프레임 기다려야 한다.
+        /// </summary>
+        public void Restart()
         {
             Destroy(_root);
             _popups.RecycleAll();

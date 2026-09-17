@@ -33,7 +33,7 @@ namespace TAoB.View
 
         public static PopupPool Create(Transform canvas, TMP_FontAsset font, int prewarm)
         {
-            RectTransform rect = UiFactory.CreateStretched(canvas, "PopupPool");
+            RectTransform rect = UiFactory.CreateStretched(canvas, BattleLayout.PopupPoolName);
             var pool = rect.gameObject.AddComponent<PopupPool>();
             pool._font = font;
             pool._rect = rect;

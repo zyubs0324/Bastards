@@ -8,16 +8,15 @@
 | 항목 | 값 |
 |---|---|
 | 무엇을 만드는가 | The Age of Bastards — 덱세팅 횡스크롤 반자동 방치형 RPG(2D). 지금은 **전투 1판짜리 수직 슬라이스**로 "자동 전투를 보다가 개입하는 게 재밌나"를 검증하는 단계 |
-| 진행 | Phase 0~4 구현·커밋 완료. 사용자 PC 에서 에디터가 너무 느려 시연을 빌드(exe·APK)로 전환했다(2026-09-15). Phase 4.5 연출 보강 구현 완료, 커밋 전 `/plan-review --code` 반영 완료. **다음 = 커밋 승인 → Phase 5 빌드 도구·APK → 사용자가 폰에서 시나리오·재미 판정** |
-| 마지막 커밋 | `b22791b` docs: 대화 이어받기 문서와 실행 스크립트 추가 (그 앞 `5250269` = Phase 4 구현). Phase 4.5 는 아직 커밋 전 |
-| 자동 검증 상태 | EditMode 테스트 226개 통과 · 배치모드 플레이 스모크 오류 0건 |
+| 진행 | Phase 0~4.5 구현·커밋 완료. 사용자 PC 에서 에디터가 너무 느려 시연을 빌드(exe·APK)로 전환했다(2026-09-15). Phase 5 빌드 도구 구현·빌드 완료(Windows exe·APK 45MB), 커밋 전 `/plan-review --code` 반영 완료. **다음 = 커밋 승인 → 사용자가 폰에서 시나리오·재미 판정** |
+| 마지막 커밋 | `6e49bce` feat: 전투 연출 보강 추가 (Phase 4.5). Phase 5 는 아직 커밋 전 |
+| 자동 검증 상태 | EditMode 테스트 226개 통과 · 배치모드 플레이 스모크 오류 0건 · 재시작 5회 누수 검사 통과(오브젝트 167개 유지) |
 | 진행 상황 정본 | `.claude/plans/vertical-slice.plan.md` — 헤더 `**Status**` 줄과 각 Phase 의 "검증" 체크가 정본. 결정 이력은 문서 하단 `## 결정 로그` |
 
 ## 2. 다음에 할 일
 
-1. **Phase 4.5 커밋** — 커밋 메시지 사용자 승인 후 실행.
-2. **Phase 5 빌드 도구** — 계획서 `## Phase 5`. Windows exe 로 스크린샷 자동 캡처 확인 → APK 빌드(패키지명 `com.ageofbastards.slice`, 제품명 `TAoB 시험판`).
-3. **사용자가 APK 를 폰으로 옮겨 설치**(USB 디버깅 없이 파일 복사)하고 Phase 4 시나리오 1~6·Phase 4.5 시나리오 9 와 재미 판정 5문항을 수행 → 결과를 계획서·기획서에 기록.
+1. **Phase 5 커밋** — 커밋 메시지 사용자 승인 후 실행. 산출물(`Game/Builds/`)은 git 에 들어가지 않으니 필요하면 `run-editor-tool.ps1 -Tool apk` 로 다시 만든다.
+2. **사용자가 APK 를 폰으로 옮겨 설치**(USB 디버깅 없이 파일 복사)하고 Phase 4 시나리오 1~6·Phase 4.5 시나리오 9 와 재미 판정 5문항을 수행 → 결과를 계획서·기획서에 기록.
 
 ## 3. 일하는 방식 (이 프로젝트의 규칙)
 
@@ -50,6 +49,9 @@
 ./Tools/run-tests.ps1 -Filter TAoB.View.Tests
 ./Tools/run-editor-tool.ps1 -Tool smoke  # 전투 씬 6초 플레이, 오류 0건이면 종료 코드 0
 ./Tools/run-editor-tool.ps1 -Tool scene  # 전투 씬 재생성 (기존 씬·빌드 목록을 덮어쓴다)
+./Tools/run-editor-tool.ps1 -Tool win    # Windows 개발 빌드 → Game/Builds/Windows/TAoB.exe
+./Tools/run-editor-tool.ps1 -Tool apk    # 안드로이드 개발 빌드 → Game/Builds/Android/TAoB-slice.apk
+# 연출 확인용 자동 캡처(에디터 없이): TAoB.exe -captureShots <폴더> -screen-fullscreen 0 → 2·5·9초 PNG 후 자동 종료
 ```
 
 스크립트가 담고 있는 배치모드 주의점(`-quit` 를 붙이는 경우와 아닌 경우, `Start-Process -Wait` 가 멈추는 문제 등)은 `project_facts.md` §0 "테스트 실행" 이 정본이다.
