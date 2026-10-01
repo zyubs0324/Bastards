@@ -12,7 +12,7 @@
 | 화면 | 가로 고정, 기준 해상도 1920×1080 |
 | 엔진 / 언어 | Unity 6.3 LTS / C# |
 | 개발 형태 | 1인(비개발자) + AI 협업 |
-| 현재 단계 | 첫 수직 슬라이스 — 전투 1판 프로토타입. 계획: `.claude/plans/vertical-slice.plan.md` |
+| 현재 단계 | 횡스크롤 이동 전투 전환 — 등장·행군·조우 4회(마지막이 보스). 계획: `.claude/plans/sidescroll-battle.plan.md`. 끝난 계획은 `.claude/plans/completed/` |
 | 이어받기 문서 | `docs/HANDOFF.md` — 새 대화에서 먼저 읽는다. 진행 상태·다음 할 일·문서 지도를 담고, 사실은 이 문서를 가리킨다 |
 | 편의 스크립트 | `Tools/run-tests.ps1`(테스트·커버리지), `Tools/run-editor-tool.ps1 -Tool scene\|tmp\|smoke\|win\|apk`(에디터 도구·개발 빌드 — 산출물 `Game/Builds/`, git 제외). 아래 "테스트 실행" 명령을 그대로 실행한다. PowerShell 5.1 이 BOM 없는 파일을 ANSI 로 읽어 한글이 깨지므로 UTF-8 BOM 으로 저장한다 |
 | 기획 정본 | 저장소 루트의 가장 높은 버전 `The_Age_of_Bastards_게임기획서_v*.md` · `The_Age_of_Bastards_세계관_설정집_v*.md` |
@@ -60,10 +60,20 @@
 | 크리티컬 | `Critical` | 기획서 4-1 |
 | 빈사 | `Downed` | 기획서 4-1 |
 | 기본 공격 | `BasicAttack` | 기획서 4-1 |
-| 고유 기술 · 재사용 대기 | `Skill` · `SkillDefinition` · `Cooldown` | 기획서 4-1 (재사용 대기는 기획서에 없고 `.claude/plans/vertical-slice.plan.md` Phase 2 에서 정의) |
+| 고유 기술 · 재사용 대기 | `Skill` · `SkillDefinition` · `Cooldown` | 기획서 4-1 (재사용 대기는 기획서에 없고 `.claude/plans/completed/vertical-slice.plan.md` Phase 2 에서 정의. `Cooldown` 은 Phase A 부터 **강제 발동 전용** 쿨타임이 된다 — 자동 사용은 쿨타임을 보지 않는다(D7)) |
 | 과부하 발동 · 과부하 위험 단계 | `Overload` · `OverloadRisk` | 기획서 4-1 |
 | 흩어짐 · 폭주 · 한계돌파 | `Scatter` · `Runaway` · `Breakthrough` | 설정집 5-2~5-4 |
 | 구조 | `Rescue` | 기획서 4-1 |
 | 후퇴 | `Retreat` | 기획서 3장 |
 | 사전 설정 조건 | `Precondition` | 기획서 3장 |
+| 전장 위치 | `PosX` | 횡스크롤 전환 D3 — Phase A 도입 예정 (단위 fu, 계획: `.claude/plans/sidescroll-battle.plan.md`) |
+| 진형 기준점 | `AnchorX` · `EnemyAnchorX` | 횡스크롤 전환 D1·D2 — Phase A 도입 예정 (단위 fu) |
+| 사거리 | `ReachFu` | 횡스크롤 전환 D4 — Phase A 도입 예정 (`Formation` 이 Row 로 고른다) |
+| 진형 자리 간격 | `SlotOffsetFu` | 횡스크롤 전환 D4 — Phase A 도입 예정 |
+| 진형유지 속성값 | `FormationChance` | 횡스크롤 전환 — Phase C 도입 예정 (만분율 0~10000) |
+| 선호 | `Preference` | 횡스크롤 전환 — Phase C 도입 예정 (1차 4종: 동료 보호·적극 돌진·후방 유지·비겁) |
+| 기술 사용 빈도 | `SkillChance` | 횡스크롤 전환 D7 — Phase A 도입 예정 (만분율, 기획 대역 100~3900) |
+| 자세 · 침투 지정 | `Stance` · `IsFlanking` | 횡스크롤 전환 — Phase C 도입 예정 (조우 단위로 한 번 정한다) |
+| 뒤로 서기(비겁 성향의 이동) | `StepBack` | 횡스크롤 전환 — Phase C 도입 예정. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
+| 조우 | 코드·데이터·UI 는 `Wave` 유지 | 횡스크롤 전환 D14 (개명은 Phase F-1) |
 | 제한 시간 | `TimeLimit` | 기획서 3장 |
