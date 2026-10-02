@@ -33,7 +33,7 @@ namespace TAoB.Data
     }
 
     /// <summary>
-    /// 데이터 파일을 읽어 검증하고 규칙 모듈 타입으로 바꾼다(계획서 Phase 3).
+    /// 데이터 파일을 읽어 검증하고 규칙 모듈 타입으로 바꾼다(수직 슬라이스 계획서 Phase 3).
     /// 하나라도 틀리면 <see cref="GameDataException"/> 으로 중단한다 — 잘못된 밸런스로 조용히 돌지 않는다.
     /// </summary>
     public static class GameDataLoader

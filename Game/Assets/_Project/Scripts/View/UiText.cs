@@ -57,7 +57,7 @@ namespace TAoB.View
             }
         }
 
-        /// <summary>색 네모 위에 쓰는 직업 한 글자(계획서 Phase 4 "색 네모 + 직업 글자").</summary>
+        /// <summary>색 네모 위에 쓰는 직업 한 글자(수직 슬라이스 계획서 Phase 4 "색 네모 + 직업 글자").</summary>
         public static string JobGlyph(Job job)
         {
             switch (job)

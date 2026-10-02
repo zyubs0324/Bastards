@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace TAoB.Combat.Tests
 {
     /// <summary>
-    /// 테스트 전용 밸런스 값. 규칙 코드에는 기본값을 두지 않기로 했으므로(계획서 Phase 2) 테스트가 직접 만든다.
+    /// 테스트 전용 밸런스 값. 규칙 코드에는 기본값을 두지 않기로 했으므로(수직 슬라이스 계획서 Phase 2) 테스트가 직접 만든다.
     /// </summary>
     internal static class TestBalance
     {

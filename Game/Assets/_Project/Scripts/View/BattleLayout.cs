@@ -37,7 +37,7 @@ namespace TAoB.View
         public static readonly Color FaintTextColor = new Color(0.7f, 0.7f, 0.7f);
         public static readonly Color ToastColor = new Color(1f, 0.9f, 0.6f);
 
-        // 배경(계획서 Phase 4.5) — 검은 허공 대신 하늘·바닥 두 색 띠와 경계선을 그린다.
+        // 배경(수직 슬라이스 계획서 Phase 4.5) — 검은 허공 대신 하늘·바닥 두 색 띠와 경계선을 그린다.
         public static readonly Color SkyColor = new Color(0.16f, 0.2f, 0.28f);
         public static readonly Color GroundColor = new Color(0.1f, 0.12f, 0.14f);
         public static readonly Color GroundLineColor = new Color(0.28f, 0.32f, 0.38f);

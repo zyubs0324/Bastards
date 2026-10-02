@@ -76,7 +76,7 @@ namespace TAoB.Combat
             }
         }
 
-        // 계획서 Phase 2: 흩어진 채 승패가 정해지면 그 틱에 빈사로 확정한다.
+        // 수직 슬라이스 계획서 Phase 2: 흩어진 채 승패가 정해지면 그 틱에 빈사로 확정한다.
         public void DownScatteredUnits(int tick, List<BattleEvent> events)
         {
             for (int i = 0; i < _unitsById.Length; i++)
@@ -170,7 +170,7 @@ namespace TAoB.Combat
         {
             target.Condition = UnitCondition.Normal;
             target.ActionGauge = 0;
-            // 게이지가 음수로 내려가도 두는 것이 의도 — 구조자의 다음 행동이 그만큼 늦어진다(계획서 Phase 2 결정 로그).
+            // 게이지가 음수로 내려가도 두는 것이 의도 — 구조자의 다음 행동이 그만큼 늦어진다(수직 슬라이스 계획서 Phase 2 결정 로그).
             rescuer.ActionGauge -= _balance.RescueExtraGauge;
             events.Add(new BattleEvent(BattleEventKind.Rescued, tick, rescuer.Id, target.Id, 0, 0));
         }

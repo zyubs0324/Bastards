@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TAoB.EditorTools
 {
     /// <summary>
-    /// 개발 빌드를 만드는 에디터 도구(계획서 Phase 5). 사용자 PC 에서 에디터 GUI 가 느려 배치모드로만 쓴다.
+    /// 개발 빌드를 만드는 에디터 도구(수직 슬라이스 계획서 Phase 5). 사용자 PC 에서 에디터 GUI 가 느려 배치모드로만 쓴다.
     /// batchmode: `-executeMethod TAoB.EditorTools.BuildTools.BuildAndroid` (`-quit -nographics`), 실행은 `Tools/run-editor-tool.ps1 -Tool apk|win`.
     /// <para>
     /// 성공하면 로그에 `[빌드] 성공 …` 을 남긴다 — 실행 스크립트가 이 표시로 성공을 판정한다(종료 코드는 비어 돌아오는 경우가 있다).

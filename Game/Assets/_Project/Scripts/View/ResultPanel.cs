@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace TAoB.View
 {
-    /// <summary>결과 화면: 승패 사유, 빈사자, 마도구 내구력 소모, 상태 해시, 재시작(계획서 Phase 4).</summary>
+    /// <summary>결과 화면: 승패 사유, 빈사자, 마도구 내구력 소모, 상태 해시, 재시작(수직 슬라이스 계획서 Phase 4).</summary>
     internal sealed class ResultPanel : MonoBehaviour
     {
         private TMP_Text _title;

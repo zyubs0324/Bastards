@@ -13,6 +13,7 @@
 | 엔진 / 언어 | Unity 6.3 LTS / C# |
 | 개발 형태 | 1인(비개발자) + AI 협업 |
 | 현재 단계 | 횡스크롤 이동 전투 전환 — 등장·행군·조우 4회(마지막이 보스). 계획: `.claude/plans/sidescroll-battle.plan.md`. 끝난 계획은 `.claude/plans/completed/` |
+| 계획서 호칭 | 코드 주석의 **"계획서"** 와 `D1~D14`·`Phase A~F` 는 활성 계획서(위 경로)를 뜻한다. **"수직 슬라이스 계획서 Phase 0~5"** 는 완료된 `.claude/plans/completed/vertical-slice.plan.md` 다 — 두 문서가 같은 낱말을 쓰지 않도록 숫자 Phase 참조에는 접두를 붙인다 |
 | 이어받기 문서 | `docs/HANDOFF.md` — 새 대화에서 먼저 읽는다. 진행 상태·다음 할 일·문서 지도를 담고, 사실은 이 문서를 가리킨다 |
 | 편의 스크립트 | `Tools/run-tests.ps1`(테스트·커버리지), `Tools/run-editor-tool.ps1 -Tool scene\|tmp\|smoke\|win\|apk`(에디터 도구·개발 빌드 — 산출물 `Game/Builds/`, git 제외). 아래 "테스트 실행" 명령을 그대로 실행한다. PowerShell 5.1 이 BOM 없는 파일을 ANSI 로 읽어 한글이 깨지므로 UTF-8 BOM 으로 저장한다 |
 | 기획 정본 | 저장소 루트의 가장 높은 버전 `The_Age_of_Bastards_게임기획서_v*.md` · `The_Age_of_Bastards_세계관_설정집_v*.md` |

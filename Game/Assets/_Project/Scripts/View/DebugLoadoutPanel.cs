@@ -10,7 +10,7 @@ using UnityEngine.UI;
 namespace TAoB.View
 {
     /// <summary>
-    /// 개발용 장비 교체 패널(계획서 Phase 4): 아군별 원석·마도구를 바꾸고 재시작해 2축 규칙을 체감한다. 덱세팅 화면이 아니다.
+    /// 개발용 장비 교체 패널(수직 슬라이스 계획서 Phase 4): 아군별 원석·마도구를 바꾸고 재시작해 2축 규칙을 체감한다. 덱세팅 화면이 아니다.
     /// RES 부족으로 장착할 수 없는 마도구는 목록에서 뺀다.
     /// </summary>
     internal sealed class DebugLoadoutPanel : MonoBehaviour

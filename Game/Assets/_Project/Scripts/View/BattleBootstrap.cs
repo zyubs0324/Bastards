@@ -9,12 +9,12 @@ using UnityEngine.TextCore.LowLevel;
 namespace TAoB.View
 {
     /// <summary>
-    /// 씬의 유일한 진입점 객체(계획서 Phase 4). 데이터를 읽고, 화면 요소를 코드로 만들고, 틱 드라이버로 규칙 모듈을 돌린다.
+    /// 씬의 유일한 진입점 객체(수직 슬라이스 계획서 Phase 4). 데이터를 읽고, 화면 요소를 코드로 만들고, 틱 드라이버로 규칙 모듈을 돌린다.
     /// 전투 표시 객체는 전부 BattleRoot 아래에 두고 재시작 때 통째로 파괴한다. PopupPool 만 살아남아 회수된다.
     /// </summary>
     public sealed class BattleBootstrap : MonoBehaviour
     {
-        /// <summary>재현용 고정 시드(계획서 Phase 4 검증 "시드 고정으로 재현").</summary>
+        /// <summary>재현용 고정 시드(수직 슬라이스 계획서 Phase 4 검증 "시드 고정으로 재현").</summary>
         public const uint Seed = 1;
 
         private const int PopupPrewarm = 24;
@@ -63,7 +63,7 @@ namespace TAoB.View
             StartBattle();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            // 실행 인자 `-captureShots <폴더>` 가 있을 때만 스크린샷을 남긴다(계획서 Phase 5). 디버그 패널과 같은 조건으로 구역화.
+            // 실행 인자 `-captureShots <폴더>` 가 있을 때만 스크린샷을 남긴다(수직 슬라이스 계획서 Phase 5). 디버그 패널과 같은 조건으로 구역화.
             DevCapture.AttachIfRequested(gameObject);
 #endif
         }
@@ -76,7 +76,7 @@ namespace TAoB.View
             _effects.Tick(dt);
             _screenShake.Tick(dt);
 
-            // 짧은 멈춤(계획서 Phase 4.5): 남은 시간 동안은 틱 루프를 건너뛴다. 틱 루프만 멈추고 연출은 dt 로 계속 흐른다.
+            // 짧은 멈춤(수직 슬라이스 계획서 Phase 4.5): 남은 시간 동안은 틱 루프를 건너뛴다. 틱 루프만 멈추고 연출은 dt 로 계속 흐른다.
             if (!_isEnded && !_effects.IsHitStopped)
             {
                 int ticks = _driver.Advance(dt, _speed);
@@ -135,7 +135,7 @@ namespace TAoB.View
             _root = root.gameObject;
             _viewById.Clear();
 
-            // 전장 층(계획서 Phase 4.5): 배경·유닛만 이 아래에 둔다. 화면 흔들림은 이 층만 흔들어 HUD·버튼은 고정한다.
+            // 전장 층(수직 슬라이스 계획서 Phase 4.5): 배경·유닛만 이 아래에 둔다. 화면 흔들림은 이 층만 흔들어 HUD·버튼은 고정한다.
             RectTransform field = UiFactory.CreateStretched(root, "Field");
             CreateBackground(field);
             PlaceGroup(field, _data.Stage.AllyIds);
@@ -148,7 +148,7 @@ namespace TAoB.View
                 CharacterData ally = _data.ResolveCharacter(_data.Stage.AllyIds[i], _replacements);
                 allies.Add(ally);
 
-                // 컷인 문구는 전투 시작 때 한 번만 만든다(계획서 결정 — 프레임마다 문자열을 만들지 않기 위함).
+                // 컷인 문구는 전투 시작 때 한 번만 만든다(수직 슬라이스 계획서 Phase 4.5 이벤트 표 — 프레임마다 문자열을 만들지 않기 위함).
                 cutinText[ally.Id] = ally.Name + " 고유 기술!";
             }
 
@@ -288,7 +288,7 @@ namespace TAoB.View
         }
 
         /// <summary>
-        /// 전투를 처음부터 다시 시작한다. 결과 화면·디버그 패널 버튼이 쓰고, 플레이 스모크의 재시작 누수 검사도 부른다(계획서 Phase 5).
+        /// 전투를 처음부터 다시 시작한다. 결과 화면·디버그 패널 버튼이 쓰고, 플레이 스모크의 재시작 누수 검사도 부른다(수직 슬라이스 계획서 Phase 5).
         /// <see cref="Destroy"/> 는 프레임 끝에 처리되므로, 호출한 쪽이 개수를 셀 때는 몇 프레임 기다려야 한다.
         /// </summary>
         public void Restart()

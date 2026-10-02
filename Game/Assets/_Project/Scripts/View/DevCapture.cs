@@ -7,7 +7,7 @@ using UnityEngine;
 namespace TAoB.View
 {
     /// <summary>
-    /// 개발용 자동 스크린샷(계획서 Phase 5 — 릴리스 빌드에는 들어가지 않는다). 실행 인자 `-captureShots &lt;폴더&gt;` 가 있을 때만 동작하고,
+    /// 개발용 자동 스크린샷(수직 슬라이스 계획서 Phase 5 — 릴리스 빌드에는 들어가지 않는다). 실행 인자 `-captureShots &lt;폴더&gt;` 가 있을 때만 동작하고,
     /// 없으면 아무것도 하지 않는다. 사용자 PC 에서 에디터 GUI 가 느려, 연출을 눈으로 확인하는 수단이 필요해 만들었다.
     /// </summary>
     internal sealed class DevCapture : MonoBehaviour

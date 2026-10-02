@@ -3,7 +3,7 @@ using TAoB.Combat;
 
 namespace TAoB.Data.Tests
 {
-    /// <summary>계획서 Phase 3 검증 목록: 정상 로드 · 필드 누락 · 음수 · 미존재 ID · 상한 규칙 5종, 그리고 파일 규칙(마지막 구간·열거형·생략 bool).</summary>
+    /// <summary>수직 슬라이스 계획서 Phase 3 검증 목록: 정상 로드 · 필드 누락 · 음수 · 미존재 ID · 상한 규칙 5종, 그리고 파일 규칙(마지막 구간·열거형·생략 bool).</summary>
     public class DataValidationTests
     {
         private static GameDataException Fails(GameDataFiles files)

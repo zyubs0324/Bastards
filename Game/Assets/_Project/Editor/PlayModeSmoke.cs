@@ -7,7 +7,7 @@ namespace TAoB.EditorTools
 {
     /// <summary>
     /// 전투 씬을 플레이 모드로 몇 초 돌려 실행 오류가 없는지 본다. 수동 시나리오를 대신하지 않고, 켜자마자 터지는 실수만 거른다.
-    /// 재시작 누수 검사(계획서 Phase 4 검증 시나리오 8)도 여기서 자동으로 한다 — 사람이 오브젝트 수를 세기 어렵기 때문.
+    /// 재시작 누수 검사(수직 슬라이스 계획서 Phase 4 검증 시나리오 8)도 여기서 자동으로 한다 — 사람이 오브젝트 수를 세기 어렵기 때문.
     /// batchmode: `-executeMethod TAoB.EditorTools.PlayModeSmoke.Run` (`-quit` 없이, `-nographics` 없이).
     /// 도메인 재로드가 있으면(에디터 GUI) 정적 상태가 지워지므로 SessionState 와 <see cref="Hook"/> 으로 다시 붙는다. batchmode 는 재로드 없이 들어간다.
     /// </summary>
@@ -17,7 +17,7 @@ namespace TAoB.EditorTools
         private const string ErrorCountKey = "TAoB.Smoke.Errors";
         private const float PlaySeconds = 6f;
 
-        /// <summary>재시작 누수 검사 횟수(계획서 시나리오 8 "재시작 5회").</summary>
+        /// <summary>재시작 누수 검사 횟수(수직 슬라이스 계획서 Phase 4 시나리오 8 "재시작 5회").</summary>
         private const int RestartCount = 5;
 
         /// <summary><c>Destroy</c> 는 프레임 끝에 처리되므로, 재시작 뒤 이만큼 기다렸다가 센다.</summary>
@@ -181,7 +181,7 @@ namespace TAoB.EditorTools
                 return;
             }
 
-            // 유닛 표시는 BattleRoot 바로 아래가 아니라 전장 층(Field) 아래에 있다(계획서 Phase 4.5).
+            // 유닛 표시는 BattleRoot 바로 아래가 아니라 전장 층(Field) 아래에 있다(수직 슬라이스 계획서 Phase 4.5).
             Transform field = bootstrap.transform.Find("Canvas/BattleRoot/Field");
             int units = 0;
             if (field != null)

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace TAoB.Combat
 {
     /// <summary>
-    /// 유닛당 대기 명령 1개와 후퇴 요청을 보관한다. 새 명령은 기존 대기 명령을 대체한다(계획서 Phase 2).
+    /// 유닛당 대기 명령 1개와 후퇴 요청을 보관한다. 새 명령은 기존 대기 명령을 대체한다(수직 슬라이스 계획서 Phase 2).
     /// </summary>
     internal sealed class CommandQueue
     {

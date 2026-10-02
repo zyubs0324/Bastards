@@ -6,7 +6,7 @@ namespace TAoB.Data
     /// <summary>stage_slice.json → <see cref="StageData"/>. 캐릭터 ID 는 이미 읽은 목록에서 찾는다.</summary>
     internal static class StageReader
     {
-        // 편성 규모 상한은 밸런스 값이 아니라 로더 규칙이다(계획서 Phase 3).
+        // 편성 규모 상한은 밸런스 값이 아니라 로더 규칙이다(수직 슬라이스 계획서 Phase 3).
         public const int MaxAllies = 5;
         public const int MaxWaves = 5;
         public const int MaxEnemiesPerWave = 5;

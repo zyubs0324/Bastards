@@ -4,7 +4,7 @@ using TAoB.Combat;
 
 namespace TAoB.View.Tests
 {
-    /// <summary>구조 버튼의 대상 선택 규칙(계획서 Phase 4). 선택 UI 가 없으므로 이 규칙이 사실상 사용자가 보는 동작이다.</summary>
+    /// <summary>구조 버튼의 대상 선택 규칙(수직 슬라이스 계획서 Phase 4). 선택 UI 가 없으므로 이 규칙이 사실상 사용자가 보는 동작이다.</summary>
     public class RescueSelectorTests
     {
         [Test]

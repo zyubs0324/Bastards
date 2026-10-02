@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TAoB.View
 {
     /// <summary>
-    /// 전장 층(<c>Field</c>)만 감쇠하며 흔든다(계획서 Phase 4.5). HUD·개입 바·결과 화면은 <c>BattleRoot</c> 의 다른 자식이라
+    /// 전장 층(<c>Field</c>)만 감쇠하며 흔든다(수직 슬라이스 계획서 Phase 4.5). HUD·개입 바·결과 화면은 <c>BattleRoot</c> 의 다른 자식이라
     /// 흔들리지 않는다 — 버튼을 누르는 위치가 어긋나지 않게 하기 위함(1차 계획 리뷰 반영).
     /// </summary>
     internal sealed class ScreenShake

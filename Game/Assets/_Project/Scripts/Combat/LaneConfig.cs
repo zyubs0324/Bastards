@@ -5,7 +5,7 @@ namespace TAoB.Combat
     /// <summary>
     /// 이동·교전 수치 묶음(계획서 Phase A). 범위와 교착 방지 불변식의 **정본**이다.
     /// 단위 fu 는 전장 단위다(계획서 D3). <see cref="BalanceConfig"/> 가 이 객체를 받는다.
-    /// 이 Phase 가 소비하는 수치만 둔다 — 이탈 허용치·자세·침투 확률은 쓰는 코드와 함께 Phase C 에서 들어온다.
+    /// Phase A 가 소비하는 수치만 둔다 — 이탈 허용치·자세·침투 확률은 쓰는 코드와 함께 계획서 Phase C 에서 들어온다.
     /// </summary>
     public sealed class LaneConfig
     {

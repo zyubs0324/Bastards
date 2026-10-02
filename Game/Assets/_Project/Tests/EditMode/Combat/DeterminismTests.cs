@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace TAoB.Combat.Tests
 {
     /// <summary>
-    /// 같은 시드·같은 틱별 명령이면 결과가 같아야 한다(계획서 Phase 2 결정론).
+    /// 같은 시드·같은 틱별 명령이면 결과가 같아야 한다(수직 슬라이스 계획서 Phase 2 결정론).
     /// 크리티컬·과부하가 실제 난수를 쓰는 조건으로 돌린다.
     /// </summary>
     public class DeterminismTests

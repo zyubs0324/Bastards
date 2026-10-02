@@ -3,7 +3,7 @@ using System;
 namespace TAoB.View
 {
     /// <summary>
-    /// 프레임 시간을 고정 틱 횟수로 바꾼다(계획서 Phase 4 틱 드라이버). 배속은 틱 횟수만 늘리고 규칙 모듈에는 전달하지 않는다.
+    /// 프레임 시간을 고정 틱 횟수로 바꾼다(수직 슬라이스 계획서 Phase 4 틱 드라이버). 배속은 틱 횟수만 늘리고 규칙 모듈에는 전달하지 않는다.
     /// </summary>
     public sealed class TickDriver
     {

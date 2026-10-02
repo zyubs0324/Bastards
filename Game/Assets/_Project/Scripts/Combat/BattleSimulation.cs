@@ -8,7 +8,7 @@ namespace TAoB.Combat
     /// </summary>
     public sealed class BattleSimulation
     {
-        /// <summary>규칙 시간 단위. 밸런스 값이 아니므로 데이터 파일에 두지 않는다(계획서 Phase 2).</summary>
+        /// <summary>규칙 시간 단위. 밸런스 값이 아니므로 데이터 파일에 두지 않는다(수직 슬라이스 계획서 Phase 2).</summary>
         public const int TicksPerSecond = 10;
 
         private readonly BattleSetup _setup;
@@ -213,8 +213,8 @@ namespace TAoB.Combat
                 if (!CanActFromHere(unit)) continue;
 
                 // 사거리 관문은 "때릴 상대가 있는가"만 본다. 대상 선택은 거리를 보지 않는다 —
-                // 열별 좌표가 고정인 이 Phase 에서는 앞열 우선 선택이 곧 최근접 선택이고,
-                // 대상별 사거리 필터는 선호 기반 대상 선택(Phase C·F)과 같은 커밋에서 들어온다.
+                // 열별 좌표가 고정인 계획서 Phase A 에서는 앞열 우선 선택이 곧 최근접 선택이고,
+                // 대상별 사거리 필터는 선호 기반 대상 선택(계획서 Phase C)과 같은 커밋에서 들어온다.
                 BattleCommand command = ChooseCommand(unit, events);
                 ActionGaugeScheduler.Consume(unit, _balance);
                 _resolver.Execute(unit, command, Tick, events);

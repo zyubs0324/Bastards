@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TAoB.View
 {
     /// <summary>
-    /// 피해 숫자·짧은 알림을 띄우는 풀. 전투마다 파괴하지 않고 회수해 다시 쓴다(계획서 Phase 4).
+    /// 피해 숫자·짧은 알림을 띄우는 풀. 전투마다 파괴하지 않고 회수해 다시 쓴다(수직 슬라이스 계획서 Phase 4).
     /// 캔버스 아래(`BattleRoot` 형제)에 두어 재시작 때 파괴되지 않는다.
     /// </summary>
     internal sealed class PopupPool : MonoBehaviour

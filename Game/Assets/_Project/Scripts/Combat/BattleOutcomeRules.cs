@@ -30,7 +30,7 @@ namespace TAoB.Combat
 
     public static class BattleOutcomeRules
     {
-        // 계획서 Phase 2 승패 표: 한 틱에 여러 조건이 성립하면 위에서부터 우선한다.
+        // 수직 슬라이스 계획서 Phase 2 승패 표: 한 틱에 여러 조건이 성립하면 위에서부터 우선한다.
         public static BattleOutcome Evaluate(OutcomeInputs inputs)
         {
             if (inputs.RetreatProcessed) return BattleOutcome.DefeatRetreat;

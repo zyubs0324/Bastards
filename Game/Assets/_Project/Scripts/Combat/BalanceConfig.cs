@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace TAoB.Combat
 {
     /// <summary>
-    /// 전투 밸런스 수치 묶음. 규칙 코드에는 기본값을 두지 않고 전부 이 객체로 받는다(계획서 Phase 2).
+    /// 전투 밸런스 수치 묶음. 규칙 코드에는 기본값을 두지 않고 전부 이 객체로 받는다(수직 슬라이스 계획서 Phase 2).
     /// 배율은 ‰(1000 = 1.0), 확률은 만분율(10000 = 100%).
     /// </summary>
     public sealed class BalanceConfig

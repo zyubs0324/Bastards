@@ -5,7 +5,7 @@ using TAoB.Combat;
 namespace TAoB.View
 {
     /// <summary>
-    /// BattleEvent → 연출 대응 전담(계획서 Phase 4.5). <see cref="BattleBootstrap.Dispatch"/> 는 팝업을 띄운 뒤
+    /// BattleEvent → 연출 대응 전담(수직 슬라이스 계획서 Phase 4.5). <see cref="BattleBootstrap.Dispatch"/> 는 팝업을 띄운 뒤
     /// 이 클래스에 한 줄만 맡긴다. 규칙 모듈(TAoB.Combat)은 건드리지 않고 UnitView·ScreenShake·컷인 호출만 한다.
     /// </summary>
     internal sealed class BattleEffects
@@ -25,7 +25,7 @@ namespace TAoB.View
         private readonly Action<string> _showCutin;
         private readonly IReadOnlyDictionary<int, string> _cutinTextById;
 
-        // 같은 틱에 한 유닛이 여러 대상을 때려도 돌진 연출은 한 번만(계획서 결정 "같은 틱 첫 피해만").
+        // 같은 틱에 한 유닛이 여러 대상을 때려도 돌진 연출은 한 번만(수직 슬라이스 계획서 Phase 4.5 이벤트 표 "같은 틱 첫 피해만").
         private readonly Dictionary<int, int> _lastLungeTick = new Dictionary<int, int>(8);
 
         private float _hitStopRemaining;

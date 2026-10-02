@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace TAoB.View
 {
     /// <summary>
-    /// 하단 개입 바(계획서 Phase 4): 아군별 고유 기술 버튼, 과부하 버튼(원석 + 과부하 가능 기술), 구조, 후퇴.
+    /// 하단 개입 바(수직 슬라이스 계획서 Phase 4): 아군별 고유 기술 버튼, 과부하 버튼(원석 + 과부하 가능 기술), 구조, 후퇴.
     /// 기본 공격은 자동 전용이라 버튼이 없다. 명령은 규칙 모듈의 <see cref="BattleSimulation.Enqueue"/> 로만 들어간다.
     /// </summary>
     internal sealed class InterventionBar : MonoBehaviour

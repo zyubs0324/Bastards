@@ -5,7 +5,7 @@ using UnityEngine;
 namespace TAoB.Data.Tests
 {
     /// <summary>
-    /// 로더가 기대는 JsonUtility 의 동작을 고정한다(계획서 Phase 3: 누락 필드의 초기값 유지 여부는 첫 테스트로 확인).
+    /// 로더가 기대는 JsonUtility 의 동작을 고정한다(수직 슬라이스 계획서 Phase 3: 누락 필드의 초기값 유지 여부는 첫 테스트로 확인).
     /// 엔진 버전이 올라가 동작이 바뀌면 여기서 먼저 깨진다.
     /// </summary>
     public class JsonUtilityBehaviourTests

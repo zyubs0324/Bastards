@@ -12,7 +12,7 @@ namespace TAoB.Combat
         All,
     }
 
-    /// <summary>캐릭터 고유 기술 1개의 정의(계획서 Phase 2).</summary>
+    /// <summary>캐릭터 고유 기술 1개의 정의(수직 슬라이스 계획서 Phase 2).</summary>
     public sealed class SkillDefinition
     {
         public SkillDefinition(int powerPermille, TargetRule targetRule, bool canOverload, int cooldownTicks)

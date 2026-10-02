@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 namespace TAoB.View
 {
-    /// <summary>uGUI 요소를 코드로 만든다(계획서 Phase 4: 씬에는 진입점 객체 하나, 나머지는 코드 생성). 스프라이트 없이 색 사각형만 쓴다.</summary>
+    /// <summary>uGUI 요소를 코드로 만든다(수직 슬라이스 계획서 Phase 4: 씬에는 진입점 객체 하나, 나머지는 코드 생성). 스프라이트 없이 색 사각형만 쓴다.</summary>
     internal static class UiFactory
     {
         private static readonly Vector2 Center = new Vector2(0.5f, 0.5f);

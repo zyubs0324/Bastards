@@ -28,7 +28,7 @@ namespace TAoB.Combat
         RejectedInvalidTarget,
     }
 
-    /// <summary>자동 판단과 사용자 입력이 규칙 모듈로 들어오는 단일 형식(계획서 Phase 2 명령 경로 단일화).</summary>
+    /// <summary>자동 판단과 사용자 입력이 규칙 모듈로 들어오는 단일 형식(수직 슬라이스 계획서 Phase 2 명령 경로 단일화).</summary>
     public readonly struct BattleCommand
     {
         private BattleCommand(CommandKind kind, int actorId, int targetId, bool isForced)

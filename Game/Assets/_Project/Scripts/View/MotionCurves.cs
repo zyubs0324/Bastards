@@ -3,7 +3,7 @@ using UnityEngine;
 namespace TAoB.View
 {
     /// <summary>
-    /// 연출 곡선(계획서 Phase 4.5). 엔진 상태 없는 순수 함수만 둔다 — 경과 시간 t(초)를 오프셋·배율로 바꾼다.
+    /// 연출 곡선(수직 슬라이스 계획서 Phase 4.5). 엔진 상태 없는 순수 함수만 둔다 — 경과 시간 t(초)를 오프셋·배율로 바꾼다.
     /// 지속 시간·진폭 같은 수치는 이 파일에 두지 않는다. 호출부(각 View 파일)가 자기 상수를 넘긴다.
     /// </summary>
     public static class MotionCurves

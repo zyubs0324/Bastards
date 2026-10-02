@@ -2,7 +2,7 @@ using NUnit.Framework;
 
 namespace TAoB.View.Tests
 {
-    /// <summary>틱 드라이버는 표시 계층에서 유일하게 규칙 실행 횟수를 정하므로 자동 테스트로 고정한다(계획서 Phase 4 검증 7 의 근거).</summary>
+    /// <summary>틱 드라이버는 표시 계층에서 유일하게 규칙 실행 횟수를 정하므로 자동 테스트로 고정한다(수직 슬라이스 계획서 Phase 4 검증 7 의 근거).</summary>
     public class TickDriverTests
     {
         [Test]
@@ -66,7 +66,7 @@ namespace TAoB.View.Tests
             Assert.AreEqual(1, driver.Advance(0.05f, 1));
         }
 
-        /// <summary>짧은 멈춤이 틱 루프 중간에 걸려 일부만 실행했을 때, 나머지를 되돌리면 다음 프레임에 이어진다(계획서 Phase 4.5).</summary>
+        /// <summary>짧은 멈춤이 틱 루프 중간에 걸려 일부만 실행했을 때, 나머지를 되돌리면 다음 프레임에 이어진다(수직 슬라이스 계획서 Phase 4.5).</summary>
         [Test]
         public void RestoreTicks_CarriesUnexecutedTicksToNextFrame()
         {

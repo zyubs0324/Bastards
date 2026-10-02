@@ -8,7 +8,7 @@ namespace TAoB.View
 {
     /// <summary>
     /// 유닛 한 명의 표시: 색 네모 + 직업 글자, 이름, HP·행동 게이지 막대, 상태·과부하 위험·내구력 글자.
-    /// 연출(계획서 Phase 4.5)은 박스(<see cref="_box"/>)의 위치·회전·배율·색만 바꾼다 — 막대·글자는 고정한다.
+    /// 연출(수직 슬라이스 계획서 Phase 4.5)은 박스(<see cref="_box"/>)의 위치·회전·배율·색만 바꾼다 — 막대·글자는 고정한다.
     /// </summary>
     internal sealed class UnitView : MonoBehaviour
     {
@@ -119,7 +119,7 @@ namespace TAoB.View
             _tool = UiFactory.CreateText(transform, "Tool", font, "", 18f, ToolColor, new Vector2(0f, -100f), new Vector2(BattleLayout.UnitWidth, 24f));
         }
 
-        /// <summary>돌진: 상대 진영 쪽으로 갔다가 돌아온다(가해자, 계획서 Phase 4.5 이벤트 표).</summary>
+        /// <summary>돌진: 상대 진영 쪽으로 갔다가 돌아온다(가해자, 수직 슬라이스 계획서 Phase 4.5 이벤트 표).</summary>
         public void PlayLunge()
         {
             _lungeElapsed = 0f;

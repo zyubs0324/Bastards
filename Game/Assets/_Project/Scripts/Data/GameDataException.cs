@@ -3,7 +3,7 @@ using System;
 namespace TAoB.Data
 {
     /// <summary>
-    /// 데이터 파일 검증 실패. 어느 파일의 어느 필드가 왜 틀렸는지를 담아, 사용자가 코드를 보지 않고 파일을 고칠 수 있게 한다(계획서 Phase 3).
+    /// 데이터 파일 검증 실패. 어느 파일의 어느 필드가 왜 틀렸는지를 담아, 사용자가 코드를 보지 않고 파일을 고칠 수 있게 한다(수직 슬라이스 계획서 Phase 3).
     /// </summary>
     public sealed class GameDataException : Exception
     {

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace TAoB.View.Tests
 {
-    /// <summary>연출 곡선은 순수 함수라 엔진 없이 고정한다(계획서 Phase 4.5 검증).</summary>
+    /// <summary>연출 곡선은 순수 함수라 엔진 없이 고정한다(수직 슬라이스 계획서 Phase 4.5 검증).</summary>
     public class MotionCurvesTests
     {
         [Test]

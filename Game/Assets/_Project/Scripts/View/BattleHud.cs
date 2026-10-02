@@ -52,7 +52,7 @@ namespace TAoB.View
             _banner = UiFactory.CreateText(transform, "Banner", font, "", 48f, Color.white, new Vector2(0f, 380f), new Vector2(1000f, 70f));
             _banner.gameObject.SetActive(false);
 
-            // 웨이브·결과 배너와 겹치지 않는 별도 슬롯(계획서 Phase 4.5 — 연속 발동 시 서로 덮어쓰지 않게).
+            // 웨이브·결과 배너와 겹치지 않는 별도 슬롯(수직 슬라이스 계획서 Phase 4.5 — 연속 발동 시 서로 덮어쓰지 않게).
             _cutin = UiFactory.CreateText(transform, "Cutin", font, "", 40f, BattleLayout.OverloadColor, new Vector2(0f, 300f), new Vector2(1000f, 60f));
             _cutin.gameObject.SetActive(false);
         }
@@ -89,7 +89,7 @@ namespace TAoB.View
             _bannerAge = 0f;
         }
 
-        /// <summary>기술 컷인 전용 슬롯. 문구는 전투 시작 때 캐릭터별로 한 번 만든 것만 넘긴다(계획서 Phase 4.5).</summary>
+        /// <summary>기술 컷인 전용 슬롯. 문구는 전투 시작 때 캐릭터별로 한 번 만든 것만 넘긴다(수직 슬라이스 계획서 Phase 4.5).</summary>
         public void ShowCutin(string text)
         {
             _cutin.text = text;
