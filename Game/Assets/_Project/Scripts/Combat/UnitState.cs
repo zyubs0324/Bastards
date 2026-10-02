@@ -32,6 +32,9 @@ namespace TAoB.Combat
 
         public int Hp { get; set; }
         public int Mnd { get; set; }
+
+        /// <summary>전장 1차원 좌표(fu). 아군은 +x 로 전진한다. Y 는 표시 계층 전담(계획서 D3).</summary>
+        public int PosX { get; set; }
         public int ActionGauge { get; set; }
         public int Cooldown { get; set; }
         public int MagitoolDurability { get; set; }

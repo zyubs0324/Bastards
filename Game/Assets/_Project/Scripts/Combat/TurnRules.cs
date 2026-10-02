@@ -6,18 +6,31 @@ namespace TAoB.Combat
     /// <summary>SPD 비례 행동 게이지(기획서 4-1 ATB).</summary>
     internal static class ActionGaugeScheduler
     {
-        public static void Fill(UnitState[] units, BalanceConfig balance)
+        /// <param name="unitsById">ID 오름차순 전체 유닛. 사거리 안에 상대가 있는지 보는 데 쓴다.</param>
+        public static void Fill(UnitState[] units, UnitState[] unitsById, BalanceConfig balance)
         {
-            // 한 틱에 한 번만 행동하므로 최대치의 2배를 넘는 게이지는 의미가 없다. 긴 전투에서 int 가 넘치지 않게 여기서 멈춘다.
-            long cap = 2L * balance.ActionGaugeMax;
             for (int i = 0; i < units.Length; i++)
             {
                 UnitState unit = units[i];
                 if (unit.CanAct)
                 {
-                    unit.ActionGauge = (int)Math.Min(cap, (long)unit.ActionGauge + unit.Setup.Stats.Spd);
+                    long filled = (long)unit.ActionGauge + unit.Setup.Stats.Spd;
+                    long cap = Cap(unit, unitsById, balance);
+                    // 이미 상한을 넘겨 모아둔 게이지는 깎지 않는다 — 상대가 사거리 밖으로 바뀐 틱에 몰수되면
+                    // "건너뛴 틱에는 게이지를 유지한다"(D6)가 깨지고 조우 전환마다 빠른 유닛이 손해를 본다.
+                    unit.ActionGauge = (int)(filled <= cap ? filled : Math.Max(unit.ActionGauge, cap));
                 }
             }
+        }
+
+        /// <summary>
+        /// 한 틱에 한 번만 행동하므로 최대치의 2배를 넘는 게이지는 의미가 없다. 긴 전투에서 int 가 넘치지 않게 여기서 멈춘다.
+        /// 사거리 밖에서 행군하는 동안은 1배로 묶는다 — 2배까지 모아두면 접촉하는 순간 2연타가 터진다(계획서 D6).
+        /// </summary>
+        private static long Cap(UnitState unit, UnitState[] unitsById, BalanceConfig balance)
+        {
+            bool reachable = Engagement.HasReachableOpponent(unit, unitsById, balance.Lane);
+            return reachable ? 2L * balance.ActionGaugeMax : balance.ActionGaugeMax;
         }
 
         public static bool IsReady(UnitState unit, BalanceConfig balance)
@@ -44,16 +57,17 @@ namespace TAoB.Combat
         }
     }
 
-    /// <summary>게이지가 찬 유닛에 대기 명령이 없을 때의 자동 판단(계획서 Phase 2).</summary>
+    /// <summary>게이지가 찬 유닛에 대기 명령이 없을 때의 자동 판단(계획서 D7).</summary>
     internal static class AutoPilot
     {
-        // 아군은 기본 공격만 — 기술·과부하·구조는 사용자 개입 전용으로 두어 개입의 가치를 검증한다.
-        public static BattleCommand Choose(UnitState unit)
+        /// <summary>
+        /// 기술은 숨은 빈도 스탯(<see cref="UnitSetup.SkillChance"/>)으로 나가고 재사용 대기를 보지도 걸지도 않는다.
+        /// 재사용 대기는 사용자의 강제 발동 전용이라 자동 사용이 그것을 소모하면 개입의 가치가 사라진다.
+        /// 과부하·구조는 사용자 개입 전용으로 남긴다.
+        /// </summary>
+        public static BattleCommand Choose(UnitState unit, IRandom random)
         {
-            if (unit.Side == Side.Enemy && unit.Cooldown == 0)
-            {
-                return BattleCommand.UseSkill(unit.Id);
-            }
+            if (Chance.Roll(random, unit.Setup.SkillChance)) return BattleCommand.AutoSkill(unit.Id);
 
             return BattleCommand.BasicAttack(unit.Id);
         }

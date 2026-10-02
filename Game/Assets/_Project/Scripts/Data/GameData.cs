@@ -69,7 +69,7 @@ namespace TAoB.Data
     public sealed class CharacterData
     {
         internal CharacterData(
-            int id, string name, Side side, Job job, Row row, Stats stats, SkillDefinition skill,
+            int id, string name, Side side, Job job, Row row, Stats stats, int skillChance, SkillDefinition skill,
             CatalystData catalyst, MagitoolData magitool, bool isBoss)
         {
             Id = id;
@@ -78,6 +78,7 @@ namespace TAoB.Data
             Job = job;
             Row = row;
             Stats = stats;
+            SkillChance = skillChance;
             Skill = skill;
             Catalyst = catalyst;
             Magitool = magitool;
@@ -90,6 +91,9 @@ namespace TAoB.Data
         public Job Job { get; }
         public Row Row { get; }
         public Stats Stats { get; }
+
+        /// <summary>기술 자동 사용 빈도(만분율). 숨은 스탯이라 화면에 보이지 않는다.</summary>
+        public int SkillChance { get; }
         public SkillDefinition Skill { get; }
 
         /// <summary>없으면 null.</summary>
@@ -101,13 +105,13 @@ namespace TAoB.Data
 
         public UnitSetup ToUnitSetup()
         {
-            return new UnitSetup(Id, Side, Job, Row, Stats, Skill, Catalyst?.Catalyst, Magitool?.Magitool, IsBoss);
+            return new UnitSetup(Id, Side, Job, Row, Stats, SkillChance, Skill, Catalyst?.Catalyst, Magitool?.Magitool, IsBoss);
         }
 
         /// <summary>장비만 바꾼 사본(개발용 장비 교체). 장착 가능 여부는 검사하지 않는다 — 호출자가 <see cref="EquipRules.CanEquip"/> 으로 거른다.</summary>
         public CharacterData WithEquipment(CatalystData catalyst, MagitoolData magitool)
         {
-            return new CharacterData(Id, Name, Side, Job, Row, Stats, Skill, catalyst, magitool, IsBoss);
+            return new CharacterData(Id, Name, Side, Job, Row, Stats, SkillChance, Skill, catalyst, magitool, IsBoss);
         }
 
         /// <summary>없으면 null. 캐릭터는 열 명 안팎이라 선형 탐색으로 충분하다.</summary>
@@ -124,12 +128,18 @@ namespace TAoB.Data
 
     public sealed class StageData
     {
-        internal StageData(int timeLimitTicks, PreconditionKind precondition, IReadOnlyList<int> allyIds, IReadOnlyList<IReadOnlyList<int>> waves)
+        internal StageData(
+            int timeLimitTicks,
+            PreconditionKind precondition,
+            IReadOnlyList<int> allyIds,
+            IReadOnlyList<IReadOnlyList<int>> waves,
+            IReadOnlyList<int> waveApproachFu)
         {
             TimeLimitTicks = timeLimitTicks;
             Precondition = precondition;
             AllyIds = allyIds;
             Waves = waves;
+            WaveApproachFu = waveApproachFu;
         }
 
         public int TimeLimitTicks { get; }
@@ -138,6 +148,9 @@ namespace TAoB.Data
 
         /// <summary>웨이브별 적 캐릭터 ID.</summary>
         public IReadOnlyList<IReadOnlyList<int>> Waves { get; }
+
+        /// <summary>웨이브별 접근 거리(fu). <see cref="Waves"/> 와 개수가 같다.</summary>
+        public IReadOnlyList<int> WaveApproachFu { get; }
     }
 
     /// <summary>검증을 통과한 데이터 전체. 로더만 만든다.</summary>
@@ -145,6 +158,7 @@ namespace TAoB.Data
     {
         internal GameData(BalanceConfig balance, AffinityTable affinity, EquipmentCatalog equipment, IReadOnlyList<CharacterData> characters, StageData stage)
         {
+            RejectUnreachableStage(balance, stage);
             Balance = balance;
             Affinity = affinity;
             Equipment = equipment;
@@ -157,6 +171,27 @@ namespace TAoB.Data
         public EquipmentCatalog Equipment { get; }
         public IReadOnlyList<CharacterData> Characters { get; }
         public StageData Stage { get; }
+
+        /// <summary>
+        /// 행군으로 닿을 수 없는 거리를 거부한다. 접근 거리는 스테이지 파일, 행군 속도는 밸런스 파일에 있어
+        /// 두 파일을 함께 아는 이 조립 지점만 검증할 수 있다 — 리더 한쪽에 두면 조용히 건너뛴다.
+        /// </summary>
+        private static void RejectUnreachableStage(BalanceConfig balance, StageData stage)
+        {
+            long span = 0;
+            for (int i = 0; i < stage.WaveApproachFu.Count; i++)
+            {
+                span += stage.WaveApproachFu[i];
+            }
+
+            long marchable = (long)balance.Lane.MarchSpeedFu * stage.TimeLimitTicks;
+            if (span > marchable)
+            {
+                throw new GameDataException(DataFiles.Stage, "waves[].approachFu",
+                    $"접근 거리 합 {span} fu 는 제한 시간 안에 행군할 수 있는 {marchable} fu 를 넘습니다" +
+                    $"(행군 속도 {balance.Lane.MarchSpeedFu} fu/틱 × {stage.TimeLimitTicks}틱).");
+            }
+        }
 
         /// <summary>없으면 null.</summary>
         public CharacterData FindCharacter(int id)
@@ -182,7 +217,8 @@ namespace TAoB.Data
                 waves.Add(ToUnits(Stage.Waves[i], replacements));
             }
 
-            return new BattleSetup(Balance, Affinity, ToUnits(Stage.AllyIds, replacements), waves, Stage.TimeLimitTicks, Stage.Precondition);
+            return new BattleSetup(
+                Balance, Affinity, ToUnits(Stage.AllyIds, replacements), waves, Stage.WaveApproachFu, Stage.TimeLimitTicks, Stage.Precondition);
         }
 
         /// <summary>편성에 실제로 들어가는 캐릭터(교체본이 있으면 그것).</summary>

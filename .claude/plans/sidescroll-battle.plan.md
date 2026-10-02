@@ -1,7 +1,7 @@
 # 횡스크롤 이동 전투 전환 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — 1차 `/plan-review`(7 scope)와 재리뷰(arch·lang·security·test) 지적 전부 반영 완료(2026-10-01). **다음 = Phase 0 문서 정합**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
+**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 구현·검증 완료, 커밋 대기**(2026-10-02: 테스트 전체 통과·`TAoB.Combat` 커버리지 98.5%·스모크 오류 0·APK 빌드 성공, `/plan-review --code` 11건 반영). **다음 = Phase B 횡스크롤 화면**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
 
 ## Context
 
@@ -41,7 +41,7 @@
 
 ### D2. 앵커 전진·정지 (정본 — 이 목록이 전부다)
 앵커는 아래 중 **하나라도 참이면 전진하지 않는다**. 그 외에는 매 틱 `marchSpeedFu` 만큼 전진한다.
-1. **기준 열의 생존자 중 하나라도** 적을 사거리 안에 두고 있다(교전 시작). 기준 열 = 아군 **앞열 생존자가 있으면 앞열, 없으면 뒷열**
+1. **기준 열의 생존자 중 하나라도** 적을 **사거리에서 `engageMarginFu` 를 뺀 거리** 안에 두고 있다(교전 시작 — 경계에서 멈추면 한 걸음에 들락거리며 떨린다). 기준 열 = 아군 **앞열 생존자가 있으면 앞열, 없으면 뒷열**
 2. 흩어진 아군이 있다
 3. 구조 캐스팅이 진행 중이다(Phase D 에서 추가)
 
@@ -61,6 +61,7 @@
 - 대기 명령은 **비파괴 조회**로 확인한다(`CommandQueue` 에 `TryPeek` 추가 — 지금은 꺼내면서 지우는 `TryTake` 뿐이다). 사거리 밖이라 그 틱을 건너뛰면 **명령과 행동 게이지를 모두 유지**한다(사용자가 누른 기술이 조용히 사라지지 않게).
 - 순서: **사거리 질의 → 대기 명령 조회 → (대기 명령이 없을 때만) 기술 빈도 롤**. 건너뛴 틱에는 난수를 소비하지 않는다.
 - 사거리 밖에서 대기하는 동안 행동 게이지 상한은 **1×Max**로 둔다(기존 2×Max 그대로면 접촉 직후 2연타가 터진다 — 재리뷰 지적).
+- **대상 선택(`TargetSelector`)에는 사거리 필터를 두지 않는다.** 관문은 "때릴 상대가 있는가" 하나뿐이고, 열별 좌표가 고정인 Phase A 에서는 앞열 우선 선택이 곧 최근접 선택이다. 대상별 필터는 선호 기반 대상 선택과 같은 커밋(Phase C)에서 들어온다 — 그때까지 앞열이 사거리 밖인데 대상으로 뽑히는 구성은 Phase B 실값에서 교착 테스트로 확인한다.
 - `Rescue`·`Overload`·폭주 대상 추첨에는 사거리를 적용하지 않는다(위치와 무관한 행동). 폭주 후보 집합이 바뀌면 난수 소비가 달라지므로 기존 동작을 보존한다.
 - 대상이 **아예 없을 때**(같은 틱에 마지막 적이 쓰러진 경우)는 기존처럼 게이지를 소비하고 `ActionStarted` 를 내보낸다 — 사거리 때문에 건너뛰는 경우와 구분한다.
 
@@ -68,7 +69,7 @@
 - **자동**: 행동할 때마다 `Chance.Roll(random, skillChance)` 성공이면 `UseSkill`, 아니면 `BasicAttack`. **재사용 대기를 보지도 걸지도 않는다.**
 - **강제 발동**: 사용자 버튼 전용. 기존 `Cooldown` 은 이제 **강제 발동 전용 쿨타임**이다. 자동 사용이 이 쿨타임을 소모하지 않으므로 개입 가치가 유지된다.
 - 적도 같은 규칙을 쓴다(기존 "적은 쿨다운 0이면 기술" 규칙을 대체).
-- **구분 수단**(재리뷰 HIGH — 지금 구조에는 출처 표식이 없다): `BattleCommand` 에 `IsForced` 를 추가한다. 사용자 경로만 `true` 로 만들고, `ActionResolver` 는 `IsForced` 일 때만 `Cooldown` 을 설정한다. `IsExecutable` 의 재사용 대기 검사도 `IsForced` 일 때만 적용한다. `AutoPilot.Choose` 는 `IRandom` 과 `skillChance` 를 받는 시그니처로 바뀐다(`BattleSimulation` 이 이미 난수를 들고 있다). `ActionStarted` 의 `Detail`(= `CommandKind`)은 바뀌지 않아 표시 계층 영향이 없다.
+- **구분 수단**(재리뷰 HIGH — 지금 구조에는 출처 표식이 없다): `BattleCommand` 에 `IsForced` 를 추가한다. 사용자 경로만 `true` 로 만들고, `ActionResolver` 는 `IsForced` 일 때만 `Cooldown` 을 설정한다. 명령 큐는 `IsForced` 가 거짓인 명령을 받지 않으므로(자동 명령은 큐를 거치지 않는다) 큐에서 나온 기술은 항상 강제 발동이고, 재사용 대기 검사를 따로 갈라 둘 필요가 없다. `AutoPilot.Choose` 는 `IRandom` 을 받는 시그니처로 바뀌고(`BattleSimulation` 이 이미 난수를 들고 있다) 빈도는 `unit.Setup.SkillChance` 에서 읽는다 — 빈도를 따로 넘기면 정본이 둘이 된다. `ActionStarted` 의 `Detail`(= `CommandKind`)은 바뀌지 않아 표시 계층 영향이 없다.
 - `UnitSetup` 은 `skillChance` 를 0~`ChanceRange` 로 받고(규칙 모듈 하한), 기획 대역(100~3900)은 `CharacterReader` 가 검증한다. **테스트 기본값은 0** — 그래야 고정 난수를 쓰는 기존 테스트가 기술 롤에 값을 빼앗기지 않는다(재리뷰 HIGH).
 
 ### D8. 확률 판정은 공용 가드를 쓴다
@@ -83,7 +84,7 @@
 기존에 해시에 없던 상태(대기 명령 큐·후퇴 요청)도 이번에 **함께 넣는다** — 대기 명령은 D6 으로 수명이 길어져 더 중요해진다.
 
 ### D11. 기존 226개 테스트 보호 — 테스트 픽스처를 "정지 프리셋"으로
-테스트용 `LaneConfig` 는 **불변식을 만족하는 정지 프리셋**을 쓴다: 사거리는 전장보다 크게(모든 쌍이 사거리 안), `marchSpeedFu` 1, 접근 거리 0(모두 같은 자리), 확률 전부 0. 결과적으로 교전 조건이 항상 참이라 앵커가 멈추고, 목표 위치가 제 자리라 아무도 움직이지 않으며, 난수를 소비하지 않는다.
+테스트용 `LaneConfig` 는 **불변식을 만족하는 정지 프리셋**을 쓴다: 사거리는 전장보다 크게(모든 쌍이 사거리 안), `marchSpeedFu` 1, 자리 간격·여유 0, 접근 거리는 최소값 1(사거리가 덮으므로 거리가 행동을 바꾸지 않는다). 결과적으로 교전 조건이 항상 참이라 앵커가 멈추고, 목표 위치가 제 자리라 아무도 움직이지 않는다.
 `Disabled` 전용 팩토리를 두지 않는 이유: 비활성 분기가 `Movement`·`Engagement` 에 영구히 남아 실값을 쓰는 Phase B 이후 **죽은 경로**가 되기 때문이다(재리뷰 지적). 같은 보호를 분기 없이 얻는다.
 Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼짐"이라는 특수 값을 데이터에 만들지 않는다.
 단 이 장치는 **위치 관련 회귀만** 막는다. D7(기술 자동 사용)은 수치와 무관하게 기존 동작을 바꾸므로 영향 테스트를 Phase A 에 따로 명시한다.
@@ -110,10 +111,10 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 
 **변경 파일**
 - 신규 `Scripts/Combat/`: `Lane.cs`(Row 를 모르는 정수 산술), `LaneConfig.cs`(수치·범위·불변식 정본), `Movement.cs`(틱당 이동 1단계), `Engagement.cs`(사거리 쌍 술어·접근 목표), `SectionProgress.cs`(앵커 전진·정지 판정 — `BattleSimulation` 비대 방지), `Chance.cs`(확률 가드)
-- 수정 `Scripts/Combat/`: `UnitState.cs`(`PosX`), `BattleSimulation.cs`(틱 단계 삽입·스폰 위치·해시·`FillSnapshot`·`_unitsById` 필드 승격), `BattleSnapshot.cs`(`UnitSnapshot.PosX` **끝에 추가**, `BattleSnapshot.AnchorX`), `TurnRules.cs`(사거리 필터 위임·`AutoPilot` 이 난수·빈도를 받음), `ActionResolver.cs`(강제 발동만 쿨타임 설정), `BattleCommand.cs`(`IsForced`), `CommandQueue.cs`(`TryPeek` — 비파괴 조회), `Formation.cs`(`ReachFu`·`SlotOffsetFu`), `BalanceConfig.cs`(`LaneConfig` 를 **23번째 인수**로)
-- 수정 `Scripts/Data/`: `Dtos.cs`·`BalanceReader.cs`(`movement` 블록 + `ReadLane`), `CharacterReader.cs`(`skillChance`), `StageReader.cs`(`approachFu`·보스 위치·파일 간 불변식), `GameData.cs`
-- 수정 데이터: `balance.json`(`movement` — **이동 끔 값**), `characters.json`(`skillChance`)
-- 수정 테스트 지원: `TestBalance.cs`·`TestUnits.cs`·`TestJson.cs`·`Snapshots.cs`
+- 수정 `Scripts/Combat/`: `UnitState.cs`(`PosX`), `BattleSimulation.cs`(틱 단계 삽입·스폰 위치·해시·`FillSnapshot`·`_unitsById` 필드 승격), `BattleSnapshot.cs`(`UnitSnapshot.PosX` **끝에 추가**, `BattleSnapshot.AnchorX`), `TurnRules.cs`(사거리 밖 게이지 상한·`AutoPilot` 이 난수를 받고 빈도는 `Setup.SkillChance` 에서 읽음), `ActionResolver.cs`(강제 발동만 쿨타임 설정), `BattleCommand.cs`(`IsForced`), `CommandQueue.cs`(`TryPeek` — 비파괴 조회), `Formation.cs`(`ReachFu`·`SlotOffsetFu`), `BalanceConfig.cs`(`LaneConfig` 를 **23번째 인수**로), `BattleSetup.cs`(조우별 `WaveApproachFu` + 좌표 상한), `UnitSetup.cs`(`SkillChance`), `AssemblyInfo.cs`(신규 — 테스트에 internal 공개)
+- 수정 `Scripts/Data/`: `Dtos.cs`·`BalanceReader.cs`(`movement` 블록 + `ReadLane`), `CharacterReader.cs`(`skillChance`), `StageReader.cs`(`approachFu`·보스 위치), `GameData.cs`(조립 지점에서 파일 간 시간 예산 검증)
+- 수정 데이터: `balance.json`(`movement` — **정지 프리셋**), `characters.json`(`skillChance`), `stage_slice.json`(`approachFu` — 최소값 1)
+- 수정 테스트 지원: `TestBalance.cs`(`StaticLane`)·`TestUnits.cs`(`skillChance` 기본 0·`Approach`)·`TestJson.cs`·`Snapshots.cs`·`TestField.cs`(신규 — 좌표만 꾸민 유닛 상태)
 
 **결정**
 - **틱 순서**: `events.Clear` → 종료 확인 → `Tick++` → 후퇴 → 흩어짐 피해 → 재사용 대기 감소 → **이동(신규)** → 게이지 충전 → 행동 → 조우 전환 → 승패. 이동이 게이지 충전 앞에 와야 사거리 판정 전에 위치가 확정된다.
@@ -126,15 +127,15 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
   | `frontSlotOffsetFu` / `backSlotOffsetFu` | fu | 0~10000 | 기준점에서 앞열·뒷열까지 |
   | `frontReachFu` / `backReachFu` | fu | 1~20000 | 앞열·뒷열 사거리 |
   | `engageMarginFu` | fu | 0~1000 | 사거리 경계보다 안쪽에 서는 여유(떨림 방지) |
-  | `formationDriftFu` | fu | 0~20000 | 진형 자리에서 벗어날 수 있는 최대 |
-  | `chargeDriftFu` | fu | 0~20000 | 돌진·침투에 허용하는 이탈 |
-  | `threatFu` | fu | 0~20000 | 자세를 정하는 위협 거리 |
-  | `stepBackFu` | fu | 0~10000 | 물러설 때 자기 자리보다 뒤에 서는 거리 |
-  | `flankChance` / `cowardChance` | 만분율 | 0~10000 | 침투·물러섬 확률 |
 
-- **교착 방지 불변식**(생성자에서 수치를 담은 예외로 검증): `backReachFu ≥ frontSlotOffsetFu + backSlotOffsetFu + engageMarginFu` · `frontReachFu > engageMarginFu` · `formationDriftFu ≤ chargeDriftFu` · **`formationDriftFu ≥ marchSpeedFu`**(한 걸음이 허용치보다 크면 ±step 진동) · `marchSpeedFu ≥ 1`.
-- **정수 함정 방어**: 한 걸음은 `min(속도, |목표−현재|)` 로 클램프한다. 거리 계산은 `long` 으로 하고 `CombatScale.ClampToInt` 로 좁힌다. ‰ 곱을 절삭해 0이 되는 경로를 만들지 않는다. `PosX` 와 앵커는 로드 시점에 "조우 접근 거리 합 + 최대 오프셋 + 사거리 ≤ `int.MaxValue`/2" 로 상한을 건다.
-- **기술 자동 사용(D7) 영향**: `AutoPilotTests` 3개(아군 기본 공격 전용·적 쿨다운 기반)와 `TurnRules.cs:50` 주석이 거짓이 된다. 피해량·처치 시점을 단정하는 시뮬레이션 테스트도 영향을 받는다. **영향 목록을 구현 착수 때 먼저 작성**하고 수정한다. 빈도 0·10000 에서 난수를 소비하지 않음을 테스트로 고정한다.
+  이 Phase 가 소비하는 6개만 둔다. 이탈 허용치(`formationDriftFu`·`chargeDriftFu`)·위협 거리·물러섬 거리·침투·비겁 확률은 **쓰는 코드와 같은 커밋**(Phase C)에서 들어온다 — 소비처 없는 키를 데이터 스키마에 먼저 굳히면 뜻이 정해지기 전에 파일·DTO·테스트가 그 이름에 묶인다.
+
+- **교착 방지 불변식**(생성자에서 수치를 담은 예외로 검증). 전제: 진형은 앞열이 `frontReachFu − engageMarginFu` 거리에 닿으면 멈추고, 뒷열은 거기서 진형 간격(`frontSlotOffsetFu + backSlotOffsetFu`)만큼 더 뒤에 선다.
+  - `marchSpeedFu ≥ 1`
+  - `frontReachFu − engageMarginFu ≥ marchSpeedFu` 와 `backReachFu − engageMarginFu ≥ marchSpeedFu` — 교전 창이 한 걸음보다 좁으면 한 틱에 창을 건너뛰어 정지선이 영영 걸리지 않는다(앞열 전멸 시 정지선이 뒷열로 떨어지므로 두 열 모두 필요하다)
+  - `backReachFu ≥ frontReachFu − engageMarginFu + frontSlotOffsetFu + backSlotOffsetFu` — 덮지 못하면 뒷열이 전투 내내 한 번도 때리지 못한다
+- **정수 함정 방어**: 한 걸음은 `min(속도, |목표−현재|)` 로 클램프한다. 거리 계산은 `long` 으로 하고 `CombatScale.ClampToInt` 로 좁힌다. ‰ 곱을 절삭해 0이 되는 경로를 만들지 않는다. `PosX` 와 앵커의 상한은 `BattleSetup` 생성자가 조우당 `MaxApproachFu`(20000)와 접근 거리 합 `MaxFieldSpanFu`(10,000,000)로 건다 — 전투 중 전진분(속도 ≤ 1000 × 제한 시간 ≤ 6000틱)을 더해도 `int` 범위의 1% 안이다.
+- **기술 자동 사용(D7) 영향**: `AutoPilotTests` 3개(아군 기본 공격 전용·적 쿨다운 기반)와 `TurnRules.cs:50` 주석이 거짓이 된다. 피해량·처치 시점을 단정하는 시뮬레이션 테스트도 영향을 받는다. 구현에서 `AutoPilotTests` 3개를 빈도 기반으로 고쳤고, 빈도 0·10000 에서 난수를 소비하지 않음과 대기 명령이 있으면 롤을 돌지 않음을 테스트로 고정했다.
 - **데이터 검증**(로드 시점, 실패는 파일명·필드 경로를 담은 예외):
 
   | 파일 | 필드 | 검증 |
@@ -157,7 +158,7 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 **검증**
 - 기존 226개: 위치 관련은 **정지 프리셋**(D11) 픽스처로 보존, 기술 자동 사용 영향분은 수정. 수정 대상은 "통과"로 세지 않고 별도 집계한다.
 - 신규 ~55: `Lane` 8 · `Movement` 10 · `Engagement` 8(사거리 경계 `=`/`+1` 포함) · `SectionProgress` 6 · `LaneConfig` 불변식 8 · `Chance` 4 · 데이터 검증 8 · 스냅샷·해시 3
-- `StaticPreset_NeverMovesAndNeverConsumesRandom` · `StaticPreset_NoOpponent_ConsumesGaugeLikeLegacy` · `NoTargetInReach_KeepsCommandAndGauge` · `OnlyPosXDiffers_HashDiffers`
+- `StaticPreset_NeverMovesAndConsumesNoRandom` · `LastEnemyFallingInTheSameTick_StillLetsTheNextAllyAct` · `OutOfReach_KeepsThePendingCommandAndTheGauge` · `OutOfReachTicks_ConsumeNoRandom` · `OnlyPosXDiffers_HashDiffers`
 - 결정론: 이동이 켜진 시드 시나리오 2회 실행 동일. 커버리지 `TAoB.Combat` 80%+ 측정.
 
 ## Phase B — 횡스크롤 화면 (재미 판정 1차)
@@ -166,7 +167,7 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 **변경 파일**
 - 신규 `Scripts/View/`: `LaneView.cs`(중첩 캔버스·스크롤·띠 재사용·패럴랙스·카메라 리드), `LaneScroll.cs`(순수 계산)
 - 수정 `Scripts/View/`: `BattleLayout.cs`(`UnitY` 분리·`PxPerFu`·띠 상수), `UnitView.cs`(루트 X 를 `PosX` 보간, `!previous.IsOnField` 면 보간 없이 현재 위치), `BattleBootstrap.cs`(`Lane` 생성·`PositionOf` 가 `Lane` 오프셋과 `Field` 흔들림을 모두 반영), `BattleHud.cs`(조우 배너 제거·상시 카운터·성능 표시)
-- 수정 데이터: `balance.json`(`movement` 실값), `stage_slice.json`(조우 4개·`approachFu`·60초)
+- 수정 데이터: `balance.json`(`movement` 실값), `stage_slice.json`(조우 4개·`approachFu` 실값·60초)
 - 수정: `Editor/PlayModeSmoke.cs`(계층 경로), `Scripts/View/DevCapture.cs`(이동 구간 캡처)
 
 **결정**
@@ -178,14 +179,14 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 
 **검증**
 - **기준값 먼저**: Phase 5 APK(정적 장면)로 같은 지표를 재 둔다. 그 뒤 Phase B APK 와 비교해 **중급 기기에서 최대 프레임 시간 p95 > 33ms 면 Phase F-2 착수**로 판정한다.
-- 신규 ~14: `LaneScroll` 랩어라운드(음수 나머지·큰 `AnchorX`)·보간 α 0/1·패럴랙스·`PxPerFu` 반올림, 좌표 테스트 2개 재작성, **실값으로 "N틱 안에 조우가 전환된다"**(교착 조기 발견), **이동을 켠 상태의 배속 결정론**(1틱씩 vs 묶어 실행 결과 동일)
+- 신규 ~17: `LaneScroll` 랩어라운드(음수 나머지·큰 `AnchorX`)·보간 α 0/1·패럴랙스·`PxPerFu` 반올림, 좌표 테스트 2개 재작성, **실값으로 "N틱 안에 조우가 전환된다"**(교착 조기 발견), **이동을 켠 상태의 배속 결정론**(1틱씩 vs 묶어 실행 결과 동일), 그리고 Phase A 코드 리뷰가 실값으로 미룬 3건 — **조우 전환 뒤 재행군·재교전**, **행군 중 제한 시간 만료**, **행군 중 후퇴**
 - 스모크 오류 0건 + 재시작 누수 · 자동 캡처로 등장·행군·교전 확인 · 폰 수동 확인
 
 ## Phase C — 선호와 규율 (역할 행동)
 **목표**: 동료가 성향대로 움직이고, 적이 뒷열로 파고들며, 규율이 낮으면 진형이 무너진다.
 
 **변경 파일**
-- 신규 `Scripts/Combat/Preference.cs`(선호 4종의 이동 의도), `Tactics.cs`(규율 판정·조우 시작 결정)
+- 신규 `Scripts/Combat/Preference.cs`(선호 4종의 이동 의도 — **대상별 사거리 필터를 여기서 함께 넣는다**), `Tactics.cs`(규율 판정·조우 시작 결정)
 - 수정: `characters.json`(`preference`·`formationChance`), `CharacterReader.cs`·`Dtos.cs`, `UnitSetup.cs`(불변 설정), **`UnitState.cs`(조우마다 뽑는 자세·전술 — 지속 상태이므로 해시에 포함)**, `Movement.cs`·`Engagement.cs`·`TurnRules.cs`(도발 가중치)
 - 수정 `Scripts/View/`: `BattleEffects.cs`·`UnitView.cs`(침투 궤적, 성향 표식)
 
@@ -297,3 +298,21 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - MEDIUM: 구조 규칙(시작 틱 카운트·완료 판정 위치·캐스팅 중 게이지·`CanAct` 충돌)과 기존 즉시 구조 테스트 영향 목록 → Phase D 결정에 명시.
   - MEDIUM: Phase C 새 필드 검증 행·소모품/구조 수치 범위·파일 간 불변식 위치 → Phase A 검증 표 확장(`preference` 는 `int`+`Missing` 으로 읽는다).
   - MEDIUM: Phase B 에 실값 교착·배속 결정론 테스트 추가, Phase C 수동 시나리오 추가, Phase 0 검증을 grep 으로 구체화.
+- 2026-10-02 **Phase A 구현 중 결정**(계획에 없던 것만):
+  - 뒷열 사거리 불변식을 실제 기하에 맞춰 **교체**했다. 옛 식(`frontSlotOffsetFu + backSlotOffsetFu + engageMarginFu`)은 앞열이 멈춰 서는 거리를 빼먹어 앞열 사거리가 긴 구성에서 뒷열이 영원히 못 때리는 설정을 통과시켰다. 두 식은 포함 관계가 아니다(`frontReachFu < 2 × engageMarginFu` 면 옛 식이 더 엄격하다) — 새 식이 기하를 그대로 옮긴 것이므로 옛 식은 버린다.
+  - 조우별 접근 거리는 `BattleSetup` 이 들고 간다(`WaveApproachFu`). 적 진형 기준점이 그 누적 합이라 규칙 모듈이 알아야 하고, 스테이지 데이터에서 오는 값이라 밸런스에 둘 수 없다.
+  - `approachFu` 는 **Phase A 에서** `stage_slice.json` 에 최소값 1 로 넣는다. 리더가 필수로 요구하는 필드를 Phase B 까지 비워 두면 그 사이 실행이 로드 실패로 죽는다. 조우 4개·실값·60초는 계획대로 Phase B.
+  - 규칙 모듈에 `AssemblyInfo.cs` 를 두어 `TAoB.Combat.Tests` 에만 internal 을 연다. 대안인 "검증할 타입을 public" 은 표시 계층에까지 내부 규칙을 노출해 한 방향 참조 경계가 흐려진다.
+  - `characters.json` 의 기술 빈도는 **위력의 역순**으로 두고 광역(`All`) 기술은 한 단계 더 낮춘다 — 단일 1300~2000 에 3400·3200·2600·2200·1400, 광역 1500·1800 에 1200·800. 산식 없는 값이 흩어지면 Phase E 밸런스에서 무엇을 움직여야 하는지 알 수 없다.
+- 2026-10-02 **`/plan-review --code` (11 리뷰: 코드 7 scope + 자산 2 + 문서 2 — CRITICAL 0 · HIGH 3 · MEDIUM 11 · LOW 9)** 반영:
+  - HIGH: `ActionResolver.RollCritical` 이 `Chance.Roll` 과 같은 가드를 복제해 D8 "단일 진입점"이 거짓이었다(arch·quality·lang·comments 4중 지적) → `Chance.Roll` 호출로 교체.
+  - HIGH: 교전 창(`사거리 − 여유`)이 한 걸음보다 좁으면 정지선이 영영 안 걸려 적을 지나쳐 행군한다. 뒷열은 `backReachFu ≤ engageMarginFu` 도 통과했다 → 두 열 모두 창 ≥ 한 걸음 불변식 추가.
+  - HIGH: 난수 소비 순서와 `BattleSetup.ValidateApproach` 에 검증이 없었다 → `OutOfReachTicks_ConsumeNoRandom`·`PendingForcedCommand_SkipsTheFrequencyRoll`·접근 거리 6개 테스트 추가.
+  - MEDIUM: 상대가 사거리 밖으로 바뀐 틱에 모아둔 초과 게이지가 몰수돼 D6 "게이지 유지"가 깨졌다 → 상한을 충전분에만 적용한다.
+  - MEDIUM: Phase C 전용 수치 6개와 `Lane.Clamp` 가 소비처 없이 들어와 있었다 → 지우고 Phase C 로 미뤘다(위 수치 표).
+  - MEDIUM: 사거리 밖에서 실행 불가가 된 구조·과부하 명령이 관문을 통과해 폴백 기본 공격이 사거리 밖을 때릴 수 있었다 → 관문이 실행 가능 여부까지 본다.
+  - MEDIUM: 큐가 `IsForced` 거짓인 명령을 받으면 강제 발동 쿨타임을 우회할 수 있었다 → `Enqueue` 가 거른다.
+  - MEDIUM: `OnlyPosXDiffers_HashDiffers`·`MovingFormation_ChangesTheOutcome` 가 이름과 달리 아무것도 분리하지 못했다 → 자리 간격만 다른 쌍, 이벤트 해시·전투 길이 비교로 교체.
+  - MEDIUM: 여유 0 픽스처가 `IsEngaged`/`CanReach` 를 구분하지 못하고 전원 뒷열 폴백 테스트가 없었다 → 두 테스트 추가.
+  - MEDIUM: 데이터 경계(빈도 대역 양끝·접근 거리 0/상한/초과·시간 예산 경계)가 비어 있었다 → 5개 추가.
+  - LOW·주석: 범위 상한을 `LaneConfig` 상수로 모으고, 거짓이 된 주석 6건(빈사와 기준점, `IsForced` 검사 위치, 해시 순회, 테스트 요약)을 고쳤다. 남은 과제 — 완료된 수직 슬라이스 계획서를 가리키는 `계획서 Phase N` 주석 48곳이 활성 계획서와 혼동된다(별도 커밋에서 일괄 수정).

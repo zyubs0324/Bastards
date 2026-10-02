@@ -23,6 +23,10 @@ namespace TAoB.Data.Tests
     { ""maxExcessPermille"": 1000, ""successChance"": 4000, ""scatterChance"": 3000, ""runawayChance"": 2000, ""breakthroughChance"": 1000 },
     { ""successChance"": 1000, ""scatterChance"": 4500, ""runawayChance"": 4400, ""breakthroughChance"": 100 }
   ],
+  ""movement"": {
+    ""marchSpeedFu"": 1, ""frontSlotOffsetFu"": 0, ""backSlotOffsetFu"": 0,
+    ""frontReachFu"": 20000, ""backReachFu"": 20000, ""engageMarginFu"": 0
+  },
   ""affinities"": [
     { ""attacker"": ""Knight"", ""defender"": ""Perceptive"", ""level"": ""Strong"" }
   ]
@@ -35,18 +39,18 @@ namespace TAoB.Data.Tests
 
         public const string Characters = @"{
   ""characters"": [
-    { ""id"": 1, ""name"": ""기사"", ""side"": ""Ally"", ""job"": ""Knight"", ""row"": ""Front"",
+    { ""id"": 1, ""name"": ""기사"", ""side"": ""Ally"", ""job"": ""Knight"", ""row"": ""Front"", ""skillChance"": 2000,
       ""stats"": { ""atk"": 40, ""def"": 5, ""hp"": 300, ""spd"": 100, ""mnd"": 20, ""res"": 30 },
       ""skill"": { ""powerPermille"": 1500, ""targetRule"": ""FrontFirst"", ""cooldownTicks"": 50 },
       ""magitoolId"": ""tool"" },
-    { ""id"": 2, ""name"": ""마법사"", ""side"": ""Ally"", ""job"": ""Mage"", ""row"": ""Back"",
+    { ""id"": 2, ""name"": ""마법사"", ""side"": ""Ally"", ""job"": ""Mage"", ""row"": ""Back"", ""skillChance"": 1500,
       ""stats"": { ""atk"": 50, ""def"": 5, ""hp"": 200, ""spd"": 100, ""mnd"": 60, ""res"": 10 },
       ""skill"": { ""powerPermille"": 1500, ""targetRule"": ""All"", ""canOverload"": true, ""cooldownTicks"": 50 },
       ""catalystId"": ""cat"" },
-    { ""id"": 101, ""name"": ""적"", ""side"": ""Enemy"", ""job"": ""Perceptive"", ""row"": ""Front"",
+    { ""id"": 101, ""name"": ""적"", ""side"": ""Enemy"", ""job"": ""Perceptive"", ""row"": ""Front"", ""skillChance"": 2000,
       ""stats"": { ""atk"": 30, ""def"": 5, ""hp"": 200, ""spd"": 100, ""mnd"": 10, ""res"": 10 },
       ""skill"": { ""powerPermille"": 1500, ""targetRule"": ""FrontFirst"", ""cooldownTicks"": 50 } },
-    { ""id"": 201, ""name"": ""보스"", ""side"": ""Enemy"", ""job"": ""Knight"", ""row"": ""Front"", ""isBoss"": true,
+    { ""id"": 201, ""name"": ""보스"", ""side"": ""Enemy"", ""job"": ""Knight"", ""row"": ""Front"", ""isBoss"": true, ""skillChance"": 2000,
       ""stats"": { ""atk"": 40, ""def"": 10, ""hp"": 500, ""spd"": 100, ""mnd"": 10, ""res"": 10 },
       ""skill"": { ""powerPermille"": 1500, ""targetRule"": ""LowestHp"", ""cooldownTicks"": 50 } }
   ]
@@ -56,7 +60,7 @@ namespace TAoB.Data.Tests
   ""timeLimitSeconds"": 60,
   ""precondition"": ""None"",
   ""allyIds"": [1, 2],
-  ""waves"": [ { ""enemyIds"": [101] }, { ""enemyIds"": [201] } ]
+  ""waves"": [ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 } ]
 }";
 
         /// <summary>적 캐릭터를 <paramref name="count"/>명 더 붙인 characters.json — ID 는 202 부터. 편성 상한 테스트용.</summary>
@@ -68,7 +72,7 @@ namespace TAoB.Data.Tests
                 int id = 202 + i;
                 extra.Append(@",
     { ""id"": " + id + @", ""name"": ""적" + id + @""", ""side"": ""Enemy"", ""job"": ""Knight"", ""row"": ""Front"",
-      ""stats"": { ""atk"": 30, ""def"": 5, ""hp"": 200, ""spd"": 100, ""mnd"": 10, ""res"": 10 },
+      ""stats"": { ""atk"": 30, ""def"": 5, ""hp"": 200, ""spd"": 100, ""mnd"": 10, ""res"": 10 }, ""skillChance"": 2000,
       ""skill"": { ""powerPermille"": 1500, ""targetRule"": ""FrontFirst"", ""cooldownTicks"": 50 } }");
             }
 

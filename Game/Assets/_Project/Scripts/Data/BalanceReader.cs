@@ -8,11 +8,15 @@ namespace TAoB.Data
     {
         // 배열 크기 상한은 밸런스 값이 아니라 로더 규칙이다. 상성표는 직업 조합 수를 넘을 수 없다(중복은 AffinityTable 이 거부).
         public const int MaxOverloadTiers = 10;
+
+        /// <summary>이동·교전 수치가 들어 있는 블록 이름. 오류 메시지의 필드 경로 접두가 된다.</summary>
+        private const string LaneBlock = "movement";
         public static readonly int MaxAffinities = JobCount() * JobCount();
 
         public static BalanceConfig ReadBalance(string file, BalanceDto dto)
         {
             OverloadTier[] tiers = ReadTiers(file, dto.overloadTiers);
+            LaneConfig lane = ReadLane(file, dto.movement);
 
             // 범위는 BalanceConfig 생성자가 정본이다. 여기서는 누락만 걸러 생성자에 넘기고, 생성자가 던진 예외의
             // 매개변수 이름(= JSON 키)을 필드명으로 옮긴다. 하한·상한을 로더에 다시 적지 않는다.
@@ -40,7 +44,8 @@ namespace TAoB.Data
                     Required(file, nameof(dto.runawayDamagePermille), dto.runawayDamagePermille),
                     Required(file, nameof(dto.runawaySelfDamagePermille), dto.runawaySelfDamagePermille),
                     Required(file, nameof(dto.breakthroughMndGain), dto.breakthroughMndGain),
-                    tiers);
+                    tiers,
+                    lane);
             }
             catch (ArgumentException ex)
             {
@@ -65,6 +70,36 @@ namespace TAoB.Data
             }
 
             return FieldCheck.Build(file, name, () => new AffinityTable(entries));
+        }
+
+        /// <summary>
+        /// movement 블록 → <see cref="LaneConfig"/>. 범위와 교착 방지 불변식은 생성자가 정본이므로
+        /// 여기서는 누락만 걸러 넘기고, 생성자 예외의 매개변수 이름에 블록 이름을 붙여 필드 경로로 되돌린다.
+        /// </summary>
+        private static LaneConfig ReadLane(string file, MovementDto dto)
+        {
+            if (dto == null) throw new GameDataException(file, LaneBlock, "필드가 없습니다.");
+
+            try
+            {
+                return new LaneConfig(
+                    Required(file, LaneField(nameof(dto.marchSpeedFu)), dto.marchSpeedFu),
+                    Required(file, LaneField(nameof(dto.frontSlotOffsetFu)), dto.frontSlotOffsetFu),
+                    Required(file, LaneField(nameof(dto.backSlotOffsetFu)), dto.backSlotOffsetFu),
+                    Required(file, LaneField(nameof(dto.frontReachFu)), dto.frontReachFu),
+                    Required(file, LaneField(nameof(dto.backReachFu)), dto.backReachFu),
+                    Required(file, LaneField(nameof(dto.engageMarginFu)), dto.engageMarginFu));
+            }
+            catch (ArgumentException ex)
+            {
+                string field = string.IsNullOrEmpty(ex.ParamName) ? LaneBlock : LaneField(ex.ParamName);
+                throw new GameDataException(file, field, ex.Message);
+            }
+        }
+
+        private static string LaneField(string name)
+        {
+            return LaneBlock + "." + name;
         }
 
         private static int Required(string file, string field, int value)

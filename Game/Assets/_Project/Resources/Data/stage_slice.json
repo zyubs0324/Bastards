@@ -3,7 +3,7 @@
   "precondition": "NoAllyDowned",
   "allyIds": [1, 2, 3],
   "waves": [
-    { "enemyIds": [101, 102, 103] },
-    { "enemyIds": [201] }
+    { "enemyIds": [101, 102, 103], "approachFu": 1 },
+    { "enemyIds": [201], "approachFu": 1 }
   ]
 }

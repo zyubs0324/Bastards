@@ -13,10 +13,18 @@ namespace TAoB.Combat
 
         private readonly BattleSetup _setup;
         private readonly BalanceConfig _balance;
+        private readonly LaneConfig _lane;
+        private readonly IRandom _random;
 
         /// <summary>설정 순서(아군 → 웨이브). 스냅샷 인덱스와 해시 순서의 기준.</summary>
         private readonly UnitState[] _units;
+
+        /// <summary>ID 오름차순. 위치·대상 판정이 틱마다 정렬하지 않고 순서를 얻는 기준.</summary>
+        private readonly UnitState[] _unitsById;
         private readonly UnitState[] _actionOrder;
+
+        /// <summary>조우별 적 진형 기준점(접근 거리 누적 합).</summary>
+        private readonly int[] _waveAnchorX;
         private readonly Dictionary<int, UnitState> _byId = new Dictionary<int, UnitState>();
         private readonly CommandQueue _queue = new CommandQueue();
         private readonly ActionResolver _resolver;
@@ -25,7 +33,9 @@ namespace TAoB.Combat
         {
             _setup = setup ?? throw new ArgumentNullException(nameof(setup));
             if (random == null) throw new ArgumentNullException(nameof(random));
+            _random = random;
             _balance = setup.Balance;
+            _lane = _balance.Lane;
 
             var units = new List<UnitState>();
             foreach (UnitSetup ally in setup.Allies)
@@ -47,10 +57,14 @@ namespace TAoB.Combat
                 _byId.Add(unit.Id, unit);
             }
 
-            var unitsById = (UnitState[])_units.Clone();
-            Array.Sort(unitsById, (a, b) => a.Id.CompareTo(b.Id));
+            _unitsById = (UnitState[])_units.Clone();
+            Array.Sort(_unitsById, (a, b) => a.Id.CompareTo(b.Id));
             _actionOrder = ActionGaugeScheduler.BuildActionOrder(_units);
-            _resolver = new ActionResolver(_balance, setup.Affinity, random, unitsById, _byId, _queue);
+            _resolver = new ActionResolver(_balance, setup.Affinity, random, _unitsById, _byId, _queue);
+
+            _waveAnchorX = BuildWaveAnchors(setup);
+            EnemyAnchorX = _waveAnchorX[0];
+            PlaceUnits();
             Outcome = BattleOutcome.InProgress;
         }
 
@@ -58,6 +72,12 @@ namespace TAoB.Combat
         public BattleOutcome Outcome { get; private set; }
         public int CurrentWave { get; private set; }
         public int WaveCount => _setup.Waves.Count;
+
+        /// <summary>아군 진형 기준점(fu). 전진·정지는 <see cref="SectionProgress"/> 가 정한다.</summary>
+        public int AnchorX { get; private set; }
+
+        /// <summary>지금 조우 적의 진형 기준점(fu). 조우가 바뀔 때만 움직인다.</summary>
+        public int EnemyAnchorX { get; private set; }
 
         public CommandResult Enqueue(BattleCommand command)
         {
@@ -71,6 +91,9 @@ namespace TAoB.Combat
 
             if (!_byId.TryGetValue(command.ActorId, out UnitState actor)) return CommandResult.RejectedUnknownUnit;
             if (actor.Side != Side.Ally || command.Kind == CommandKind.BasicAttack) return CommandResult.RejectedNotControllable;
+            // 큐는 사용자 경로 전용이다 — 자동 판단이 만든 명령은 그 틱에 바로 실행되고 큐를 거치지 않는다(계획서 D7).
+            // 이 가드가 있어 큐에서 나온 기술은 항상 강제 발동이고, 재사용 대기 검사를 따로 갈라 둘 필요가 없다.
+            if (!command.IsForced) return CommandResult.RejectedNotControllable;
             if (actor.Condition != UnitCondition.Normal) return CommandResult.RejectedIncapacitated;
 
             switch (command.Kind)
@@ -108,7 +131,9 @@ namespace TAoB.Combat
 
             _resolver.ApplyScatterLoss(Tick, events);
             AdvanceCooldowns();
-            ActionGaugeScheduler.Fill(_units, _balance);
+            // 이동이 게이지 충전보다 앞에 와야 사거리 판정 전에 이번 틱의 위치가 확정된다.
+            AdvanceSection();
+            ActionGaugeScheduler.Fill(_units, _unitsById, _balance);
             ResolveActions(events);
 
             bool waveCleared = IsWaveCleared(CurrentWave);
@@ -138,6 +163,8 @@ namespace TAoB.Combat
             target.Outcome = Outcome;
             target.CurrentWave = CurrentWave;
             target.WaveCount = WaveCount;
+            target.AnchorX = AnchorX;
+            target.EnemyAnchorX = EnemyAnchorX;
             for (int i = 0; i < _units.Length; i++)
             {
                 UnitState unit = _units[i];
@@ -158,7 +185,8 @@ namespace TAoB.Combat
                     tool != null,
                     unit.MagitoolDurability,
                     tool != null ? tool.MaxDurability : 0,
-                    unit.Setup.IsBoss));
+                    unit.Setup.IsBoss,
+                    unit.PosX));
             }
         }
 
@@ -181,7 +209,12 @@ namespace TAoB.Combat
             {
                 UnitState unit = _actionOrder[i];
                 if (!ActionGaugeScheduler.IsReady(unit, _balance)) continue;
+                // 사거리 밖이면 명령도 게이지도 건드리지 않고 넘긴다 — 사용자가 누른 기술이 조용히 사라지지 않게(계획서 D6).
+                if (!CanActFromHere(unit)) continue;
 
+                // 사거리 관문은 "때릴 상대가 있는가"만 본다. 대상 선택은 거리를 보지 않는다 —
+                // 열별 좌표가 고정인 이 Phase 에서는 앞열 우선 선택이 곧 최근접 선택이고,
+                // 대상별 사거리 필터는 선호 기반 대상 선택(Phase C·F)과 같은 커밋에서 들어온다.
                 BattleCommand command = ChooseCommand(unit, events);
                 ActionGaugeScheduler.Consume(unit, _balance);
                 _resolver.Execute(unit, command, Tick, events);
@@ -196,7 +229,29 @@ namespace TAoB.Combat
                 events.Add(new BattleEvent(BattleEventKind.CommandFallback, Tick, unit.Id, pending.TargetId, 0, (int)pending.Kind));
             }
 
-            return AutoPilot.Choose(unit);
+            return AutoPilot.Choose(unit, _random);
+        }
+
+        /// <summary>
+        /// 지금 자리에서 행동이 성립하는가. 사거리 안에 상대가 있으면 성립한다.
+        /// 상대가 전장에 아예 없으면(같은 틱에 마지막 적이 쓰러진 경우) 기존처럼 행동한다 — 사거리 때문에 건너뛰는 것과 구분한다.
+        /// 위치와 무관한 대기 명령(과부하·구조)은 사거리를 보지 않는다.
+        /// </summary>
+        private bool CanActFromHere(UnitState unit)
+        {
+            if (Engagement.HasReachableOpponent(unit, _unitsById, _lane)) return true;
+            if (!Engagement.HasOpponentOnField(unit, _unitsById)) return true;
+
+            // 실행 가능 여부까지 본다 — 조건이 깨진 구조 명령으로 관문을 통과하면
+            // 폴백 기본 공격이 사거리 밖 상대를 때린다.
+            return _queue.TryPeek(unit.Id, out BattleCommand pending)
+                && IsPositionIndependent(pending.Kind)
+                && IsExecutable(unit, pending);
+        }
+
+        private static bool IsPositionIndependent(CommandKind kind)
+        {
+            return kind == CommandKind.Overload || kind == CommandKind.Rescue;
         }
 
         private bool IsExecutable(UnitState unit, BattleCommand command)
@@ -230,6 +285,41 @@ namespace TAoB.Combat
             return OverloadResolver.RiskLevel(unit.Setup.Catalyst.OverloadExcessPermille(unit.Mnd, _balance), _balance);
         }
 
+        /// <summary>진형 기준점을 전진시키고 모든 유닛을 자기 자리 쪽으로 한 걸음 옮긴다.</summary>
+        private void AdvanceSection()
+        {
+            int advanceFu = SectionProgress.AdvanceFu(_unitsById, _lane);
+            if (advanceFu > 0) AnchorX = CombatScale.ClampToInt((long)AnchorX + advanceFu);
+            Movement.Advance(_unitsById, AnchorX, EnemyAnchorX, _lane);
+        }
+
+        private static int[] BuildWaveAnchors(BattleSetup setup)
+        {
+            var anchors = new int[setup.Waves.Count];
+            long cumulative = 0;
+            for (int wave = 0; wave < anchors.Length; wave++)
+            {
+                cumulative += setup.WaveApproachFu[wave];
+                anchors[wave] = CombatScale.ClampToInt(cumulative);
+            }
+
+            return anchors;
+        }
+
+        /// <summary>
+        /// 모든 유닛의 좌표를 전투 시작 전에 확정한다. 아직 등장하지 않은 조우의 적도 함께 두어,
+        /// 표시 계층이 등장 순간에 낡은 좌표에서 미끄러지지 않게 한다.
+        /// </summary>
+        private void PlaceUnits()
+        {
+            for (int i = 0; i < _units.Length; i++)
+            {
+                UnitState unit = _units[i];
+                int anchorX = unit.Side == Side.Ally ? AnchorX : _waveAnchorX[unit.WaveIndex];
+                unit.PosX = Movement.SlotFu(unit, anchorX, _lane);
+            }
+        }
+
         private void AdvanceCooldowns()
         {
             for (int i = 0; i < _units.Length; i++)
@@ -252,6 +342,7 @@ namespace TAoB.Combat
         private void StartWave(int wave, List<BattleEvent> events)
         {
             CurrentWave = wave;
+            EnemyAnchorX = _waveAnchorX[wave];
             for (int i = 0; i < _units.Length; i++)
             {
                 if (_units[i].WaveIndex == wave) _units[i].IsOnField = true;
@@ -306,9 +397,13 @@ namespace TAoB.Combat
             hasher.Add(Tick);
             hasher.Add((int)Outcome);
             hasher.Add(CurrentWave);
+            hasher.Add(AnchorX);
+            hasher.Add(EnemyAnchorX);
+            hasher.Add(_queue.RetreatRequested ? 1 : 0);
             foreach (UnitState unit in _units)
             {
                 hasher.Add(unit.Id);
+                hasher.Add(unit.PosX);
                 hasher.Add(unit.IsOnField ? 1 : 0);
                 hasher.Add((int)unit.Condition);
                 hasher.Add(unit.Hp);
@@ -316,6 +411,12 @@ namespace TAoB.Combat
                 hasher.Add(unit.ActionGauge);
                 hasher.Add(unit.Cooldown);
                 hasher.Add(unit.MagitoolDurability);
+                // 대기 명령은 사거리 판정으로 수명이 길어졌으므로 해시에 넣는다.
+                // 딕셔너리를 순회하지 않고 유닛 순서대로 조회해 순서를 고정한다.
+                bool hasPending = _queue.TryPeek(unit.Id, out BattleCommand pending);
+                hasher.Add(hasPending ? (int)pending.Kind : -1);
+                hasher.Add(hasPending ? pending.TargetId : BattleEvent.NoUnit);
+                hasher.Add(hasPending && pending.IsForced ? 1 : 0);
             }
 
             return hasher.Value;

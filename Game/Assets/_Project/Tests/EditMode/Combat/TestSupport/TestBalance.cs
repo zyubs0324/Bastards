@@ -18,6 +18,22 @@ namespace TAoB.Combat.Tests
             };
         }
 
+        /// <summary>
+        /// 정지 프리셋(계획서 D11). 사거리가 전장보다 크고 자리 간격·여유가 0이라 모든 쌍이 사거리 안이고,
+        /// 교전이 늘 성립해 기준점이 멈춘 채로 아무도 움직이지 않는다. 그래서 위치가 규칙에 들어와도 기존 동작이 그대로 남는다.
+        /// 이동을 보는 테스트는 필요한 값만 이름으로 바꿔 쓴다.
+        /// </summary>
+        public static LaneConfig StaticLane(
+            int marchSpeedFu = 1,
+            int frontSlotOffsetFu = 0,
+            int backSlotOffsetFu = 0,
+            int frontReachFu = LaneConfig.MaxReachFu,
+            int backReachFu = LaneConfig.MaxReachFu,
+            int engageMarginFu = 0)
+        {
+            return new LaneConfig(marchSpeedFu, frontSlotOffsetFu, backSlotOffsetFu, frontReachFu, backReachFu, engageMarginFu);
+        }
+
         public static BalanceConfig Create(
             int defenseK = 100,
             int weakAffinityPermille = 750,
@@ -40,7 +56,8 @@ namespace TAoB.Combat.Tests
             int runawayDamagePermille = 1000,
             int runawaySelfDamagePermille = 200,
             int breakthroughMndGain = 10,
-            IReadOnlyList<OverloadTier> overloadTiers = null)
+            IReadOnlyList<OverloadTier> overloadTiers = null,
+            LaneConfig lane = null)
         {
             return new BalanceConfig(
                 defenseK,
@@ -64,7 +81,8 @@ namespace TAoB.Combat.Tests
                 runawayDamagePermille,
                 runawaySelfDamagePermille,
                 breakthroughMndGain,
-                overloadTiers ?? DefaultTiers());
+                overloadTiers ?? DefaultTiers(),
+                lane ?? StaticLane());
         }
     }
 }

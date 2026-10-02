@@ -22,12 +22,33 @@ namespace TAoB.Data
 
             WaveDto[] waveDtos = FieldCheck.Items(file, "waves", dto.waves, 1, MaxWaves);
             var waves = new List<IReadOnlyList<int>>(waveDtos.Length);
+            var approach = new List<int>(waveDtos.Length);
             for (int i = 0; i < waveDtos.Length; i++)
             {
-                waves.Add(ReadIds(file, $"waves[{i}].enemyIds", waveDtos[i].enemyIds, Side.Enemy, MaxEnemiesPerWave, characters, placed));
+                string field = $"waves[{i}]";
+                IReadOnlyList<int> enemyIds = ReadIds(file, field + ".enemyIds", waveDtos[i].enemyIds, Side.Enemy, MaxEnemiesPerWave, characters, placed);
+                RejectEarlyBoss(file, field + ".enemyIds", enemyIds, characters, isLastWave: i == waveDtos.Length - 1);
+                waves.Add(enemyIds);
+                approach.Add(FieldCheck.Int(file, field + ".approachFu", waveDtos[i].approachFu, 1, BattleSetup.MaxApproachFu));
             }
 
-            return new StageData(seconds * BattleSimulation.TicksPerSecond, precondition, allyIds, waves.AsReadOnly());
+            return new StageData(
+                seconds * BattleSimulation.TicksPerSecond, precondition, allyIds, waves.AsReadOnly(), approach.AsReadOnly());
+        }
+
+        /// <summary>보스는 마지막 조우에만 선다 — 중간 조우에 서면 뒤 조우가 보스보다 약해 전장의 절정이 사라진다.</summary>
+        private static void RejectEarlyBoss(
+            string file, string field, IReadOnlyList<int> enemyIds, IReadOnlyList<CharacterData> characters, bool isLastWave)
+        {
+            if (isLastWave) return;
+
+            for (int j = 0; j < enemyIds.Count; j++)
+            {
+                if (CharacterData.Find(characters, enemyIds[j]).IsBoss)
+                {
+                    throw new GameDataException(file, $"{field}[{j}]", $"보스 {enemyIds[j]} 는 마지막 조우에만 설 수 있습니다.");
+                }
+            }
         }
 
         private static IReadOnlyList<int> ReadIds(

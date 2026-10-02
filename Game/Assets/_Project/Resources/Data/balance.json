@@ -26,6 +26,14 @@
     { "maxExcessPermille": 2000, "successChance": 2000, "scatterChance": 4000, "runawayChance": 3500, "breakthroughChance": 500 },
     { "successChance": 1000, "scatterChance": 4500, "runawayChance": 4400, "breakthroughChance": 100 }
   ],
+  "movement": {
+    "marchSpeedFu": 1,
+    "frontSlotOffsetFu": 0,
+    "backSlotOffsetFu": 0,
+    "frontReachFu": 20000,
+    "backReachFu": 20000,
+    "engageMarginFu": 0
+  },
   "affinities": [
     { "attacker": "Knight", "defender": "Perceptive", "level": "Strong" },
     { "attacker": "Perceptive", "defender": "Mage", "level": "Strong" },

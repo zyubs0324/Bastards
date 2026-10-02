@@ -14,12 +14,13 @@ namespace TAoB.View.Tests
             Row row = Row.Front,
             int hp = 100,
             int overloadRisk = 0,
-            bool isBoss = false)
+            bool isBoss = false,
+            int posX = 0)
         {
             return new UnitSnapshot(
                 id, side, row, isOnField, condition,
                 hp, 100, 0, 1000, 0,
-                overloadRisk, 50, false, 0, 0, isBoss);
+                overloadRisk, 50, false, 0, 0, isBoss, posX);
         }
 
         public static IReadOnlyList<UnitSnapshot> List(params UnitSnapshot[] units)

@@ -30,7 +30,8 @@ namespace TAoB.Combat
             bool hasMagitool,
             int magitoolDurability,
             int magitoolMaxDurability,
-            bool isBoss)
+            bool isBoss,
+            int posX)
         {
             Id = id;
             Side = side;
@@ -48,6 +49,7 @@ namespace TAoB.Combat
             MagitoolDurability = magitoolDurability;
             MagitoolMaxDurability = magitoolMaxDurability;
             IsBoss = isBoss;
+            PosX = posX;
         }
 
         public int Id { get; }
@@ -72,6 +74,9 @@ namespace TAoB.Combat
         public int MagitoolDurability { get; }
         public int MagitoolMaxDurability { get; }
         public bool IsBoss { get; }
+
+        /// <summary>전장 1차원 좌표(fu). 표시 계층이 두 스냅샷 사이를 보간한다.</summary>
+        public int PosX { get; }
     }
 
     /// <summary>
@@ -96,6 +101,12 @@ namespace TAoB.Combat
         public BattleOutcome Outcome { get; internal set; }
         public int CurrentWave { get; internal set; }
         public int WaveCount { get; internal set; }
+
+        /// <summary>아군 진형 기준점(fu). 배경 스크롤은 이 값에서만 구한다 — 별도 시간 누적을 두면 배속에서 어긋난다.</summary>
+        public int AnchorX { get; internal set; }
+
+        /// <summary>지금 조우 적의 진형 기준점(fu).</summary>
+        public int EnemyAnchorX { get; internal set; }
         public IReadOnlyList<UnitSnapshot> Units => _readOnlyUnits;
 
         internal void SetUnit(int index, UnitSnapshot unit)

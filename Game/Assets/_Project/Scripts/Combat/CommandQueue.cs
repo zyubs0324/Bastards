@@ -24,6 +24,12 @@ namespace TAoB.Combat
             return replaced;
         }
 
+        /// <summary>꺼내지 않고 들여다본다. 사거리 밖이라 행동을 건너뛸 때 명령을 잃지 않기 위함(계획서 D6).</summary>
+        public bool TryPeek(int unitId, out BattleCommand command)
+        {
+            return _pending.TryGetValue(unitId, out command);
+        }
+
         public bool TryTake(int unitId, out BattleCommand command)
         {
             if (!_pending.TryGetValue(unitId, out command)) return false;

@@ -13,9 +13,11 @@ namespace TAoB.Combat.Tests
             int scatterHpLossPerTick = 5,
             int resSelfDamagePerShortfall = 2,
             int equipBlockResShortfall = 20,
-            int critBaseChance = 0)
+            int critBaseChance = 0,
+            LaneConfig lane = null)
         {
             return TestBalance.Create(
+                lane: lane,
                 critBaseChance: critBaseChance,
                 critChancePerSpd: 0,
                 frontDamageTakenPermille: 1000,
@@ -39,6 +41,10 @@ namespace TAoB.Combat.Tests
             return new SkillDefinition(powerPermille, targetRule, canOverload, cooldownTicks);
         }
 
+        /// <summary>
+        /// 기술 자동 사용 빈도는 기본 0 이다 — 고정 난수를 쓰는 테스트가 기술 롤에 값을 빼앗기지 않게 하기 위함(계획서 D7).
+        /// 자동 기술을 보는 테스트는 <paramref name="skillChance"/> 를 직접 준다.
+        /// </summary>
         public static UnitSetup Ally(
             int id,
             Row row = Row.Front,
@@ -46,9 +52,10 @@ namespace TAoB.Combat.Tests
             Stats? stats = null,
             SkillDefinition skill = null,
             Catalyst catalyst = null,
-            Magitool magitool = null)
+            Magitool magitool = null,
+            int skillChance = 0)
         {
-            return new UnitSetup(id, Side.Ally, job, row, stats ?? MakeStats(), skill ?? Skill(), catalyst, magitool, isBoss: false);
+            return new UnitSetup(id, Side.Ally, job, row, stats ?? MakeStats(), skillChance, skill ?? Skill(), catalyst, magitool, isBoss: false);
         }
 
         public static UnitSetup Enemy(
@@ -58,9 +65,11 @@ namespace TAoB.Combat.Tests
             Stats? stats = null,
             SkillDefinition skill = null,
             Catalyst catalyst = null,
-            bool isBoss = false)
+            bool isBoss = false,
+            int skillChance = 0)
         {
-            return new UnitSetup(id, Side.Enemy, job, row, stats ?? MakeStats(hp: Unkillable, spd: NeverActs), skill ?? Skill(), catalyst, null, isBoss);
+            return new UnitSetup(
+                id, Side.Enemy, job, row, stats ?? MakeStats(hp: Unkillable, spd: NeverActs), skillChance, skill ?? Skill(), catalyst, null, isBoss);
         }
 
         public static BattleSetup Setup(
@@ -69,15 +78,25 @@ namespace TAoB.Combat.Tests
             BalanceConfig balance = null,
             int timeLimitTicks = BattleSetup.MaxTimeLimitTicks,
             PreconditionKind precondition = PreconditionKind.None,
-            AffinityTable affinity = null)
+            AffinityTable affinity = null,
+            int[] waveApproachFu = null)
         {
             return new BattleSetup(
                 balance ?? Balance(),
                 affinity ?? new AffinityTable(new AffinityEntry[0]),
                 allies,
                 waves,
+                waveApproachFu ?? Approach(waves.Length),
                 timeLimitTicks,
                 precondition);
+        }
+
+        /// <summary>조우마다 최소 접근 거리. 정지 프리셋에서는 사거리가 전장보다 커서 이 거리가 행동을 바꾸지 않는다.</summary>
+        public static int[] Approach(int waveCount)
+        {
+            var approach = new int[waveCount];
+            for (int i = 0; i < waveCount; i++) approach[i] = 1;
+            return approach;
         }
 
         public static UnitSetup[][] OneWave(params UnitSetup[] enemies)

@@ -5,6 +5,7 @@ namespace TAoB.Combat
 {
     /// <summary>
     /// 한 유닛의 행동(공격·기술·과부하·구조)과 피해 적용을 처리한다. 틱 진행 순서는 <see cref="BattleSimulation"/> 이 정한다.
+    /// 확률 판정은 <see cref="Chance.Roll"/> 만 쓴다 — 가드를 복제하면 난수 소비 규약이 두 곳으로 갈린다(계획서 D8).
     /// </summary>
     internal sealed class ActionResolver
     {
@@ -43,7 +44,8 @@ namespace TAoB.Combat
             switch (command.Kind)
             {
                 case CommandKind.UseSkill:
-                    actor.Cooldown = skill.CooldownTicks;
+                    // 자동 사용은 재사용 대기를 쓰지도 걸지도 않는다(계획서 D7). 대기는 사용자의 강제 발동 전용이다.
+                    if (command.IsForced) actor.Cooldown = skill.CooldownTicks;
                     int catalystOutput = actor.Setup.Catalyst != null ? actor.Setup.Catalyst.OutputFor(actor.Mnd) : 0;
                     Attack(actor, skill.TargetRule, skill.PowerPermille, catalystOutput, tick, events);
                     break;
@@ -96,7 +98,7 @@ namespace TAoB.Combat
             for (int i = 0; i < _targets.Count; i++)
             {
                 UnitState target = _targets[i];
-                bool isCritical = RollCritical(critChance);
+                bool isCritical = Chance.Roll(_random, critChance);
                 int damage = DamageCalculator.Compute(
                     new DamageInput(attackPower, powerPermille, _affinity.Get(actor.Job, target.Job), target.Row, target.Setup.Stats.Def, isCritical),
                     _balance);
@@ -113,6 +115,7 @@ namespace TAoB.Combat
             SkillDefinition skill = actor.Setup.Skill;
             int excess = catalyst.OverloadExcessPermille(actor.Mnd, _balance);
             OverloadOutcome outcome = OverloadResolver.Resolve(excess, _balance, _random);
+            // 과부하는 사용자 개입 전용이라 언제나 강제 발동이다.
             actor.Cooldown = skill.CooldownTicks;
             events.Add(new BattleEvent(BattleEventKind.OverloadResolved, tick, actor.Id, BattleEvent.NoUnit, excess, (int)outcome));
 
@@ -186,14 +189,6 @@ namespace TAoB.Combat
             }
 
             return use;
-        }
-
-        private bool RollCritical(int chance)
-        {
-            // 결과가 확정인 경우에는 난수를 소비하지 않는다.
-            if (chance <= 0) return false;
-            if (chance >= CombatScale.ChanceRange) return true;
-            return _random.Next(CombatScale.ChanceRange) < chance;
         }
 
         private void ApplyDamage(UnitState target, int amount, int sourceId, BattleEventKind kind, int detail, int tick, List<BattleEvent> events)

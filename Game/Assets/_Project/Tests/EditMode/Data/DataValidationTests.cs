@@ -27,6 +27,10 @@ namespace TAoB.Data.Tests
             Assert.AreEqual(AffinityLevel.Strong, data.Affinity.Get(Job.Knight, Job.Perceptive));
             Assert.AreEqual(AffinityLevel.Normal, data.Affinity.Get(Job.Perceptive, Job.Knight));
             Assert.AreEqual(600, data.Stage.TimeLimitTicks);
+            Assert.AreEqual(1, data.Balance.Lane.MarchSpeedFu);
+            Assert.AreEqual(20000, data.Balance.Lane.FrontReachFu);
+            Assert.AreEqual(2000, data.FindCharacter(1).SkillChance);
+            CollectionAssert.AreEqual(new[] { 1, 1 }, data.Stage.WaveApproachFu);
             Assert.AreEqual("tool", data.FindCharacter(1).Magitool.Id);
             Assert.IsNull(data.FindCharacter(1).Catalyst);
 
@@ -200,8 +204,8 @@ namespace TAoB.Data.Tests
         {
             string characters = TestJson.CharactersWithExtraEnemies(3);
             string stage = TestJson.Swap(TestJson.Stage,
-                @"[ { ""enemyIds"": [101] }, { ""enemyIds"": [201] } ]",
-                @"[ { ""enemyIds"": [101] }, { ""enemyIds"": [201] }, { ""enemyIds"": [202] }, { ""enemyIds"": [203] }, { ""enemyIds"": [204] } ]");
+                @"[ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 } ]",
+                @"[ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [202], ""approachFu"": 1 }, { ""enemyIds"": [203], ""approachFu"": 1 }, { ""enemyIds"": [204], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 } ]");
 
             GameData data = GameDataLoader.Parse(TestJson.Files(characters: characters, stage: stage));
 
@@ -213,8 +217,8 @@ namespace TAoB.Data.Tests
         {
             string characters = TestJson.CharactersWithExtraEnemies(3);
             string stage = TestJson.Swap(TestJson.Stage,
-                @"[ { ""enemyIds"": [101] }, { ""enemyIds"": [201] } ]",
-                @"[ { ""enemyIds"": [101, 201, 202, 203, 204] } ]");
+                @"[ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 } ]",
+                @"[ { ""enemyIds"": [101, 201, 202, 203, 204], ""approachFu"": 1 } ]");
 
             GameData data = GameDataLoader.Parse(TestJson.Files(characters: characters, stage: stage));
 
@@ -255,8 +259,8 @@ namespace TAoB.Data.Tests
         public void TooManyWaves_IsRejected()
         {
             string json = TestJson.Swap(TestJson.Stage,
-                @"[ { ""enemyIds"": [101] }, { ""enemyIds"": [201] } ]",
-                @"[ { ""enemyIds"": [101] }, { ""enemyIds"": [201] }, { ""enemyIds"": [101] }, { ""enemyIds"": [101] }, { ""enemyIds"": [101] }, { ""enemyIds"": [101] } ]");
+                @"[ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 } ]",
+                @"[ { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 }, { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [101], ""approachFu"": 1 } ]");
 
             var ex = Fails(TestJson.Files(stage: json));
 
@@ -405,6 +409,174 @@ namespace TAoB.Data.Tests
             var ex = Fails(TestJson.Files(stage: json));
 
             AssertLocation(ex, DataFiles.Stage, "allyIds");
+        }
+
+        [Test]
+        public void MissingMovementBlock_NamesTheFirstFieldInIt()
+        {
+            // JsonUtility 는 빠진 객체를 초기값이 채워진 새 인스턴스로 만든다 — 그래서 누락이 블록 안 필드로 잡힌다.
+            string json = TestJson.Swap(TestJson.Balance, @"""movement"": {", @"""unusedBlock"": {");
+
+            var ex = Fails(TestJson.Files(balance: json));
+
+            AssertLocation(ex, DataFiles.Balance, "movement.marchSpeedFu");
+        }
+
+        [Test]
+        public void MissingMovementField_NamesFieldWithBlockPrefix()
+        {
+            string json = TestJson.Swap(TestJson.Balance, @"""frontSlotOffsetFu"": 0,", "");
+
+            var ex = Fails(TestJson.Files(balance: json));
+
+            AssertLocation(ex, DataFiles.Balance, "movement.frontSlotOffsetFu");
+        }
+
+        [Test]
+        public void MovementBreakingTheDeadlockInvariant_IsRejected()
+        {
+            // 범위는 하나하나 맞지만 조합이 교착이다. 이 검증이 없으면 뒷열이 영원히 적에 닿지 못한 채 전투가 돈다.
+            string json = TestJson.Swap(TestJson.Balance, @"""backReachFu"": 20000", @"""backReachFu"": 10");
+            json = TestJson.Swap(json, @"""frontSlotOffsetFu"": 0", @"""frontSlotOffsetFu"": 100");
+
+            var ex = Fails(TestJson.Files(balance: json));
+
+            AssertLocation(ex, DataFiles.Balance, "movement.backReachFu");
+        }
+
+        [Test]
+        public void EveryMovementKey_MatchesLaneConfigParameterName()
+        {
+            // 로더는 LaneConfig 생성자 예외의 매개변수 이름에 블록 이름을 붙여 필드 경로로 되돌린다. 그 규약을 6개 전부에서 고정한다.
+            var ctor = typeof(LaneConfig).GetConstructors()[0];
+            int checkedCount = 0;
+
+            foreach (var parameter in ctor.GetParameters())
+            {
+                string key = "\"" + parameter.Name + "\": ";
+                StringAssert.Contains(key, TestJson.Balance, $"픽스처에 생성자 매개변수 {parameter.Name} 과 같은 키가 없습니다.");
+
+                string json = System.Text.RegularExpressions.Regex.Replace(
+                    TestJson.Balance, System.Text.RegularExpressions.Regex.Escape(key) + @"\d+", key + int.MaxValue);
+                var ex = Fails(TestJson.Files(balance: json));
+                AssertLocation(ex, DataFiles.Balance, "movement." + parameter.Name);
+                checkedCount++;
+            }
+
+            Assert.AreEqual(6, checkedCount);
+        }
+
+        [Test]
+        public void MissingSkillChance_IsRejected()
+        {
+            // 픽스처에서 유일한 값(1500)인 두 번째 캐릭터의 필드를 지운다.
+            string json = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500,", "");
+
+            var ex = Fails(TestJson.Files(characters: json));
+
+            AssertLocation(ex, DataFiles.Characters, "characters[1].skillChance");
+        }
+
+        [Test]
+        public void SkillChanceOutsideTheDesignBand_IsRejected()
+        {
+            string tooHigh = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500,", @"""skillChance"": 4000,");
+            string tooLow = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500,", @"""skillChance"": 99,");
+
+            AssertLocation(Fails(TestJson.Files(characters: tooHigh)), DataFiles.Characters, "characters[1].skillChance");
+            AssertLocation(Fails(TestJson.Files(characters: tooLow)), DataFiles.Characters, "characters[1].skillChance");
+        }
+
+        [Test]
+        public void MissingApproachFu_IsRejected()
+        {
+            string json = TestJson.Swap(TestJson.Stage, @"{ ""enemyIds"": [101], ""approachFu"": 1 }", @"{ ""enemyIds"": [101] }");
+
+            var ex = Fails(TestJson.Files(stage: json));
+
+            AssertLocation(ex, DataFiles.Stage, "waves[0].approachFu");
+        }
+
+        [Test]
+        public void BossBeforeTheLastEncounter_IsRejected()
+        {
+            // 보스가 중간에 서면 뒤 조우가 보스보다 약해져 전장의 절정이 사라진다.
+            string json = TestJson.Swap(TestJson.Stage,
+                @"{ ""enemyIds"": [101], ""approachFu"": 1 }, { ""enemyIds"": [201], ""approachFu"": 1 }",
+                @"{ ""enemyIds"": [201], ""approachFu"": 1 }, { ""enemyIds"": [101], ""approachFu"": 1 }");
+
+            var ex = Fails(TestJson.Files(stage: json));
+
+            AssertLocation(ex, DataFiles.Stage, "waves[0].enemyIds[0]");
+        }
+
+        [Test]
+        public void ApproachLongerThanTheTimeLimitAllows_IsRejected()
+        {
+            // 두 파일을 함께 봐야 알 수 있는 조건이다 — 행군 속도는 밸런스, 접근 거리와 제한 시간은 스테이지에 있다.
+            string json = TestJson.Swap(TestJson.Stage,
+                @"{ ""enemyIds"": [101], ""approachFu"": 1 }", @"{ ""enemyIds"": [101], ""approachFu"": 700 }");
+
+            var ex = Fails(TestJson.Files(stage: json));
+
+            AssertLocation(ex, DataFiles.Stage, "waves[].approachFu");
+        }
+
+        [Test]
+        public void SkillChanceAtBandEdges_IsAccepted()
+        {
+            string low = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500,", @"""skillChance"": 100,");
+            string high = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500,", @"""skillChance"": 3900,");
+
+            Assert.AreEqual(100, GameDataLoader.Parse(TestJson.Files(characters: low)).FindCharacter(2).SkillChance);
+            Assert.AreEqual(3900, GameDataLoader.Parse(TestJson.Files(characters: high)).FindCharacter(2).SkillChance);
+        }
+
+        [Test]
+        public void ApproachFuBelowOne_IsRejected()
+        {
+            string json = TestJson.Swap(TestJson.Stage, @"""approachFu"": 1 }, { ""enemyIds"": [201]", @"""approachFu"": 0 }, { ""enemyIds"": [201]");
+
+            var ex = Fails(TestJson.Files(stage: json));
+
+            AssertLocation(ex, DataFiles.Stage, "waves[0].approachFu");
+        }
+
+        [Test]
+        public void ApproachFuAtItsMaximum_IsAccepted()
+        {
+            // 상한까지 행군할 수 있어야 하므로 행군 속도도 함께 올린다 — 시간 예산 검증과 엮이는 값이다.
+            string balance = TestJson.Swap(TestJson.Balance, @"""marchSpeedFu"": 1,", @"""marchSpeedFu"": 1000,");
+            string stage = TestJson.Swap(TestJson.Stage,
+                @"""approachFu"": 1 }, { ""enemyIds"": [201]", @"""approachFu"": 20000 }, { ""enemyIds"": [201]");
+
+            GameData data = GameDataLoader.Parse(TestJson.Files(balance: balance, stage: stage));
+
+            Assert.AreEqual(BattleSetup.MaxApproachFu, data.Stage.WaveApproachFu[0]);
+        }
+
+        [Test]
+        public void ApproachFuAboveItsMaximum_IsRejected()
+        {
+            string balance = TestJson.Swap(TestJson.Balance, @"""marchSpeedFu"": 1,", @"""marchSpeedFu"": 1000,");
+            string stage = TestJson.Swap(TestJson.Stage,
+                @"""approachFu"": 1 }, { ""enemyIds"": [201]", @"""approachFu"": 20001 }, { ""enemyIds"": [201]");
+
+            var ex = Fails(TestJson.Files(balance: balance, stage: stage));
+
+            AssertLocation(ex, DataFiles.Stage, "waves[0].approachFu");
+        }
+
+        [Test]
+        public void ApproachExactlyMatchingTheTimeBudget_IsAccepted()
+        {
+            // 행군 속도 1 × 제한 시간 600틱 = 600fu 가 예산이다. 합이 정확히 600 이면 통과해야 한다.
+            string json = TestJson.Swap(TestJson.Stage,
+                @"""approachFu"": 1 }, { ""enemyIds"": [201]", @"""approachFu"": 599 }, { ""enemyIds"": [201]");
+
+            GameData data = GameDataLoader.Parse(TestJson.Files(stage: json));
+
+            CollectionAssert.AreEqual(new[] { 599, 1 }, data.Stage.WaveApproachFu);
         }
 
         [Test]

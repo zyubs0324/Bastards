@@ -32,6 +32,18 @@ namespace TAoB.Data
         public int breakthroughMndGain = FieldCheck.Missing;
         public OverloadTierDto[] overloadTiers;
         public AffinityDto[] affinities;
+        public MovementDto movement;
+    }
+
+    [Serializable]
+    internal sealed class MovementDto
+    {
+        public int marchSpeedFu = FieldCheck.Missing;
+        public int frontSlotOffsetFu = FieldCheck.Missing;
+        public int backSlotOffsetFu = FieldCheck.Missing;
+        public int frontReachFu = FieldCheck.Missing;
+        public int backReachFu = FieldCheck.Missing;
+        public int engageMarginFu = FieldCheck.Missing;
     }
 
     [Serializable]
@@ -97,6 +109,9 @@ namespace TAoB.Data
         // bool 은 빠지면 false 다. 누락을 구분할 수 없으므로 "생략 = false" 를 파일 규칙으로 삼는다.
         public bool isBoss;
         public StatsDto stats;
+
+        /// <summary>기술 자동 사용 빈도(만분율). 숨은 스탯이라 stats 블록 밖에 둔다.</summary>
+        public int skillChance = FieldCheck.Missing;
         public SkillDto skill;
 
         // 비어 있거나 빠지면 장비 없음.
@@ -137,5 +152,8 @@ namespace TAoB.Data
     internal sealed class WaveDto
     {
         public int[] enemyIds;
+
+        /// <summary>이 조우를 만나기까지 행군하는 거리(fu).</summary>
+        public int approachFu = FieldCheck.Missing;
     }
 }

@@ -19,11 +19,20 @@ namespace TAoB.Combat
         /// </summary>
         public const int MaxTimeLimitTicks = 600 * BattleSimulation.TicksPerSecond;
 
+        /// <summary>조우 1회 접근 거리 상한(fu). <see cref="LaneConfig"/> 의 거리 상한과 같은 자리수로 맞춘다.</summary>
+        public const int MaxApproachFu = 20000;
+
+        /// <summary>
+        /// 전장 좌표 상한(fu). 접근 거리 합이 이 값을 넘으면 거부해 좌표·거리 계산이 int 범위 안에 남는다.
+        /// </summary>
+        public const int MaxFieldSpanFu = 10000000;
+
         public BattleSetup(
             BalanceConfig balance,
             AffinityTable affinity,
             IReadOnlyList<UnitSetup> allies,
             IReadOnlyList<IReadOnlyList<UnitSetup>> waves,
+            IReadOnlyList<int> waveApproachFu,
             int timeLimitTicks,
             PreconditionKind precondition)
         {
@@ -46,6 +55,7 @@ namespace TAoB.Combat
 
             Allies = new List<UnitSetup>(allies).AsReadOnly();
             Waves = waveCopies.AsReadOnly();
+            WaveApproachFu = ValidateApproach(waveApproachFu, waveCopies.Count);
             TimeLimitTicks = timeLimitTicks;
             Precondition = precondition;
         }
@@ -54,8 +64,35 @@ namespace TAoB.Combat
         public AffinityTable Affinity { get; }
         public IReadOnlyList<UnitSetup> Allies { get; }
         public IReadOnlyList<IReadOnlyList<UnitSetup>> Waves { get; }
+
+        /// <summary>조우마다 그 적을 만나기까지 행군하는 거리(fu). 적 진형 기준점은 이 거리의 누적 합이다.</summary>
+        public IReadOnlyList<int> WaveApproachFu { get; }
         public int TimeLimitTicks { get; }
         public PreconditionKind Precondition { get; }
+
+        private static IReadOnlyList<int> ValidateApproach(IReadOnlyList<int> approach, int waveCount)
+        {
+            const string name = "waveApproachFu";
+            if (approach == null) throw new ArgumentNullException(name);
+            if (approach.Count != waveCount)
+            {
+                throw new ArgumentException($"접근 거리가 {approach.Count}개입니다. 조우 수 {waveCount} 와 같아야 합니다.", name);
+            }
+
+            long span = 0;
+            for (int i = 0; i < approach.Count; i++)
+            {
+                Guard.Range(approach[i], 1, MaxApproachFu, $"{name}[{i}]");
+                span += approach[i];
+            }
+
+            if (span > MaxFieldSpanFu)
+            {
+                throw new ArgumentException($"접근 거리 합이 {span} fu 입니다. {MaxFieldSpanFu} 이하여야 합니다.", name);
+            }
+
+            return new List<int>(approach).AsReadOnly();
+        }
 
         private static void ValidateGroup(IReadOnlyList<UnitSetup> units, Side expectedSide, string name, HashSet<int> ids, BalanceConfig balance)
         {

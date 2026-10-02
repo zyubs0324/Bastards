@@ -31,7 +31,8 @@ namespace TAoB.Combat
             int runawayDamagePermille,
             int runawaySelfDamagePermille,
             int breakthroughMndGain,
-            IReadOnlyList<OverloadTier> overloadTiers)
+            IReadOnlyList<OverloadTier> overloadTiers,
+            LaneConfig lane)
         {
             const int max = CombatScale.MaxValue;
             const int maxPermille = CombatScale.MaxPermille;
@@ -58,6 +59,7 @@ namespace TAoB.Combat
             Guard.Range(runawaySelfDamagePermille, 0, maxPermille, nameof(runawaySelfDamagePermille));
             Guard.Range(breakthroughMndGain, 0, max, nameof(breakthroughMndGain));
             ValidateTiers(overloadTiers);
+            if (lane == null) throw new ArgumentNullException(nameof(lane));
 
             DefenseK = defenseK;
             WeakAffinityPermille = weakAffinityPermille;
@@ -81,6 +83,7 @@ namespace TAoB.Combat
             RunawaySelfDamagePermille = runawaySelfDamagePermille;
             BreakthroughMndGain = breakthroughMndGain;
             OverloadTiers = new List<OverloadTier>(overloadTiers).AsReadOnly();
+            Lane = lane;
         }
 
         /// <summary>방어 감소율 DEF/(DEF+K) 의 K.</summary>
@@ -120,6 +123,9 @@ namespace TAoB.Combat
 
         /// <summary>초과 비율 오름차순. 마지막 구간의 상한은 int.MaxValue.</summary>
         public IReadOnlyList<OverloadTier> OverloadTiers { get; }
+
+        /// <summary>이동·교전 수치. 범위와 교착 방지 불변식의 정본은 <see cref="LaneConfig"/> 생성자다.</summary>
+        public LaneConfig Lane { get; }
 
         private static void ValidateTiers(IReadOnlyList<OverloadTier> tiers)
         {

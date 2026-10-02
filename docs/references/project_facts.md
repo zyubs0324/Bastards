@@ -66,14 +66,19 @@
 | 구조 | `Rescue` | 기획서 4-1 |
 | 후퇴 | `Retreat` | 기획서 3장 |
 | 사전 설정 조건 | `Precondition` | 기획서 3장 |
-| 전장 위치 | `PosX` | 횡스크롤 전환 D3 — Phase A 도입 예정 (단위 fu, 계획: `.claude/plans/sidescroll-battle.plan.md`) |
-| 진형 기준점 | `AnchorX` · `EnemyAnchorX` | 횡스크롤 전환 D1·D2 — Phase A 도입 예정 (단위 fu) |
-| 사거리 | `ReachFu` | 횡스크롤 전환 D4 — Phase A 도입 예정 (`Formation` 이 Row 로 고른다) |
-| 진형 자리 간격 | `SlotOffsetFu` | 횡스크롤 전환 D4 — Phase A 도입 예정 |
+| 전장 위치 | `PosX` | 횡스크롤 전환 D3 (단위 fu, 계획: `.claude/plans/sidescroll-battle.plan.md`) |
+| 진형 기준점 | `AnchorX` · `EnemyAnchorX` | 횡스크롤 전환 D1·D2 (단위 fu) |
+| 사거리 | `ReachFu` | 횡스크롤 전환 D4 (`Formation` 이 Row 로 고른다. 데이터 키는 `movement.frontReachFu`·`movement.backReachFu`) |
+| 진형 자리 간격 | `SlotOffsetFu` | 횡스크롤 전환 D4 (데이터 키는 `movement.frontSlotOffsetFu`·`movement.backSlotOffsetFu`) |
+| 행군 속도 | `MarchSpeedFu` | 횡스크롤 전환 D2 (fu/틱, 데이터 키 `movement.marchSpeedFu`) |
+| 교전 여유 | `EngageMarginFu` | 횡스크롤 전환 D2 (사거리 경계보다 안쪽에 서는 거리. 교전 판정은 `사거리 − 여유` 를 본다) |
+| 교전 | `Engagement` | 횡스크롤 전환 D5·D6 — 사거리 쌍 술어. 전투 한 판의 구획인 **조우**(`Wave`)와 다른 개념이다 |
+| 조우 접근 거리 | `WaveApproachFu` · `ApproachFu` | 횡스크롤 전환 (조우마다 그 적을 만나기까지 행군하는 거리. 적 기준점은 누적 합) |
 | 진형유지 속성값 | `FormationChance` | 횡스크롤 전환 — Phase C 도입 예정 (만분율 0~10000) |
 | 선호 | `Preference` | 횡스크롤 전환 — Phase C 도입 예정 (1차 4종: 동료 보호·적극 돌진·후방 유지·비겁) |
-| 기술 사용 빈도 | `SkillChance` | 횡스크롤 전환 D7 — Phase A 도입 예정 (만분율, 기획 대역 100~3900) |
+| 기술 사용 빈도 | `SkillChance` | 횡스크롤 전환 D7 (만분율, 기획 대역 100~3900. 숨은 스탯이라 `Stats` 밖에 둔다) |
 | 자세 · 침투 지정 | `Stance` · `IsFlanking` | 횡스크롤 전환 — Phase C 도입 예정 (조우 단위로 한 번 정한다) |
-| 뒤로 서기(비겁 성향의 이동) | `StepBack` | 횡스크롤 전환 — Phase C 도입 예정. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
+| 뒤로 서기(비겁 성향의 이동) | `StepBack` · `StepBackFu` | 횡스크롤 전환 — Phase C 도입 예정. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
+| 진형 이탈 허용치 · 위협 거리 | `FormationDriftFu` · `ChargeDriftFu` · `ThreatFu` | 횡스크롤 전환 — Phase C 도입 예정 (쓰는 코드와 같은 커밋에서 데이터 키도 함께 들어온다) |
 | 조우 | 코드·데이터·UI 는 `Wave` 유지 | 횡스크롤 전환 D14 (개명은 Phase F-1) |
 | 제한 시간 | `TimeLimit` | 기획서 3장 |

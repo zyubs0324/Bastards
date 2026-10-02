@@ -9,6 +9,11 @@ namespace TAoB.Data
         // 배열 크기 상한은 밸런스 값이 아니라 로더 규칙이다(현재 캐릭터 7).
         public const int MaxCharacters = 50;
 
+        // 기술 자동 사용 빈도의 기획 대역: 매우 낮음 1~4% ~ 자주 31~39%(계획서 D7).
+        // 규칙 모듈은 0~만분율 전체를 받으므로 대역을 좁히는 것은 로더의 몫이다.
+        public const int MinSkillChance = 100;
+        public const int MaxSkillChance = 3900;
+
         public static IReadOnlyList<CharacterData> Read(string file, CharactersDto dto, EquipmentCatalog equipment, BalanceConfig balance)
         {
             CharacterDto[] dtos = FieldCheck.Items(file, "characters", dto.characters, 1, MaxCharacters);
@@ -28,11 +33,12 @@ namespace TAoB.Data
                 Job job = FieldCheck.EnumName<Job>(file, field + ".job", c.job);
                 Row row = FieldCheck.EnumName<Row>(file, field + ".row", c.row);
                 Stats stats = ReadStats(file, field + ".stats", c.stats);
+                int skillChance = FieldCheck.Int(file, field + ".skillChance", c.skillChance, MinSkillChance, MaxSkillChance);
                 SkillDefinition skill = ReadSkill(file, field + ".skill", c.skill);
                 CatalystData catalyst = FindCatalyst(file, field + ".catalystId", c.catalystId, equipment);
                 MagitoolData magitool = FindMagitool(file, field + ".magitoolId", c.magitoolId, equipment, stats, balance);
 
-                result.Add(new CharacterData(id, name, side, job, row, stats, skill, catalyst, magitool, c.isBoss));
+                result.Add(new CharacterData(id, name, side, job, row, stats, skillChance, skill, catalyst, magitool, c.isBoss));
             }
 
             return result.AsReadOnly();
