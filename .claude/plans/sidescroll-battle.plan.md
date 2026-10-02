@@ -1,7 +1,7 @@
 # 횡스크롤 이동 전투 전환 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 구현·검증 완료, 커밋 대기**(2026-10-02: 테스트 전체 통과·`TAoB.Combat` 커버리지 98.5%·스모크 오류 0·APK 빌드 성공, `/plan-review --code` 11건 반영). **다음 = Phase B 횡스크롤 화면**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
+**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 완료**(2026-10-02, 커밋 `d8125ff` — 테스트 313개 통과·`TAoB.Combat` 커버리지 99.2%·스모크 오류 0·APK 빌드 성공, `/plan-review --code` 11 리뷰 반영). **다음 = Phase B 횡스크롤 화면**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
 
 ## Context
 
@@ -156,10 +156,10 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 - **소모품 틱 위치**(Phase D 에서 쓰지만 순서는 여기서 정한다): 후퇴 확인 **직후**, 흩어짐 피해 앞. 소모품은 유닛 슬롯 큐와 **분리된 파티 단위 대기열**을 쓴다 — 지금 큐는 유닛 ID 가 키라 같은 큐에 넣으면 그 유닛의 기술 명령을 덮어쓴다(재리뷰 지적).
 
 **검증**
-- 기존 226개: 위치 관련은 **정지 프리셋**(D11) 픽스처로 보존, 기술 자동 사용 영향분은 수정. 수정 대상은 "통과"로 세지 않고 별도 집계한다.
-- 신규 ~55: `Lane` 8 · `Movement` 10 · `Engagement` 8(사거리 경계 `=`/`+1` 포함) · `SectionProgress` 6 · `LaneConfig` 불변식 8 · `Chance` 4 · 데이터 검증 8 · 스냅샷·해시 3
+- 기존 226개: 위치 관련은 **정지 프리셋**(D11) 픽스처로 보존, 기술 자동 사용 영향분(`AutoPilotTests` 3개)은 수정.
+- **실측 결과 313개 전부 통과**(신규 87). `Lane` 7 · `Movement` 10 · `Engagement` 8(사거리 경계 `=`/`+1` 포함) · `SectionProgress` 9 · `LaneConfig` 9 · `Chance` 4 · 접근 거리 검증 6 · 기술 빈도 5 · 전투 중 위치 11 · 데이터 검증 14 · 결정론 3
 - `StaticPreset_NeverMovesAndConsumesNoRandom` · `LastEnemyFallingInTheSameTick_StillLetsTheNextAllyAct` · `OutOfReach_KeepsThePendingCommandAndTheGauge` · `OutOfReachTicks_ConsumeNoRandom` · `OnlyPosXDiffers_HashDiffers`
-- 결정론: 이동이 켜진 시드 시나리오 2회 실행 동일. 커버리지 `TAoB.Combat` 80%+ 측정.
+- 결정론: 이동이 켜진 시드 시나리오 2회 실행·배속 실행 동일. 커버리지 `TAoB.Combat` **99.2%**(기준 80%).
 
 ## Phase B — 횡스크롤 화면 (재미 판정 1차)
 **목표**: 진형이 등장해 배경이 흐르며 전진하고, 조우 4회를 거쳐 보스까지 간다.
@@ -315,4 +315,4 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - MEDIUM: `OnlyPosXDiffers_HashDiffers`·`MovingFormation_ChangesTheOutcome` 가 이름과 달리 아무것도 분리하지 못했다 → 자리 간격만 다른 쌍, 이벤트 해시·전투 길이 비교로 교체.
   - MEDIUM: 여유 0 픽스처가 `IsEngaged`/`CanReach` 를 구분하지 못하고 전원 뒷열 폴백 테스트가 없었다 → 두 테스트 추가.
   - MEDIUM: 데이터 경계(빈도 대역 양끝·접근 거리 0/상한/초과·시간 예산 경계)가 비어 있었다 → 5개 추가.
-  - LOW·주석: 범위 상한을 `LaneConfig` 상수로 모으고, 거짓이 된 주석 6건(빈사와 기준점, `IsForced` 검사 위치, 해시 순회, 테스트 요약)을 고쳤다. 남은 과제 — 완료된 수직 슬라이스 계획서를 가리키는 `계획서 Phase N` 주석 48곳이 활성 계획서와 혼동된다(별도 커밋에서 일괄 수정).
+  - LOW·주석: 범위 상한을 `LaneConfig` 상수로 모으고, 거짓이 된 주석 6건(빈사와 기준점, `IsForced` 검사 위치, 해시 순회, 테스트 요약)을 고쳤다. 완료된 수직 슬라이스 계획서를 가리키는 주석 51곳에 `수직 슬라이스` 접두를 붙여 활성 계획서와 구분했다(커밋 `62bff36`). 호칭 규약은 `project_facts.md` §0 에 등재.
