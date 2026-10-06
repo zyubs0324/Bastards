@@ -74,6 +74,7 @@
 | 행군 속도 | `MarchSpeedFu` | 횡스크롤 전환 D2 (fu/틱, 데이터 키 `movement.marchSpeedFu`) |
 | 교전 여유 | `EngageMarginFu` | 횡스크롤 전환 D2 (사거리 경계보다 안쪽에 서는 거리. 교전 판정은 `사거리 − 여유` 를 본다) |
 | 교전 | `Engagement` | 횡스크롤 전환 D5·D6 — 사거리 쌍 술어. 전투 한 판의 구획인 **조우**(`Wave`)와 다른 개념이다 |
+| 스크롤 층 · 진형 화면 위치 | `Lane`(표시 계층의 `LaneView`) · `AllyAnchorScreenX` | 횡스크롤 전환 D12 — 표시 계층의 중첩 캔버스. 규칙 모듈 설정의 `Balance.Lane`(이동 수치 묶음)과 **다른 개념**이다. 전장 좌표 → 화면 환산은 `PxPerFu` 한 지점 |
 | 조우 접근 거리 | `WaveApproachFu` · `ApproachFu` | 횡스크롤 전환 (조우마다 그 적을 만나기까지 행군하는 거리. 적 기준점은 누적 합) |
 | 진형유지 속성값 | `FormationChance` | 횡스크롤 전환 — Phase C 도입 예정 (만분율 0~10000) |
 | 선호 | `Preference` | 횡스크롤 전환 — Phase C 도입 예정 (1차 4종: 동료 보호·적극 돌진·후방 유지·비겁) |

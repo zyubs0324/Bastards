@@ -7,27 +7,31 @@ namespace TAoB.View.Tests
     public class LayoutAndTextTests
     {
         [Test]
-        public void Allies_Left_Enemies_Right_FrontNearerCenter()
+        public void Slots_AreCentredVertically_TopToBottom()
         {
-            Vector2 allyFront = BattleLayout.UnitPosition(Side.Ally, Row.Front, 0, 1);
-            Vector2 allyBack = BattleLayout.UnitPosition(Side.Ally, Row.Back, 0, 1);
-            Vector2 enemyFront = BattleLayout.UnitPosition(Side.Enemy, Row.Front, 0, 1);
+            float single = BattleLayout.UnitY(0, 1);
+            float first = BattleLayout.UnitY(0, 2);
+            float second = BattleLayout.UnitY(1, 2);
 
-            Assert.Less(allyFront.x, 0f);
-            Assert.Greater(enemyFront.x, 0f);
-            Assert.Less(Mathf.Abs(allyFront.x), Mathf.Abs(allyBack.x));
-            Assert.AreEqual(-enemyFront.x, allyFront.x, 0.001f, "좌우 대칭");
+            Assert.Greater(first, second, "0번 자리가 위");
+            Assert.AreEqual(single, (first + second) * 0.5f, 0.001f, "두 자리의 가운데 = 한 자리 위치");
         }
 
         [Test]
-        public void Slots_AreCentredVertically_TopToBottom()
+        public void AllyAnchorSitsLeftOfCentre_SoApproachingEnemiesAreVisible()
         {
-            Vector2 single = BattleLayout.UnitPosition(Side.Ally, Row.Front, 0, 1);
-            Vector2 first = BattleLayout.UnitPosition(Side.Ally, Row.Front, 0, 2);
-            Vector2 second = BattleLayout.UnitPosition(Side.Ally, Row.Front, 1, 2);
+            Assert.Less(BattleLayout.AllyAnchorScreenX, 0f);
+            Assert.Greater(BattleLayout.AllyAnchorScreenX, -BattleLayout.Width * 0.5f, "화면 밖으로 나가서는 안 된다.");
+        }
 
-            Assert.Greater(first.y, second.y, "0번 자리가 위");
-            Assert.AreEqual(single.y, (first.y + second.y) * 0.5f, 0.001f, "두 자리의 가운데 = 한 자리 위치");
+        [Test]
+        public void BackgroundTiles_CoverTheScreen_SoTheWrapSeamNeverShows()
+        {
+            // 묶음 폭은 간격 × (개수 − 1)이고 랩어라운드가 한 칸을 더 먹는다. 두 가지를 빼먹으면
+            // 모자란 개수를 통과시켜, 행군할 때 화면 가장자리에서 띠가 튀어나온다.
+            Assert.IsTrue(BattleLayout.TilesCoverScreen(BattleLayout.LaneMarkerSpacingPx, BattleLayout.LaneMarkerCount), "가까운 층");
+            Assert.IsTrue(BattleLayout.TilesCoverScreen(BattleLayout.LaneFarSpacingPx, BattleLayout.LaneFarCount), "먼 층");
+            Assert.IsFalse(BattleLayout.TilesCoverScreen(240f, 9), "모자란 구성은 거짓이어야 한다 — 늘 참이면 검사가 아니다.");
         }
 
         [Test]
@@ -75,13 +79,6 @@ namespace TAoB.View.Tests
             Assert.AreNotEqual("", UiText.Condition(UnitCondition.Scattered));
             Assert.AreNotEqual("", UiText.Condition(UnitCondition.Downed));
             Assert.AreNotEqual(UiText.Condition(UnitCondition.Scattered), UiText.Condition(UnitCondition.Downed));
-        }
-
-        [Test]
-        public void WaveBanner_CountsFromOne()
-        {
-            Assert.AreEqual("웨이브 1 / 3", UiText.WaveBanner(0, 3));
-            Assert.AreEqual("웨이브 3 / 3", UiText.WaveBanner(2, 3));
         }
 
         [Test]

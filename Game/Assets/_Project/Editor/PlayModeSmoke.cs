@@ -181,18 +181,18 @@ namespace TAoB.EditorTools
                 return;
             }
 
-            // 유닛 표시는 BattleRoot 바로 아래가 아니라 전장 층(Field) 아래에 있다(수직 슬라이스 계획서 Phase 4.5).
-            Transform field = bootstrap.transform.Find("Canvas/BattleRoot/Field");
+            // 유닛 표시는 전장 층(Field) 안의 스크롤 층(Lane) 아래에 있다(계획서 Phase B).
+            Transform lane = bootstrap.transform.Find("Canvas/BattleRoot/Field/" + BattleLayout.LaneName);
             int units = 0;
-            if (field != null)
+            if (lane != null)
             {
-                for (int i = 0; i < field.childCount; i++)
+                for (int i = 0; i < lane.childCount; i++)
                 {
-                    if (field.GetChild(i).name.StartsWith("Unit ")) units++;
+                    if (lane.GetChild(i).name.StartsWith("Unit ")) units++;
                 }
             }
 
-            if (units == 0) Debug.LogError("[스모크] Field 아래에 유닛 표시가 없습니다.");
+            if (units == 0) Debug.LogError("[스모크] 스크롤 층 아래에 유닛 표시가 없습니다.");
             else Debug.Log($"[스모크] 유닛 표시 {units}개 생성됨");
         }
     }

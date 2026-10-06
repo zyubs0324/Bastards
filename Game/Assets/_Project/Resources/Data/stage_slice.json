@@ -1,9 +1,11 @@
 {
-  "timeLimitSeconds": 120,
-  "precondition": "NoAllyDowned",
+  "timeLimitSeconds": 60,
+  "precondition": "None",
   "allyIds": [1, 2, 3],
   "waves": [
-    { "enemyIds": [101, 102, 103], "approachFu": 1 },
-    { "enemyIds": [201], "approachFu": 1 }
+    { "enemyIds": [101], "approachFu": 2000 },
+    { "enemyIds": [102, 104], "approachFu": 2000 },
+    { "enemyIds": [103, 105], "approachFu": 2000 },
+    { "enemyIds": [201], "approachFu": 2000 }
   ]
 }

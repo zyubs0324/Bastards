@@ -14,8 +14,8 @@ namespace TAoB.View
     {
         private const string Argument = "-captureShots";
 
-        /// <summary>전투 초반(배치)·중반(교전)·후반을 한 장씩 남긴다.</summary>
-        private static readonly float[] CaptureSeconds = { 2f, 5f, 9f };
+        /// <summary>등장·행군 / 첫 교전 / 중반 조우 / 보스 / 결과 화면을 한 장씩(계획서 Phase B — 한 판이 60초다).</summary>
+        private static readonly float[] CaptureSeconds = { 2f, 7f, 20f, 40f, 55f };
 
         /// <summary><see cref="ScreenCapture.CaptureScreenshot"/> 은 프레임 끝에 비동기로 저장하므로, 종료 전에 쓰일 시간을 준다.</summary>
         private const float QuitDelaySeconds = 1f;

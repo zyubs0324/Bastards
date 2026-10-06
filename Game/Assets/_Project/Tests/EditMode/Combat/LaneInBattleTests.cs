@@ -222,6 +222,63 @@ namespace TAoB.Combat.Tests
         }
 
         [Test]
+        public void AfterAnEncounterIsCleared_TheFormationMarchesAgain_AndEngagesTheNext()
+        {
+            // 조우 전환의 핵심: 멈췄던 기준점이 다시 전진하고 다음 조우에서 또 멈춘다.
+            var frail = TestUnits.MakeStats(hp: 1, spd: TestUnits.NeverActs);
+            var sim = Create(
+                MovingLane(),
+                new[] { 100, 400 },
+                new[] { new[] { TestUnits.Enemy(101, stats: frail) }, new[] { TestUnits.Enemy(201, stats: frail) } });
+
+            SimRunner.Run(sim, 10);
+            Assert.AreEqual(1, sim.CurrentWave, "첫 조우를 정리하고 다음 조우로 넘어가야 한다.");
+            int anchorAfterFirst = sim.AnchorX;
+
+            SimRunner.Run(sim, 10);
+            Assert.Greater(sim.AnchorX, anchorAfterFirst, "조우가 바뀌면 다시 행군한다.");
+
+            SimRunner.Run(sim, 60);
+            Assert.AreEqual(BattleOutcome.Victory, sim.Outcome, "두 번째 조우까지 닿아 정리해야 한다.");
+        }
+
+        [Test]
+        public void TimeLimitDuringTheMarch_IsADefeat()
+        {
+            // 접근 거리가 제한 시간보다 길면 적을 만나지 못한 채 끝난다. 규칙 모듈은 이 구성을 막지 않는다
+            // (파일 간 시간 예산 검증은 데이터 로더의 몫이다) — 그래도 전투가 매달리지 않고 끝나야 한다.
+            var sim = new BattleSimulation(
+                TestUnits.Setup(
+                    new[] { TestUnits.Ally(1) },
+                    TestUnits.OneWave(TestUnits.Enemy(101)),
+                    TestUnits.Balance(lane: MovingLane()),
+                    timeLimitTicks: 30,
+                    waveApproachFu: new[] { 5000 }),
+                new FixedRandom());
+
+            var events = SimRunner.Run(sim, 40);
+
+            Assert.AreEqual(BattleOutcome.DefeatTimeLimit, sim.Outcome);
+            Assert.AreEqual(300, sim.AnchorX, "제한 시간까지 행군만 한다.");
+            Assert.IsEmpty(SimRunner.OfKind(events, BattleEventKind.Damage));
+        }
+
+        [Test]
+        public void RetreatDuringTheMarch_EndsTheBattleImmediately()
+        {
+            var sim = Create(MovingLane(), new[] { 2000 }, TestUnits.OneWave(TestUnits.Enemy(101)));
+            SimRunner.Run(sim, 5);
+            int anchorBeforeRetreat = sim.AnchorX;
+
+            Assert.AreEqual(CommandResult.Accepted, sim.Enqueue(BattleCommand.Retreat()));
+            SimRunner.Run(sim, 5);
+
+            Assert.AreEqual(BattleOutcome.DefeatRetreat, sim.Outcome);
+            Assert.AreEqual(anchorBeforeRetreat, sim.AnchorX,
+                "후퇴는 이동 단계 앞에서 전투를 끝내므로 그 틱에는 기준점이 움직이지 않는다.");
+        }
+
+        [Test]
         public void LastEnemyFallingInTheSameTick_StillLetsTheNextAllyAct()
         {
             // 마지막 적이 쓰러진 뒤 행동하는 동료에게는 상대가 아예 없다.

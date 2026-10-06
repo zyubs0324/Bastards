@@ -6,11 +6,23 @@ using UnityEngine.UI;
 
 namespace TAoB.View
 {
-    /// <summary>상단 정보: 웨이브, 남은 시간, 시드, 배속 버튼, 가운데 배너.</summary>
+    /// <summary>
+    /// 상단 정보: 웨이브, 남은 시간, 시드, 배속 버튼, 가운데 배너.
+    /// 조우가 바뀔 때마다 배너를 띄우지는 않는다 — 이동과 전투가 끊김 없이 이어지는 흐름(계획서 D1)을
+    /// 배너가 끊고, 같은 사실이 상시 카운터에 이미 있다. 배너는 전투 결과에만 쓴다.
+    /// </summary>
     internal sealed class BattleHud : MonoBehaviour
     {
         private const float BannerSeconds = 2f;
         private const float CutinSeconds = 0.6f;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>성능 표시 갱신 간격(초). 초당 2회를 넘기면 표시 자체가 측정값을 흔든다.</summary>
+        private const float PerfRefreshSeconds = 0.5f;
+
+        /// <summary>이 시간을 넘긴 프레임을 끊김으로 센다(30fps 한 프레임).</summary>
+        private const float StutterSeconds = 0.033f;
+#endif
 
         private TMP_Text _wave;
         private TMP_Text _time;
@@ -25,6 +37,15 @@ namespace TAoB.View
         private int _lastTick = -1;
         private float _bannerAge;
         private float _cutinAge;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // 평균 fps 는 끊김을 가리므로 최대 프레임 시간·끊김 횟수·프레임당 틱 최댓값을 본다(계획서 Phase B).
+        private TMP_Text _perf;
+        private float _perfAge;
+        private float _worstFrame;
+        private int _stutters;
+        private int _worstTicks;
+#endif
 
         public static BattleHud Create(Transform parent, TMP_FontAsset font, int timeLimitTicks, uint seed, Action<int> setSpeed)
         {
@@ -52,9 +73,36 @@ namespace TAoB.View
             _banner = UiFactory.CreateText(transform, "Banner", font, "", 48f, Color.white, new Vector2(0f, 380f), new Vector2(1000f, 70f));
             _banner.gameObject.SetActive(false);
 
-            // 웨이브·결과 배너와 겹치지 않는 별도 슬롯(수직 슬라이스 계획서 Phase 4.5 — 연속 발동 시 서로 덮어쓰지 않게).
+            // 결과 배너와 겹치지 않는 별도 슬롯(수직 슬라이스 계획서 Phase 4.5 — 연속 발동 시 서로 덮어쓰지 않게).
             _cutin = UiFactory.CreateText(transform, "Cutin", font, "", 40f, BattleLayout.OverloadColor, new Vector2(0f, 300f), new Vector2(1000f, 60f));
             _cutin.gameObject.SetActive(false);
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _perf = UiFactory.CreateText(
+                transform, "Perf", font, "", 20f, BattleLayout.FaintTextColor, new Vector2(-710f, 398f), new Vector2(460f, 30f), left);
+#endif
+        }
+
+        /// <summary>
+        /// 한 프레임의 비용을 기록한다. 측정은 릴리스 빌드에 들어가지 않으므로 호출부도 같은 조건으로 구역화한다.
+        /// </summary>
+        public void ReportFrame(float dt, int ticks)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (dt > _worstFrame) _worstFrame = dt;
+            if (dt > StutterSeconds) _stutters++;
+            if (ticks > _worstTicks) _worstTicks = ticks;
+
+            _perfAge += dt;
+            if (_perfAge < PerfRefreshSeconds) return;
+
+            _perfAge = 0f;
+
+            // 최대 프레임 시간·틱 최댓값은 갱신 주기마다 다시 재고, 끊김 횟수는 한 판 전체의 누적으로 둔다.
+            _perf.SetText("최대 {0:0}ms · 끊김 {1} · 틱/프레임 {2}", _worstFrame * 1000f, _stutters, _worstTicks);
+            _worstFrame = 0f;
+            _worstTicks = 0;
+#endif
         }
 
         public void Apply(BattleSnapshot snapshot)

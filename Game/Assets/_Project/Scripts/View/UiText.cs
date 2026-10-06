@@ -68,10 +68,5 @@ namespace TAoB.View
                 default: return "?";
             }
         }
-
-        public static string WaveBanner(int waveIndex, int waveCount)
-        {
-            return $"웨이브 {waveIndex + 1} / {waveCount}";
-        }
     }
 }

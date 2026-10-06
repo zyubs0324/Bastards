@@ -37,6 +37,18 @@
       "catalystId": "cat_rough", "magitoolId": ""
     },
     {
+      "id": 104, "skillChance": 3400, "name": "굶주린 들개", "side": "Enemy", "job": "Perceptive", "row": "Front",
+      "stats": { "atk": 32, "def": 10, "hp": 280, "spd": 115, "mnd": 10, "res": 10 },
+      "skill": { "powerPermille": 1300, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 50 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
+      "id": 105, "skillChance": 2600, "name": "낙오병", "side": "Enemy", "job": "Knight", "row": "Front",
+      "stats": { "atk": 36, "def": 22, "hp": 340, "spd": 85, "mnd": 10, "res": 30 },
+      "skill": { "powerPermille": 1500, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
       "id": 201, "skillChance": 1400, "name": "반역 기사단장", "side": "Enemy", "job": "Knight", "row": "Front", "isBoss": true,
       "stats": { "atk": 60, "def": 40, "hp": 1500, "spd": 80, "mnd": 30, "res": 80 },
       "skill": { "powerPermille": 2000, "targetRule": "LowestHp", "canOverload": false, "cooldownTicks": 70 },

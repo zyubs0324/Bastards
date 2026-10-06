@@ -43,6 +43,9 @@ namespace TAoB.View
         private static readonly Color ToolColor = new Color(0.8f, 0.85f, 0.95f);
 
         private RectTransform _rect;
+
+        /// <summary>자리로 정해지는 Y. X 는 매 프레임 <c>PosX</c> 보간으로 덮어쓴다.</summary>
+        private float _baseY;
         private Image _box;
         private Vector2 _boxBasePosition;
         private TMP_Text _hp;
@@ -77,13 +80,18 @@ namespace TAoB.View
 
         public int Id { get; private set; }
 
-        /// <summary>화면 중심 기준 위치. 팝업을 띄울 때 쓴다.</summary>
+        /// <summary>
+        /// 스크롤 층(<c>Lane</c>) 지역 좌표. 팝업처럼 화면 좌표가 필요하면 층·전장 층의 이동량을 더한다
+        /// (<see cref="BattleBootstrap"/> 의 팝업 좌표 계산).
+        /// </summary>
         public Vector2 Position => _rect.anchoredPosition;
 
+        /// <param name="position">전장 좌표에서 구한 첫 위치. Y 는 자리로 고정이고 X 는 이후 <c>PosX</c> 가 정한다.</param>
         public static UnitView Create(Transform parent, TMP_FontAsset font, CharacterData character, Vector2 position)
         {
             RectTransform rect = UiFactory.CreateRect(parent, "Unit " + character.Id, position, new Vector2(BattleLayout.UnitWidth, BattleLayout.UnitHeight));
             var view = rect.gameObject.AddComponent<UnitView>();
+            view._baseY = position.y;
             view.Build(font, character);
             return view;
         }
@@ -163,6 +171,10 @@ namespace TAoB.View
             }
 
             if (!current.IsOnField) return;
+
+            // 등장하는 틱에는 보간하지 않는다 — 직전 스냅샷의 좌표에서 미끄러져 오면 순간이동처럼 보인다.
+            float posX = previous.IsOnField ? Mathf.Lerp(previous.PosX, current.PosX, alpha) : current.PosX;
+            _rect.anchoredPosition = new Vector2(BattleLayout.LaneX(posX), _baseY);
 
             // 막대 폭을 다시 쓰면 레이아웃이 더러워지므로, 보간 결과가 같은 프레임에는 건드리지 않는다.
             float hpRatio = Mathf.Lerp(previous.Hp, current.Hp, alpha) / current.MaxHp;

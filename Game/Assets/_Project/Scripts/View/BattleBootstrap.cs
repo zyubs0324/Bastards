@@ -43,6 +43,8 @@ namespace TAoB.View
         private BattleHud _hud;
         private InterventionBar _bar;
         private ResultPanel _result;
+        private RectTransform _field;
+        private LaneView _lane;
         private ScreenShake _screenShake;
         private BattleEffects _effects;
         private int _speed = 1;
@@ -77,23 +79,26 @@ namespace TAoB.View
             _screenShake.Tick(dt);
 
             // 짧은 멈춤(수직 슬라이스 계획서 Phase 4.5): 남은 시간 동안은 틱 루프를 건너뛴다. 틱 루프만 멈추고 연출은 dt 로 계속 흐른다.
+            int executedTicks = 0;
             if (!_isEnded && !_effects.IsHitStopped)
             {
                 int ticks = _driver.Advance(dt, _speed);
-                int executed = 0;
                 for (int i = 0; i < ticks; i++)
                 {
                     RunTick();
-                    executed = i + 1;
+                    executedTicks = i + 1;
                     if (_isEnded || _effects.IsHitStopped) break;
                 }
 
                 // 멈춤이 틱 루프 중간에 걸려 다 돌지 못했으면, 실행하지 못한 만큼을 되돌려 틱을 잃지 않는다.
-                if (executed < ticks) _driver.RestoreTicks(ticks - executed);
+                if (executedTicks < ticks) _driver.RestoreTicks(ticks - executedTicks);
             }
 
             // 전투가 끝나면 보간을 끝까지 밀어 최종 상태로 고정한다. 이후 프레임에도 계속 그려서 연출이 끝까지 재생되게 한다.
             float alpha = _isEnded ? 1f : _driver.Alpha;
+
+            // 배경과 유닛이 같은 alpha 를 쓰므로 배속에서도 어긋나지 않는다(계획서 Phase B).
+            _lane.Apply(_previous.AnchorX, _current.AnchorX, alpha);
             for (int i = 0; i < _current.Units.Count; i++)
             {
                 _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha, dt);
@@ -101,6 +106,9 @@ namespace TAoB.View
 
             _hud.Apply(_current);
             _bar.Apply(_current);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _hud.ReportFrame(dt, executedTicks);
+#endif
         }
 
         private void RunTick()
@@ -136,10 +144,14 @@ namespace TAoB.View
             _viewById.Clear();
 
             // 전장 층(수직 슬라이스 계획서 Phase 4.5): 배경·유닛만 이 아래에 둔다. 화면 흔들림은 이 층만 흔들어 HUD·버튼은 고정한다.
-            RectTransform field = UiFactory.CreateStretched(root, "Field");
-            CreateBackground(field);
-            PlaceGroup(field, _data.Stage.AllyIds);
-            for (int i = 0; i < _data.Stage.Waves.Count; i++) PlaceGroup(field, _data.Stage.Waves[i]);
+            _field = UiFactory.CreateStretched(root, "Field");
+
+            // 하늘·바닥은 전장 층에 고정이고(단색이라 흐를 것이 없다), 흐르는 것은 스크롤 층 안의 표식뿐이다.
+            CreateBackground(_field);
+            _lane = LaneView.Create(_field);
+            PlaceGroup(_lane.Content, _data.Stage.AllyIds);
+            for (int i = 0; i < _data.Stage.Waves.Count; i++) PlaceGroup(_lane.Content, _data.Stage.Waves[i]);
+            _lane.Apply(_previous.AnchorX, _current.AnchorX, 1f);
 
             var allies = new List<CharacterData>(_data.Stage.AllyIds.Count);
             var cutinText = new Dictionary<int, string>(_data.Stage.AllyIds.Count);
@@ -160,12 +172,11 @@ namespace TAoB.View
 #endif
             _result = ResultPanel.Create(root, _font, _restart);
 
-            _screenShake = new ScreenShake(field);
+            _screenShake = new ScreenShake(_field);
             _effects = new BattleEffects(_viewById, _screenShake, text => _hud.ShowCutin(text), cutinText);
 
             // 팝업은 항상 맨 위에 그린다.
             _popups.transform.SetAsLastSibling();
-            _hud.ShowBanner(UiText.WaveBanner(0, _data.Stage.Waves.Count));
         }
 
         /// <summary>스프라이트 없이 하늘·바닥 색 띠와 경계선을 그린다. 화면 흔들림 진폭보다 크게 만들어 가장자리가 드러나지 않게 한다.</summary>
@@ -187,7 +198,10 @@ namespace TAoB.View
             UiFactory.CreateImage(field, "GroundLine", new Vector2(0f, groundTop), new Vector2(width, 4f), BattleLayout.GroundLineColor);
         }
 
-        /// <summary>같은 진영·같은 열끼리 위에서 아래로 세운다. 자리 수를 먼저 세어야 가운데 정렬이 된다.</summary>
+        /// <summary>
+        /// 같은 진영·같은 열끼리 위에서 아래로 세운다. 자리 수를 먼저 세어야 가운데 정렬이 된다.
+        /// X 는 규칙 모듈이 정한 첫 좌표에서 오고(아직 등장하지 않은 조우의 적도 자리를 갖는다), 그 뒤로는 매 프레임 보간으로 덮인다.
+        /// </summary>
         private void PlaceGroup(Transform root, IReadOnlyList<int> ids)
         {
             int frontCount = 0;
@@ -205,9 +219,26 @@ namespace TAoB.View
                 CharacterData character = _data.ResolveCharacter(ids[i], _replacements);
                 bool isFront = character.Row == Row.Front;
                 int slot = isFront ? frontSlot++ : backSlot++;
-                Vector2 position = BattleLayout.UnitPosition(character.Side, character.Row, slot, isFront ? frontCount : backCount);
+                var position = new Vector2(
+                    BattleLayout.LaneX(SpawnPosX(character.Id)),
+                    BattleLayout.UnitY(slot, isFront ? frontCount : backCount));
                 _viewById[character.Id] = UnitView.Create(root, _font, character, position);
             }
+        }
+
+        /// <summary>
+        /// 전투 시작 스냅샷의 좌표. 유닛 수가 열 명 안팎이라 선형 탐색으로 충분하다.
+        /// 편성과 스냅샷은 같은 설정에서 오므로 못 찾는 경우는 없어야 한다 — 0 으로 덮으면
+        /// 유닛이 기준점에 겹쳐 보일 뿐 원인이 드러나지 않으므로 여기서 멈춘다.
+        /// </summary>
+        private int SpawnPosX(int unitId)
+        {
+            for (int i = 0; i < _current.Units.Count; i++)
+            {
+                if (_current.Units[i].Id == unitId) return _current.Units[i].PosX;
+            }
+
+            throw new InvalidOperationException($"유닛 {unitId} 가 전투 시작 스냅샷에 없습니다.");
         }
 
         private void Dispatch(List<BattleEvent> events)
@@ -257,18 +288,21 @@ namespace TAoB.View
                 case BattleEventKind.MagitoolDepleted:
                     _popups.ShowLabel(PositionOf(e.SourceId), "내구력 소진", BattleLayout.MagitoolColor, 0.9f);
                     break;
-                case BattleEventKind.WaveStarted:
-                    _hud.ShowBanner(UiText.WaveBanner(e.Value, _sim.WaveCount));
-                    break;
                 case BattleEventKind.BattleEnded:
                     _hud.ShowBanner(UiText.Outcome((BattleOutcome)e.Detail));
                     break;
             }
         }
 
+        /// <summary>
+        /// 팝업은 캔버스 좌표를 쓰므로(스크롤·흔들림과 함께 움직이면 글자가 흐른다) 유닛의 지역 좌표에
+        /// 스크롤 층과 전장 층의 이동량을 더해 옮긴다.
+        /// </summary>
         private Vector2 PositionOf(int unitId)
         {
-            return _viewById.TryGetValue(unitId, out UnitView view) ? view.Position : Vector2.zero;
+            if (!_viewById.TryGetValue(unitId, out UnitView view)) return Vector2.zero;
+
+            return view.Position + _lane.Offset + _field.anchoredPosition;
         }
 
         private CommandResult Submit(BattleCommand command)

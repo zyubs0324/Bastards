@@ -27,12 +27,12 @@
     { "successChance": 1000, "scatterChance": 4500, "runawayChance": 4400, "breakthroughChance": 100 }
   ],
   "movement": {
-    "marchSpeedFu": 1,
-    "frontSlotOffsetFu": 0,
-    "backSlotOffsetFu": 0,
-    "frontReachFu": 20000,
-    "backReachFu": 20000,
-    "engageMarginFu": 0
+    "marchSpeedFu": 40,
+    "frontSlotOffsetFu": 120,
+    "backSlotOffsetFu": 120,
+    "frontReachFu": 320,
+    "backReachFu": 560,
+    "engageMarginFu": 40
   },
   "affinities": [
     { "attacker": "Knight", "defender": "Perceptive", "level": "Strong" },
