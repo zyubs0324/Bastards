@@ -1,7 +1,7 @@
 # 횡스크롤 이동 전투 전환 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 완료**(2026-10-02, 커밋 `d8125ff`·`62bff36`·`3f4595d`). **Phase B 구현·검증 완료, 커밋 대기**(2026-10-06: 테스트 333개 통과·`TAoB.Combat` 커버리지 99.2%·스모크 오류 0·Windows/APK 빌드 성공·자동 캡처로 등장·교전·보스·결과 화면 확인, `/plan-review --code` 반영). **다음 = 폰에서 1차 재미 판정**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
+**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 완료**(2026-10-02, 커밋 `d8125ff`·`62bff36`·`3f4595d`). **Phase B 완료**(2026-10-06, 커밋 `c2fd6ab` — 테스트 333개 통과·`TAoB.Combat` 커버리지 99.2%·스모크 오류 0·Windows/APK 빌드 성공·자동 캡처로 등장·교전·보스·결과 화면 확인, `/plan-review --code` 반영). **다음 = 폰에서 1차 재미 판정**. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
 
 ## Context
 
