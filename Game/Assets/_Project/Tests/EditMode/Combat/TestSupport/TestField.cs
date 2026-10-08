@@ -8,15 +8,26 @@ namespace TAoB.Combat.Tests
     /// </summary>
     internal static class TestField
     {
-        public static UnitState Ally(int id, Row row = Row.Front, int posX = 0, UnitCondition condition = UnitCondition.Normal)
+        public static UnitState Ally(
+            int id, Row row = Row.Front, int posX = 0, UnitCondition condition = UnitCondition.Normal,
+            Preference preference = Preference.None, int formationChance = 0, Stance stance = Stance.Hold)
         {
-            return Place(new UnitState(TestUnits.Ally(id, row), UnitState.AllyWave), posX, condition);
+            UnitState unit = Place(
+                new UnitState(TestUnits.Ally(id, row, preference: preference, formationChance: formationChance), UnitState.AllyWave), posX, condition);
+            unit.Stance = stance;
+            return unit;
         }
 
         /// <param name="wave">0 이면 전투 시작부터 전장에 있고, 1 이상이면 아직 등장하지 않았다.</param>
-        public static UnitState Enemy(int id, Row row = Row.Front, int posX = 0, UnitCondition condition = UnitCondition.Normal, int wave = 0)
+        public static UnitState Enemy(
+            int id, Row row = Row.Front, int posX = 0, UnitCondition condition = UnitCondition.Normal, int wave = 0,
+            Preference preference = Preference.None, int formationChance = 0, Stance stance = Stance.Hold, bool isFlanking = false)
         {
-            return Place(new UnitState(TestUnits.Enemy(id, row), wave), posX, condition);
+            UnitState unit = Place(
+                new UnitState(TestUnits.Enemy(id, row, preference: preference, formationChance: formationChance), wave), posX, condition);
+            unit.Stance = stance;
+            unit.IsFlanking = isFlanking;
+            return unit;
         }
 
         /// <summary>ID 오름차순 배열 — 규칙 모듈이 요구하는 순서다.</summary>

@@ -35,6 +35,29 @@ namespace TAoB.View.Tests
         }
 
         [Test]
+        public void HoldingTheLine_ShowsNoStanceTag()
+        {
+            // 평소와 다르게 움직이는 동료만 표식을 단다.
+            Assert.AreEqual("", UiText.StanceTag(Stance.Hold, false));
+        }
+
+        [Test]
+        public void EveryActiveStance_HasADistinctTag_AndAFlankerIsToldApartFromAChargerAndAColor()
+        {
+            var seen = new System.Collections.Generic.HashSet<string>();
+            foreach (Stance stance in new[] { Stance.Forward, Stance.Charge, Stance.HoldBack, Stance.StepBack })
+            {
+                string tag = UiText.StanceTag(stance, false);
+                Assert.IsNotEmpty(tag, stance.ToString());
+                Assert.IsTrue(seen.Add(tag), $"{stance} 표식이 다른 자세와 같다");
+            }
+
+            Assert.IsTrue(seen.Add(UiText.StanceTag(Stance.Charge, true)), "침투는 돌진과 다른 표식이다.");
+            Assert.AreNotEqual(BattleLayout.StanceTagColor(Stance.Charge, false), BattleLayout.StanceTagColor(Stance.Charge, true));
+            Assert.AreNotEqual(BattleLayout.StanceTagColor(Stance.Forward, false), BattleLayout.StanceTagColor(Stance.StepBack, false));
+        }
+
+        [Test]
         public void EveryOutcome_HasDistinctText()
         {
             var seen = new System.Collections.Generic.HashSet<string>();

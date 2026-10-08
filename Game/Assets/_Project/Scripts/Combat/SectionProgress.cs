@@ -6,17 +6,31 @@ namespace TAoB.Combat
     /// </summary>
     internal static class SectionProgress
     {
-        /// <summary>이번 틱에 기준점이 전진할 거리. 0 이면 멈춘다.</summary>
-        public static int AdvanceFu(UnitState[] units, LaneConfig lane)
+        /// <summary>
+        /// 이번 틱에 기준점이 전진할 거리. 0 이면 멈춘다. 교전 여부는 자세가 아니라 **자리**에서 판정한다(Phase C) —
+        /// 돌진한 아군이나 침투하러 앞서 나온 적이 있어도 진형은 정해진 거리에서 멈춘다. 그래야 모두가 같이 사거리 안에 들고,
+        /// 침투한 적이 정지선을 앞당겨 제 이점을 스스로 지우는 일이 없다.
+        /// </summary>
+        /// <param name="enemyAnchorX">지금 조우 적의 진형 기준점.</param>
+        public static int AdvanceFu(UnitState[] units, LaneConfig lane, int allyAnchorX, int enemyAnchorX)
         {
             if (HasScatteredAlly(units)) return 0;
 
             Row reference = ReferenceRow(units);
             for (int i = 0; i < units.Length; i++)
             {
-                UnitState unit = units[i];
-                if (!IsAliveAlly(unit) || unit.Row != reference) continue;
-                if (Engagement.HasEngagedOpponent(unit, units, lane)) return 0;
+                UnitState ally = units[i];
+                if (!IsAliveAlly(ally) || ally.Row != reference) continue;
+
+                int allySlotX = Movement.SlotFu(ally, allyAnchorX, lane);
+                for (int j = 0; j < units.Length; j++)
+                {
+                    UnitState enemy = units[j];
+                    if (enemy.Side != Side.Enemy || !enemy.IsTargetable) continue;
+
+                    int enemySlotX = Movement.SlotFu(enemy, enemyAnchorX, lane);
+                    if (Engagement.IsEngagedAt(ally, allySlotX, enemySlotX, lane)) return 0;
+                }
             }
 
             return lane.MarchSpeedFu;

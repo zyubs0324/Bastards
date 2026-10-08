@@ -69,8 +69,8 @@ namespace TAoB.Data
     public sealed class CharacterData
     {
         internal CharacterData(
-            int id, string name, Side side, Job job, Row row, Stats stats, int skillChance, SkillDefinition skill,
-            CatalystData catalyst, MagitoolData magitool, bool isBoss)
+            int id, string name, Side side, Job job, Row row, Stats stats, int skillChance, Preference preference, int formationChance,
+            SkillDefinition skill, CatalystData catalyst, MagitoolData magitool, bool isBoss)
         {
             Id = id;
             Name = name;
@@ -79,6 +79,8 @@ namespace TAoB.Data
             Row = row;
             Stats = stats;
             SkillChance = skillChance;
+            Preference = preference;
+            FormationChance = formationChance;
             Skill = skill;
             Catalyst = catalyst;
             Magitool = magitool;
@@ -94,6 +96,12 @@ namespace TAoB.Data
 
         /// <summary>기술 자동 사용 빈도(만분율). 숨은 스탯이라 화면에 보이지 않는다.</summary>
         public int SkillChance { get; }
+
+        /// <summary>조우마다 진형유지 값을 통과했을 때 따르는 성향.</summary>
+        public Preference Preference { get; }
+
+        /// <summary>숨은 진형유지 값(만분율).</summary>
+        public int FormationChance { get; }
         public SkillDefinition Skill { get; }
 
         /// <summary>없으면 null.</summary>
@@ -105,13 +113,13 @@ namespace TAoB.Data
 
         public UnitSetup ToUnitSetup()
         {
-            return new UnitSetup(Id, Side, Job, Row, Stats, SkillChance, Skill, Catalyst?.Catalyst, Magitool?.Magitool, IsBoss);
+            return new UnitSetup(Id, Side, Job, Row, Stats, SkillChance, Preference, FormationChance, Skill, Catalyst?.Catalyst, Magitool?.Magitool, IsBoss);
         }
 
         /// <summary>장비만 바꾼 사본(개발용 장비 교체). 장착 가능 여부는 검사하지 않는다 — 호출자가 <see cref="EquipRules.CanEquip"/> 으로 거른다.</summary>
         public CharacterData WithEquipment(CatalystData catalyst, MagitoolData magitool)
         {
-            return new CharacterData(Id, Name, Side, Job, Row, Stats, SkillChance, Skill, catalyst, magitool, IsBoss);
+            return new CharacterData(Id, Name, Side, Job, Row, Stats, SkillChance, Preference, FormationChance, Skill, catalyst, magitool, IsBoss);
         }
 
         /// <summary>없으면 null. 캐릭터는 열 명 안팎이라 선형 탐색으로 충분하다.</summary>

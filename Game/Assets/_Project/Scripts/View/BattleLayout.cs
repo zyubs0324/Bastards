@@ -120,6 +120,21 @@ namespace TAoB.View
             return spacingPx * (count - 1) * 0.5f >= UiFit.MaxCanvasWidth * 0.5f + spacingPx;
         }
 
+        /// <summary>성향 표식 색. 침투는 붉은색, 돌진은 주황으로 갈라 한눈에 읽힌다.</summary>
+        public static Color StanceTagColor(Stance stance, bool isFlanking)
+        {
+            if (isFlanking) return new Color(1f, 0.35f, 0.3f);
+
+            switch (stance)
+            {
+                case Stance.Forward: return new Color(0.5f, 0.85f, 1f);
+                case Stance.Charge: return new Color(1f, 0.7f, 0.25f);
+                case Stance.HoldBack: return new Color(0.7f, 0.8f, 0.7f);
+                case Stance.StepBack: return new Color(0.65f, 0.65f, 0.9f);
+                default: return Color.white;
+            }
+        }
+
         public static Color JobColor(Job job, Side side)
         {
             Color color;

@@ -447,7 +447,7 @@ namespace TAoB.Data.Tests
         [Test]
         public void EveryMovementKey_MatchesLaneConfigParameterName()
         {
-            // 로더는 LaneConfig 생성자 예외의 매개변수 이름에 블록 이름을 붙여 필드 경로로 되돌린다. 그 규약을 6개 전부에서 고정한다.
+            // 로더는 LaneConfig 생성자 예외의 매개변수 이름에 블록 이름을 붙여 필드 경로로 되돌린다. 그 규약을 10개 전부에서 고정한다.
             var ctor = typeof(LaneConfig).GetConstructors()[0];
             int checkedCount = 0;
 
@@ -463,7 +463,7 @@ namespace TAoB.Data.Tests
                 checkedCount++;
             }
 
-            Assert.AreEqual(6, checkedCount);
+            Assert.AreEqual(10, checkedCount);
         }
 
         [Test]
@@ -485,6 +485,77 @@ namespace TAoB.Data.Tests
 
             AssertLocation(Fails(TestJson.Files(characters: tooHigh)), DataFiles.Characters, "characters[1].skillChance");
             AssertLocation(Fails(TestJson.Files(characters: tooLow)), DataFiles.Characters, "characters[1].skillChance");
+        }
+
+        [Test]
+        public void MissingPreference_IsRejected()
+        {
+            // 문자열이라 빠지면 null 이 되어 걸러진다 — 열거형 정수였다면 0(첫 값)으로 조용히 통과했을 것이다.
+            string json = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500, ""preference"": ""None"",", @"""skillChance"": 1500,");
+
+            var ex = Fails(TestJson.Files(characters: json));
+
+            AssertLocation(ex, DataFiles.Characters, "characters[1].preference");
+        }
+
+        [Test]
+        public void UnknownPreference_IsRejectedWithTheAllowedNames()
+        {
+            string json = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500, ""preference"": ""None"",", @"""skillChance"": 1500, ""preference"": ""Berserker"",");
+
+            var ex = Fails(TestJson.Files(characters: json));
+
+            AssertLocation(ex, DataFiles.Characters, "characters[1].preference");
+            StringAssert.Contains("Guardian", ex.Message);
+        }
+
+        [TestCase("None")]
+        [TestCase("Guardian")]
+        [TestCase("Charger")]
+        [TestCase("Rearguard")]
+        [TestCase("Coward")]
+        public void EveryPreferenceName_IsAccepted(string name)
+        {
+            string json = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500, ""preference"": ""None"",", @"""skillChance"": 1500, ""preference"": """ + name + @""",");
+
+            GameData data = GameDataLoader.Parse(TestJson.Files(characters: json));
+
+            Assert.AreEqual(name, data.FindCharacter(2).Preference.ToString());
+        }
+
+        [Test]
+        public void MissingFormationChance_IsRejected()
+        {
+            string json = TestJson.Swap(TestJson.Characters, @"""skillChance"": 1500, ""preference"": ""None"", ""formationChance"": 0,", @"""skillChance"": 1500, ""preference"": ""None"",");
+
+            var ex = Fails(TestJson.Files(characters: json));
+
+            AssertLocation(ex, DataFiles.Characters, "characters[1].formationChance");
+        }
+
+        [TestCase(10001)]
+        [TestCase(-5)]
+        public void FormationChanceOutOfRange_IsRejected(int value)
+        {
+            // -5 는 "필드 없음" 표시(-1)와 다르므로 범위 오류로 걸린다. Swap 은 조각이 없으면 먼저 실패해 이 테스트가 조용히 건너뛰지 않는다.
+            string json = TestJson.Swap(TestJson.Characters,
+                @"""skillChance"": 1500, ""preference"": ""None"", ""formationChance"": 0,",
+                @"""skillChance"": 1500, ""preference"": ""None"", ""formationChance"": " + value + ",");
+
+            var ex = Fails(TestJson.Files(characters: json));
+
+            AssertLocation(ex, DataFiles.Characters, "characters[1].formationChance");
+        }
+
+        [Test]
+        public void FormationChanceBounds_AreAccepted()
+        {
+            string full = TestJson.Swap(TestJson.Characters,
+                @"""skillChance"": 1500, ""preference"": ""None"", ""formationChance"": 0,",
+                @"""skillChance"": 1500, ""preference"": ""None"", ""formationChance"": 10000,");
+
+            Assert.AreEqual(0, GameDataLoader.Parse(TestJson.Files()).FindCharacter(2).FormationChance);
+            Assert.AreEqual(10000, GameDataLoader.Parse(TestJson.Files(characters: full)).FindCharacter(2).FormationChance);
         }
 
         [Test]

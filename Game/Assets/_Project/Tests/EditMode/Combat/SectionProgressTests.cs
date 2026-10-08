@@ -17,7 +17,7 @@ namespace TAoB.Combat.Tests
         {
             UnitState[] units = TestField.ById(TestField.Ally(1, Row.Front), TestField.Enemy(101, Row.Front, posX: 500));
 
-            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config, 0, 500));
         }
 
         [Test]
@@ -25,7 +25,7 @@ namespace TAoB.Combat.Tests
         {
             UnitState[] units = TestField.ById(TestField.Ally(1, Row.Front), TestField.Enemy(101, Row.Front, posX: 100));
 
-            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config, 0, 100));
         }
 
         [Test]
@@ -37,8 +37,8 @@ namespace TAoB.Combat.Tests
                 TestField.Ally(2, Row.Back),
                 TestField.Enemy(101, Row.Front, posX: 250));
 
-            Assert.IsTrue(Engagement.HasEngagedOpponent(units[1], units, Config), "뒷열은 이미 닿는 거리다.");
-            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config));
+            Assert.IsTrue(Engagement.IsEngagedAt(units[1], units[1].PosX, 250, Config), "뒷열은 이미 닿는 거리다.");
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config, 0, 250));
         }
 
         [Test]
@@ -51,7 +51,7 @@ namespace TAoB.Combat.Tests
                 TestField.Enemy(101, Row.Front, posX: 250));
 
             Assert.AreEqual(Row.Back, SectionProgress.ReferenceRow(units));
-            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config, 0, 250));
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace TAoB.Combat.Tests
                 TestField.Ally(2, Row.Back, condition: UnitCondition.Scattered),
                 TestField.Enemy(101, Row.Front, posX: 500));
 
-            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config, 0, 500));
         }
 
         [Test]
@@ -84,8 +84,43 @@ namespace TAoB.Combat.Tests
             UnitState[] atMargin = TestField.ById(TestField.Ally(1, Row.Front), TestField.Enemy(101, Row.Front, posX: 80));
             UnitState[] justOutside = TestField.ById(TestField.Ally(2, Row.Front), TestField.Enemy(102, Row.Front, posX: 81));
 
-            Assert.AreEqual(0, SectionProgress.AdvanceFu(atMargin, WithMargin));
-            Assert.AreEqual(10, SectionProgress.AdvanceFu(justOutside, WithMargin));
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(atMargin, WithMargin, 0, 80));
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(justOutside, WithMargin, 0, 81));
+        }
+
+        [Test]
+        public void ChargerAheadOfTheLine_DoesNotStopTheFormationEarly()
+        {
+            // 돌진한 유닛의 실제 위치(60)는 사거리 안이지만 자리(0)는 아니다. 실제 위치로 판정하면 진형이 일찍 서서
+            // 나머지 동료는 사거리 밖에서 구경만 한다.
+            UnitState charger = TestField.Ally(1, Row.Front, posX: 60, stance: Stance.Charge);
+            UnitState enemy = TestField.Enemy(101, Row.Front, posX: 160);
+            UnitState[] units = TestField.ById(charger, enemy);
+
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config, 0, 160));
+        }
+
+        [Test]
+        public void FlankingEnemyAheadOfItsLine_DoesNotStopTheFormationEarly()
+        {
+            // 침투하러 앞서 나온 적의 실제 위치(60)는 사거리 안이지만 그 적의 자리(160)는 아니다. 실제 위치로 판정하면
+            // 아군이 일찍 멈춰, 침투한 적이 앞으로 나온 만큼 도로 멀어져 뒷열에 닿지 못한다.
+            UnitState ally = TestField.Ally(1, Row.Front);
+            UnitState flanker = TestField.Enemy(101, Row.Front, posX: 60, stance: Stance.Charge, isFlanking: true);
+            UnitState[] units = TestField.ById(ally, flanker);
+
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config, 0, 160));
+        }
+
+        [Test]
+        public void SlotInEngagementReach_StopsTheFormation_EvenIfTheUnitStoodBack()
+        {
+            // 반대로 물러선 유닛의 실제 위치(-60)는 사거리 밖이지만 자리(0)가 닿으면 진형은 멈춘다.
+            UnitState coward = TestField.Ally(1, Row.Front, posX: -60, stance: Stance.StepBack);
+            UnitState enemy = TestField.Enemy(101, Row.Front, posX: 100);
+            UnitState[] units = TestField.ById(coward, enemy);
+
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config, 0, 100));
         }
 
         [Test]
@@ -98,18 +133,41 @@ namespace TAoB.Combat.Tests
                 TestField.Enemy(101, Row.Front, posX: 250));
 
             Assert.AreEqual(Row.Back, SectionProgress.ReferenceRow(units));
-            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(units, Config, 0, 250));
         }
 
         [Test]
         public void DownedEnemyDoesNotHoldTheFormation()
         {
-            UnitState[] units = TestField.ById(
+            // 앞열 적은 자리(100)가 닿는 거리고 뒷열 적은 자리(500)가 멀다. 빈사 앞열 하나만 닿는 구성이다.
+            LaneConfig staggered = TestBalance.StaticLane(marchSpeedFu: 10, frontReachFu: 100, backReachFu: 1000, backSlotOffsetFu: 400);
+            UnitState[] downedFront = TestField.ById(
                 TestField.Ally(1, Row.Front),
-                TestField.Enemy(101, Row.Front, posX: 50, condition: UnitCondition.Downed),
-                TestField.Enemy(102, Row.Front, posX: 500));
+                TestField.Enemy(101, Row.Front, condition: UnitCondition.Downed),
+                TestField.Enemy(102, Row.Back));
+            UnitState[] aliveFront = TestField.ById(
+                TestField.Ally(1, Row.Front),
+                TestField.Enemy(101, Row.Front),
+                TestField.Enemy(102, Row.Back));
 
-            Assert.AreEqual(10, SectionProgress.AdvanceFu(units, Config));
+            Assert.AreEqual(10, SectionProgress.AdvanceFu(downedFront, staggered, 0, 100), "빈사 적은 정지선을 만들지 않는다.");
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(aliveFront, staggered, 0, 100), "대조: 같은 자리에 산 적이 있으면 멈춘다.");
+        }
+
+        [TestCase(Stance.Charge)]
+        [TestCase(Stance.Forward)]
+        [TestCase(Stance.HoldBack)]
+        [TestCase(Stance.StepBack)]
+        public void StopLineIsTheSlotDistance_WhateverTheStanceOffsets(Stance stance)
+        {
+            // 실데이터 수치: 자리 간격 120, 사거리 440, 여유 120 이므로 양쪽 자리가 320 이내면 멈춘다(적 기준점 560 이하).
+            // 자세 목표(자리 +- 드리프트)로 판정하면 자세마다 경계가 달라진다.
+            LaneConfig lane = TestBalance.RealisticLane();
+            UnitState[] stopped = TestField.ById(TestField.Ally(1, Row.Front, stance: stance), TestField.Enemy(101, Row.Front, stance: stance));
+            UnitState[] marching = TestField.ById(TestField.Ally(2, Row.Front, stance: stance), TestField.Enemy(102, Row.Front, stance: stance));
+
+            Assert.AreEqual(0, SectionProgress.AdvanceFu(stopped, lane, 0, 560));
+            Assert.AreEqual(40, SectionProgress.AdvanceFu(marching, lane, 0, 561));
         }
     }
 }

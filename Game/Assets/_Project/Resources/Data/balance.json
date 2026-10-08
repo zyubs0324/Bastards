@@ -30,9 +30,13 @@
     "marchSpeedFu": 40,
     "frontSlotOffsetFu": 120,
     "backSlotOffsetFu": 120,
-    "frontReachFu": 320,
-    "backReachFu": 560,
-    "engageMarginFu": 40
+    "frontReachFu": 440,
+    "backReachFu": 680,
+    "engageMarginFu": 120,
+    "formationDriftFu": 40,
+    "chargeDriftFu": 200,
+    "stepBackFu": 60,
+    "flankChance": 3500
   },
   "affinities": [
     { "attacker": "Knight", "defender": "Perceptive", "level": "Strong" },

@@ -76,10 +76,15 @@ namespace TAoB.Combat
     /// <summary>
     /// 대상 규칙(기획서 4-1 진형·기술 대상)에 따라 공격 대상을 고른다.
     /// 전달받는 유닛 배열은 ID 오름차순이어야 한다 — 틱마다 정렬하지 않고 순서를 얻기 위함.
+    ///
+    /// 후보는 **사거리 안의 상대**뿐이다(계획서 Phase C). 정지 프리셋처럼 모든 쌍이 사거리 안이면 이전과 같다.
+    /// 단일 대상 규칙은 도발 중인 상대(동료 보호)가 사거리 안에 있으면 그쪽만 후보로 삼는다 —
+    /// 가중 난수가 아니라 정해진 우선순위라 플레이어가 읽을 수 있고 난수열도 바뀌지 않는다.
+    /// 측면 침투 중인 유닛은 도발을 무시하고, 앞열 우선 규칙에서는 뒷열부터 노린다(앞열이 사거리 안에 있어도).
     /// </summary>
     internal static class TargetSelector
     {
-        public static void Select(TargetRule rule, UnitState actor, UnitState[] unitsById, List<UnitState> results)
+        public static void Select(TargetRule rule, UnitState actor, UnitState[] unitsById, LaneConfig lane, List<UnitState> results)
         {
             results.Clear();
             Side opponent = actor.Side == Side.Ally ? Side.Enemy : Side.Ally;
@@ -89,20 +94,42 @@ namespace TAoB.Combat
                 case TargetRule.All:
                     for (int i = 0; i < unitsById.Length; i++)
                     {
-                        if (IsOpponent(unitsById[i], opponent)) results.Add(unitsById[i]);
+                        if (IsReachable(unitsById[i], opponent, actor, lane)) results.Add(unitsById[i]);
                     }
 
                     return;
 
                 case TargetRule.LowestHp:
-                    AddIfFound(results, FindLowestHp(unitsById, opponent));
+                    AddIfFound(results, FindLowestHp(unitsById, opponent, actor, lane, HasTauntInReach(unitsById, opponent, actor, lane)));
                     return;
 
                 default:
-                    UnitState target = FindFirstInRow(unitsById, opponent, Row.Front) ?? FindFirstInRow(unitsById, opponent, Row.Back);
+                    bool onlyTaunters = HasTauntInReach(unitsById, opponent, actor, lane);
+                    Row first = actor.IsFlanking ? Row.Back : Row.Front;
+                    Row second = actor.IsFlanking ? Row.Front : Row.Back;
+                    UnitState target = FindFirstInRow(unitsById, opponent, first, actor, lane, onlyTaunters)
+                        ?? FindFirstInRow(unitsById, opponent, second, actor, lane, onlyTaunters);
                     AddIfFound(results, target);
                     return;
             }
+        }
+
+        private static bool IsReachable(UnitState unit, Side opponent, UnitState actor, LaneConfig lane)
+        {
+            return IsOpponent(unit, opponent) && Engagement.CanReach(actor, unit, lane);
+        }
+
+        /// <summary>사거리 안에 도발 중인 상대가 있는가. 침투 중인 유닛은 도발을 무시한다.</summary>
+        private static bool HasTauntInReach(UnitState[] unitsById, Side opponent, UnitState actor, LaneConfig lane)
+        {
+            if (actor.IsFlanking) return false;
+
+            for (int i = 0; i < unitsById.Length; i++)
+            {
+                if (unitsById[i].IsTaunting && IsReachable(unitsById[i], opponent, actor, lane)) return true;
+            }
+
+            return false;
         }
 
         /// <summary>폭주 후보: 시전자를 뺀 공격 가능한 모든 유닛(아군 포함), ID 순.</summary>
@@ -120,25 +147,31 @@ namespace TAoB.Combat
             return unit.Side == opponent && unit.IsTargetable;
         }
 
-        private static UnitState FindFirstInRow(UnitState[] unitsById, Side opponent, Row row)
+        private static UnitState FindFirstInRow(UnitState[] unitsById, Side opponent, Row row, UnitState actor, LaneConfig lane, bool onlyTaunters)
         {
             for (int i = 0; i < unitsById.Length; i++)
             {
                 UnitState unit = unitsById[i];
-                if (IsOpponent(unit, opponent) && unit.Row == row) return unit;
+                if (!IsReachable(unit, opponent, actor, lane) || unit.Row != row) continue;
+                if (onlyTaunters && !unit.IsTaunting) continue;
+
+                return unit;
             }
 
             return null;
         }
 
-        private static UnitState FindLowestHp(UnitState[] unitsById, Side opponent)
+        private static UnitState FindLowestHp(UnitState[] unitsById, Side opponent, UnitState actor, LaneConfig lane, bool onlyTaunters)
         {
             UnitState best = null;
             for (int i = 0; i < unitsById.Length; i++)
             {
                 UnitState unit = unitsById[i];
+                if (!IsReachable(unit, opponent, actor, lane)) continue;
+                if (onlyTaunters && !unit.IsTaunting) continue;
+
                 // ID 순으로 돌기 때문에 HP 가 같으면 먼저 찾은(작은 ID) 유닛이 남는다.
-                if (IsOpponent(unit, opponent) && (best == null || unit.Hp < best.Hp)) best = unit;
+                if (best == null || unit.Hp < best.Hp) best = unit;
             }
 
             return best;

@@ -53,9 +53,13 @@ namespace TAoB.Combat.Tests
             SkillDefinition skill = null,
             Catalyst catalyst = null,
             Magitool magitool = null,
-            int skillChance = 0)
+            int skillChance = 0,
+            Preference preference = Preference.None,
+            int formationChance = 0)
         {
-            return new UnitSetup(id, Side.Ally, job, row, stats ?? MakeStats(), skillChance, skill ?? Skill(), catalyst, magitool, isBoss: false);
+            return new UnitSetup(
+                id, Side.Ally, job, row, stats ?? MakeStats(), skillChance, preference, formationChance,
+                skill ?? Skill(), catalyst, magitool, isBoss: false);
         }
 
         public static UnitSetup Enemy(
@@ -66,10 +70,13 @@ namespace TAoB.Combat.Tests
             SkillDefinition skill = null,
             Catalyst catalyst = null,
             bool isBoss = false,
-            int skillChance = 0)
+            int skillChance = 0,
+            Preference preference = Preference.None,
+            int formationChance = 0)
         {
             return new UnitSetup(
-                id, Side.Enemy, job, row, stats ?? MakeStats(hp: Unkillable, spd: NeverActs), skillChance, skill ?? Skill(), catalyst, null, isBoss);
+                id, Side.Enemy, job, row, stats ?? MakeStats(hp: Unkillable, spd: NeverActs), skillChance, preference, formationChance,
+                skill ?? Skill(), catalyst, null, isBoss);
         }
 
         public static BattleSetup Setup(

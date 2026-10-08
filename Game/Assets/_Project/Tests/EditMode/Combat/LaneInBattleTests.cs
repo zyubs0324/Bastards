@@ -194,14 +194,39 @@ namespace TAoB.Combat.Tests
         }
 
         [Test]
+        public void OverloadOutOfReach_WaitsInTheQueue_WithoutRollingOrActing()
+        {
+            // 과부하는 공격이라 사거리 안에서만 나간다(계획서 Phase C). 준비된 값이 없는 난수라 위험 판정이 끼면 예외가 난다.
+            UnitSetup Mage() => TestUnits.Ally(1, Row.Front, Job.Mage, skill: TestUnits.Skill(canOverload: true), catalyst: new Catalyst(100));
+            var far = new BattleSimulation(
+                TestUnits.Setup(new[] { Mage() }, TestUnits.OneWave(TestUnits.Enemy(101)), TestUnits.Balance(lane: MovingLane()), waveApproachFu: new[] { 2000 }),
+                new FixedRandom());
+            var near = new BattleSimulation(
+                TestUnits.Setup(new[] { Mage() }, TestUnits.OneWave(TestUnits.Enemy(101)), TestUnits.Balance(lane: MovingLane()), waveApproachFu: new[] { 20 }),
+                new FixedRandom(4000, 4000, 4000));
+            far.Enqueue(BattleCommand.Overload(1));
+            near.Enqueue(BattleCommand.Overload(1));
+
+            List<BattleEvent> farEvents = SimRunner.Run(far, 30);
+            List<BattleEvent> nearEvents = SimRunner.Run(near, 30);
+
+            Assert.IsEmpty(SimRunner.OfKind(farEvents, BattleEventKind.OverloadResolved), "사거리 밖에서는 과부하가 나가지 않는다.");
+            Assert.IsEmpty(SimRunner.ActionsBy(farEvents, 1), "대기 중인 명령이 기본 공격으로 새지 않는다.");
+            Assert.IsNotEmpty(SimRunner.OfKind(nearEvents, BattleEventKind.OverloadResolved), "대조: 사거리 안이면 같은 명령이 나간다.");
+        }
+
+        [Test]
         public void ScatteredAllyHoldsTheFormation_UntilItIsRescued()
         {
+            // 과부하는 공격이라 대상이 사거리 안에 있어야 나간다. 뒷열 마법사만 먼 적에 닿는 구성으로 맞춘다 —
+            // 앞열은 닿지 않아 진형은 행군 중이고, 흩어짐이 그 행군을 멈추는지 본다.
+            LaneConfig longBackReach = TestBalance.StaticLane(marchSpeedFu: 10, frontReachFu: 50, backReachFu: 3000);
             var mage = TestUnits.Ally(2, Row.Back, Job.Mage, skill: TestUnits.Skill(canOverload: true), catalyst: new Catalyst(100));
             var sim = new BattleSimulation(
                 TestUnits.Setup(
                     new[] { TestUnits.Ally(1), mage },
                     TestUnits.OneWave(TestUnits.Enemy(101)),
-                    TestUnits.Balance(lane: MovingLane()),
+                    TestUnits.Balance(lane: longBackReach),
                     waveApproachFu: new[] { 2000 }),
                 // 과부하 초과 500‰ 구간에서 4000 은 흩어짐이다(ScatterRescueTests 와 같은 값).
                 new FixedRandom(4000));

@@ -31,7 +31,9 @@ namespace TAoB.Combat
             int magitoolDurability,
             int magitoolMaxDurability,
             bool isBoss,
-            int posX)
+            int posX,
+            Stance stance,
+            bool isFlanking)
         {
             Id = id;
             Side = side;
@@ -50,6 +52,8 @@ namespace TAoB.Combat
             MagitoolMaxDurability = magitoolMaxDurability;
             IsBoss = isBoss;
             PosX = posX;
+            Stance = stance;
+            IsFlanking = isFlanking;
         }
 
         public int Id { get; }
@@ -77,6 +81,12 @@ namespace TAoB.Combat
 
         /// <summary>전장 1차원 좌표(fu). 표시 계층이 두 스냅샷 사이를 보간한다.</summary>
         public int PosX { get; }
+
+        /// <summary>이번 조우의 자세. 성향 표식을 그리는 데 쓴다.</summary>
+        public Stance Stance { get; }
+
+        /// <summary>측면 침투 중인 적인가.</summary>
+        public bool IsFlanking { get; }
     }
 
     /// <summary>

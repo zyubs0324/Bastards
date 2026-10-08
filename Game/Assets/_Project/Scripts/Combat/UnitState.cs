@@ -35,6 +35,15 @@ namespace TAoB.Combat
 
         /// <summary>전장 1차원 좌표(fu). 아군은 +x 로 전진한다. Y 는 표시 계층 전담(계획서 D3).</summary>
         public int PosX { get; set; }
+
+        /// <summary>이번 조우의 자세. 조우가 시작될 때 한 번 정한다(<see cref="Tactics"/>). 지속 상태라 해시에 들어간다.</summary>
+        public Stance Stance { get; set; }
+
+        /// <summary>측면 침투 중인 적. 뒷열을 먼저 노린다. 조우마다 다시 정한다.</summary>
+        public bool IsFlanking { get; set; }
+
+        /// <summary>도발 중인가 — 동료 보호 성향을 따르기로 한 유닛. 상대편의 단일 대상 공격이 먼저 이 유닛을 향한다.</summary>
+        public bool IsTaunting => Stance == Stance.Forward;
         public int ActionGauge { get; set; }
         public int Cooldown { get; set; }
         public int MagitoolDurability { get; set; }

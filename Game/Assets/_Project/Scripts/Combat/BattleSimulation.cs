@@ -65,6 +65,9 @@ namespace TAoB.Combat
             _waveAnchorX = BuildWaveAnchors(setup);
             EnemyAnchorX = _waveAnchorX[0];
             PlaceUnits();
+
+            // 첫 조우의 자세·침투를 정한다. 확률이 0 이면 난수를 쓰지 않으므로 성향 없는 구성의 난수열은 그대로다.
+            Tactics.DecideEncounter(_unitsById, 0, _lane, _random);
             Outcome = BattleOutcome.InProgress;
         }
 
@@ -186,7 +189,9 @@ namespace TAoB.Combat
                     unit.MagitoolDurability,
                     tool != null ? tool.MaxDurability : 0,
                     unit.Setup.IsBoss,
-                    unit.PosX));
+                    unit.PosX,
+                    unit.Stance,
+                    unit.IsFlanking));
             }
         }
 
@@ -212,9 +217,7 @@ namespace TAoB.Combat
                 // 사거리 밖이면 명령도 게이지도 건드리지 않고 넘긴다 — 사용자가 누른 기술이 조용히 사라지지 않게(계획서 D6).
                 if (!CanActFromHere(unit)) continue;
 
-                // 사거리 관문은 "때릴 상대가 있는가"만 본다. 대상 선택은 거리를 보지 않는다 —
-                // 열별 좌표가 고정인 계획서 Phase A 에서는 앞열 우선 선택이 곧 최근접 선택이고,
-                // 대상별 사거리 필터는 선호 기반 대상 선택(계획서 Phase C)과 같은 커밋에서 들어온다.
+                // 사거리 관문은 "때릴 상대가 있는가"만 본다. 대상별 사거리 필터는 TargetSelector 가 맡는다(계획서 Phase C).
                 BattleCommand command = ChooseCommand(unit, events);
                 ActionGaugeScheduler.Consume(unit, _balance);
                 _resolver.Execute(unit, command, Tick, events);
@@ -235,7 +238,7 @@ namespace TAoB.Combat
         /// <summary>
         /// 지금 자리에서 행동이 성립하는가. 사거리 안에 상대가 있으면 성립한다.
         /// 상대가 전장에 아예 없으면(같은 틱에 마지막 적이 쓰러진 경우) 기존처럼 행동한다 — 사거리 때문에 건너뛰는 것과 구분한다.
-        /// 위치와 무관한 대기 명령(과부하·구조)은 사거리를 보지 않는다.
+        /// 위치와 무관한 대기 명령(구조)은 사거리를 보지 않는다.
         /// </summary>
         private bool CanActFromHere(UnitState unit)
         {
@@ -249,9 +252,13 @@ namespace TAoB.Combat
                 && IsExecutable(unit, pending);
         }
 
+        /// <summary>
+        /// 위치와 무관한 명령은 구조뿐이다. 과부하는 공격이라 대상이 사거리 밖이면 쿨타임과 폭주 위험만 치르고
+        /// 아무도 맞히지 못한다 — 사거리 안에 들 때까지 기다려야 한다.
+        /// </summary>
         private static bool IsPositionIndependent(CommandKind kind)
         {
-            return kind == CommandKind.Overload || kind == CommandKind.Rescue;
+            return kind == CommandKind.Rescue;
         }
 
         private bool IsExecutable(UnitState unit, BattleCommand command)
@@ -285,10 +292,10 @@ namespace TAoB.Combat
             return OverloadResolver.RiskLevel(unit.Setup.Catalyst.OverloadExcessPermille(unit.Mnd, _balance), _balance);
         }
 
-        /// <summary>진형 기준점을 전진시키고 모든 유닛을 자기 자리 쪽으로 한 걸음 옮긴다.</summary>
+        /// <summary>진형 기준점을 전진시키고 모든 유닛을 자세까지 반영한 목표 자리 쪽으로 한 걸음 옮긴다.</summary>
         private void AdvanceSection()
         {
-            int advanceFu = SectionProgress.AdvanceFu(_unitsById, _lane);
+            int advanceFu = SectionProgress.AdvanceFu(_unitsById, _lane, AnchorX, EnemyAnchorX);
             if (advanceFu > 0) AnchorX = CombatScale.ClampToInt((long)AnchorX + advanceFu);
             Movement.Advance(_unitsById, AnchorX, EnemyAnchorX, _lane);
         }
@@ -348,6 +355,9 @@ namespace TAoB.Combat
                 if (_units[i].WaveIndex == wave) _units[i].IsOnField = true;
             }
 
+            // 아군은 조우마다 자세를 다시 뽑고, 이 조우의 적은 처음 뽑는다.
+            Tactics.DecideEncounter(_unitsById, wave, _lane, _random);
+
             events.Add(new BattleEvent(BattleEventKind.WaveStarted, Tick, BattleEvent.NoUnit, BattleEvent.NoUnit, wave, 0));
         }
 
@@ -404,6 +414,8 @@ namespace TAoB.Combat
             {
                 hasher.Add(unit.Id);
                 hasher.Add(unit.PosX);
+                hasher.Add((int)unit.Stance);
+                hasher.Add(unit.IsFlanking ? 1 : 0);
                 hasher.Add(unit.IsOnField ? 1 : 0);
                 hasher.Add((int)unit.Condition);
                 hasher.Add(unit.Hp);

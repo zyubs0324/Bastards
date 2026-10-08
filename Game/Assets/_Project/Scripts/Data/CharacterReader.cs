@@ -34,11 +34,13 @@ namespace TAoB.Data
                 Row row = FieldCheck.EnumName<Row>(file, field + ".row", c.row);
                 Stats stats = ReadStats(file, field + ".stats", c.stats);
                 int skillChance = FieldCheck.Int(file, field + ".skillChance", c.skillChance, MinSkillChance, MaxSkillChance);
+                Preference preference = FieldCheck.EnumName<Preference>(file, field + ".preference", c.preference);
+                int formationChance = FieldCheck.Int(file, field + ".formationChance", c.formationChance, 0, CombatScale.ChanceRange);
                 SkillDefinition skill = ReadSkill(file, field + ".skill", c.skill);
                 CatalystData catalyst = FindCatalyst(file, field + ".catalystId", c.catalystId, equipment);
                 MagitoolData magitool = FindMagitool(file, field + ".magitoolId", c.magitoolId, equipment, stats, balance);
 
-                result.Add(new CharacterData(id, name, side, job, row, stats, skillChance, skill, catalyst, magitool, c.isBoss));
+                result.Add(new CharacterData(id, name, side, job, row, stats, skillChance, preference, formationChance, skill, catalyst, magitool, c.isBoss));
             }
 
             return result.AsReadOnly();

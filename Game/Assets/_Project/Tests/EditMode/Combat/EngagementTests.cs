@@ -43,8 +43,8 @@ namespace TAoB.Combat.Tests
             UnitState atMargin = TestField.Enemy(101, Row.Front, posX: 80);
             UnitState justOutside = TestField.Enemy(102, Row.Front, posX: 81);
 
-            Assert.IsTrue(Engagement.IsEngaged(actor, atMargin, Config));
-            Assert.IsFalse(Engagement.IsEngaged(actor, justOutside, Config));
+            Assert.IsTrue(Engagement.IsEngagedAt(actor, actor.PosX, atMargin.PosX, Config));
+            Assert.IsFalse(Engagement.IsEngagedAt(actor, actor.PosX, justOutside.PosX, Config));
             // 교전은 아니지만 때릴 수는 있다 — 여유는 멈춰 설 자리를 정하는 값이다.
             Assert.IsTrue(Engagement.CanReach(actor, justOutside, Config));
         }
@@ -90,7 +90,7 @@ namespace TAoB.Combat.Tests
 
             Assert.IsTrue(Engagement.HasOpponentOnField(actor, units));
             Assert.IsFalse(Engagement.HasReachableOpponent(actor, units, Config));
-            Assert.IsFalse(Engagement.HasEngagedOpponent(actor, units, Config));
+            Assert.IsFalse(Engagement.IsEngagedAt(actor, actor.PosX, 5000, Config));
         }
     }
 }

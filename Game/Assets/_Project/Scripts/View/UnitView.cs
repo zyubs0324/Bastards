@@ -52,6 +52,7 @@ namespace TAoB.View
         private TMP_Text _status;
         private TMP_Text _risk;
         private TMP_Text _tool;
+        private TMP_Text _stanceTag;
         private RectTransform _hpFill;
         private RectTransform _gaugeFill;
         private Color _baseColor;
@@ -63,6 +64,8 @@ namespace TAoB.View
         private int _lastMaxHp = -1;
         private int _lastRisk = -1;
         private int _lastDurability = -1;
+        private Stance _lastStance = Stance.Hold;
+        private bool _lastFlanking;
         private float _lastHpRatio = -1f;
         private float _lastGaugeRatio = -1f;
         private UnitCondition _lastCondition = UnitCondition.Normal;
@@ -125,6 +128,9 @@ namespace TAoB.View
             _status = UiFactory.CreateText(transform, "Status", font, "", 30f, StatusColor, _boxBasePosition, new Vector2(BattleLayout.UnitWidth, 40f));
             _risk = UiFactory.CreateText(transform, "Risk", font, "", 18f, RiskColor, new Vector2(0f, 98f), new Vector2(BattleLayout.UnitWidth, 24f));
             _tool = UiFactory.CreateText(transform, "Tool", font, "", 18f, ToolColor, new Vector2(0f, -100f), new Vector2(BattleLayout.UnitWidth, 24f));
+
+            // 성향 표식은 과부하 위험 글자 위에 둔다. 처음에는 비어 있고 조우가 시작될 때 자세가 정해지면 채워진다.
+            _stanceTag = UiFactory.CreateText(transform, "Stance", font, "", 22f, Color.white, new Vector2(0f, 124f), new Vector2(BattleLayout.UnitWidth, 26f));
         }
 
         /// <summary>돌진: 상대 진영 쪽으로 갔다가 돌아온다(가해자, 수직 슬라이스 계획서 Phase 4.5 이벤트 표).</summary>
@@ -202,6 +208,14 @@ namespace TAoB.View
             {
                 _lastCondition = current.Condition;
                 _status.text = UiText.Condition(current.Condition);
+            }
+
+            if (current.Stance != _lastStance || current.IsFlanking != _lastFlanking)
+            {
+                _lastStance = current.Stance;
+                _lastFlanking = current.IsFlanking;
+                _stanceTag.text = UiText.StanceTag(current.Stance, current.IsFlanking);
+                _stanceTag.color = BattleLayout.StanceTagColor(current.Stance, current.IsFlanking);
             }
 
             if (current.OverloadRisk != _lastRisk)

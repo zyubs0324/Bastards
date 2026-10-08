@@ -88,7 +88,11 @@ namespace TAoB.Data
                     Required(file, LaneField(nameof(dto.backSlotOffsetFu)), dto.backSlotOffsetFu),
                     Required(file, LaneField(nameof(dto.frontReachFu)), dto.frontReachFu),
                     Required(file, LaneField(nameof(dto.backReachFu)), dto.backReachFu),
-                    Required(file, LaneField(nameof(dto.engageMarginFu)), dto.engageMarginFu));
+                    Required(file, LaneField(nameof(dto.engageMarginFu)), dto.engageMarginFu),
+                    Required(file, LaneField(nameof(dto.formationDriftFu)), dto.formationDriftFu),
+                    Required(file, LaneField(nameof(dto.chargeDriftFu)), dto.chargeDriftFu),
+                    Required(file, LaneField(nameof(dto.stepBackFu)), dto.stepBackFu),
+                    Required(file, LaneField(nameof(dto.flankChance)), dto.flankChance));
             }
             catch (ArgumentException ex)
             {

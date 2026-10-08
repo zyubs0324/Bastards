@@ -76,11 +76,12 @@
 | 교전 | `Engagement` | 횡스크롤 전환 D5·D6 — 사거리 쌍 술어. 전투 한 판의 구획인 **조우**(`Wave`)와 다른 개념이다 |
 | 스크롤 층 · 진형 화면 위치 | `Lane`(표시 계층의 `LaneView`) · `AllyAnchorScreenX` | 횡스크롤 전환 D12 — 표시 계층의 중첩 캔버스. 규칙 모듈 설정의 `Balance.Lane`(이동 수치 묶음)과 **다른 개념**이다. 전장 좌표 → 화면 환산은 `PxPerFu` 한 지점 |
 | 조우 접근 거리 | `WaveApproachFu` · `ApproachFu` | 횡스크롤 전환 (조우마다 그 적을 만나기까지 행군하는 거리. 적 기준점은 누적 합) |
-| 진형유지 속성값 | `FormationChance` | 횡스크롤 전환 — Phase C 도입 예정 (만분율 0~10000) |
-| 선호 | `Preference` | 횡스크롤 전환 — Phase C 도입 예정 (1차 4종: 동료 보호·적극 돌진·후방 유지·비겁) |
+| 진형유지 속성값 | `FormationChance` | 횡스크롤 전환 Phase C (만분율 0~10000, 숨은 스탯 — 조우마다 통과해야 성향대로 움직인다) |
+| 선호 | `Preference` | 횡스크롤 전환 Phase C (없음 `None` + 동료 보호 `Guardian`·적극 돌진 `Charger`·후방 유지 `Rearguard`·비겁 `Coward`) |
 | 기술 사용 빈도 | `SkillChance` | 횡스크롤 전환 D7 (만분율, 기획 대역 100~3900. 숨은 스탯이라 `Stats` 밖에 둔다) |
-| 자세 · 침투 지정 | `Stance` · `IsFlanking` | 횡스크롤 전환 — Phase C 도입 예정 (조우 단위로 한 번 정한다) |
-| 뒤로 서기(비겁 성향의 이동) | `StepBack` · `StepBackFu` | 횡스크롤 전환 — Phase C 도입 예정. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
-| 진형 이탈 허용치 · 위협 거리 | `FormationDriftFu` · `ChargeDriftFu` · `ThreatFu` | 횡스크롤 전환 — Phase C 도입 예정 (쓰는 코드와 같은 커밋에서 데이터 키도 함께 들어온다) |
+| 자세 · 침투 지정 | `Stance`(`Hold`·`Forward`·`Charge`·`HoldBack`·`StepBack`) · `IsFlanking` | 횡스크롤 전환 Phase C (조우 시작 때 한 번 정한다). 화면의 성향 표식 글자는 보호·돌진·후방·비겁·침투 |
+| 뒤로 서기(비겁 성향의 이동) | `StepBack` · `StepBackFu` | 횡스크롤 전환 Phase C. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
+| 진형 이탈 거리 · 돌진 거리 · 침투 확률 | `FormationDriftFu`(보호는 앞·후방은 뒤) · `ChargeDriftFu` · `FlankChance` | 횡스크롤 전환 Phase C (데이터 키는 `movement.*`) |
+| 도발 | `IsTaunting`(= `Stance.Forward`) | 횡스크롤 전환 Phase C — 동료 보호를 따르기로 한 유닛. 사거리 안이면 상대편의 단일 대상 공격이 먼저 이쪽을 향한다 |
 | 조우 | 코드·데이터·UI 는 `Wave` 유지 | 횡스크롤 전환 D14 (개명은 Phase F-1) |
 | 제한 시간 | `TimeLimit` | 기획서 3장 |

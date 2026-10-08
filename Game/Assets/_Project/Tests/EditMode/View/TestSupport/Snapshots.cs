@@ -15,12 +15,14 @@ namespace TAoB.View.Tests
             int hp = 100,
             int overloadRisk = 0,
             bool isBoss = false,
-            int posX = 0)
+            int posX = 0,
+            Stance stance = Stance.Hold,
+            bool isFlanking = false)
         {
             return new UnitSnapshot(
                 id, side, row, isOnField, condition,
                 hp, 100, 0, 1000, 0,
-                overloadRisk, 50, false, 0, 0, isBoss, posX);
+                overloadRisk, 50, false, 0, 0, isBoss, posX, stance, isFlanking);
         }
 
         public static IReadOnlyList<UnitSnapshot> List(params UnitSnapshot[] units)

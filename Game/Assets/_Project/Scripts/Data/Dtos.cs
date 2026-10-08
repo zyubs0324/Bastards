@@ -44,6 +44,10 @@ namespace TAoB.Data
         public int frontReachFu = FieldCheck.Missing;
         public int backReachFu = FieldCheck.Missing;
         public int engageMarginFu = FieldCheck.Missing;
+        public int formationDriftFu = FieldCheck.Missing;
+        public int chargeDriftFu = FieldCheck.Missing;
+        public int stepBackFu = FieldCheck.Missing;
+        public int flankChance = FieldCheck.Missing;
     }
 
     [Serializable]
@@ -112,6 +116,12 @@ namespace TAoB.Data
 
         /// <summary>기술 자동 사용 빈도(만분율). 숨은 스탯이라 stats 블록 밖에 둔다.</summary>
         public int skillChance = FieldCheck.Missing;
+
+        /// <summary>성향 이름(Preference). 문자열이라 빠지면 null 이 되어 누락이 걸러진다(열거형 정수였다면 0 으로 조용히 통과한다).</summary>
+        public string preference;
+
+        /// <summary>숨은 진형유지 값(만분율). 높을수록 성향대로, 낮을수록 흐트러져 자리를 지킨다.</summary>
+        public int formationChance = FieldCheck.Missing;
         public SkillDto skill;
 
         // 비어 있거나 빠지면 장비 없음.

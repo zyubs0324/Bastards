@@ -5,15 +5,22 @@ namespace TAoB.Combat
     /// </summary>
     internal static class Movement
     {
-        /// <summary>진형 기준점에 대해 이 유닛이 서야 할 자리.</summary>
+        /// <summary>진형 기준점에 대해 이 유닛이 서야 할 자리(자세 이전의 진형 자리).</summary>
         public static int SlotFu(UnitState unit, int anchorX, LaneConfig lane)
         {
             long slot = (long)anchorX + Lane.Facing(unit.Side) * Formation.SlotOffsetFu(unit.Row, lane);
             return CombatScale.ClampToInt(slot);
         }
 
+        /// <summary>자세까지 반영한 목표 자리. 바라보는 방향이 앞이므로 아군은 오른쪽, 적은 왼쪽으로 벗어난다.</summary>
+        public static int TargetFu(UnitState unit, int anchorX, LaneConfig lane)
+        {
+            long target = (long)SlotFu(unit, anchorX, lane) + Lane.Facing(unit.Side) * Stances.OffsetFu(unit.Stance, lane);
+            return CombatScale.ClampToInt(target);
+        }
+
         /// <summary>
-        /// 모든 유닛을 자기 자리 쪽으로 한 걸음 옮긴다. 흩어지거나 빈사인 유닛은 제자리에 남는다.
+        /// 모든 유닛을 자세까지 반영한 목표 자리(<see cref="TargetFu"/>) 쪽으로 한 걸음 옮긴다. 흩어지거나 빈사인 유닛은 제자리에 남는다.
         /// 흩어진 아군이 있으면 기준점도 멈추므로(계획서 D2) 그 사이에 진형이 벌어지지 않고,
         /// 빈사자는 구조 대상이 아니라 그대로 전장에 남는다.
         /// </summary>
@@ -25,7 +32,7 @@ namespace TAoB.Combat
                 if (!unit.CanAct) continue;
 
                 int anchorX = unit.Side == Side.Ally ? allyAnchorX : enemyAnchorX;
-                unit.PosX = Lane.StepToward(unit.PosX, SlotFu(unit, anchorX, lane), lane.MarchSpeedFu);
+                unit.PosX = Lane.StepToward(unit.PosX, TargetFu(unit, anchorX, lane), lane.MarchSpeedFu);
             }
         }
     }

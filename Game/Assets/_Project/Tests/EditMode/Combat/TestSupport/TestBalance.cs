@@ -29,9 +29,26 @@ namespace TAoB.Combat.Tests
             int backSlotOffsetFu = 0,
             int frontReachFu = LaneConfig.MaxReachFu,
             int backReachFu = LaneConfig.MaxReachFu,
-            int engageMarginFu = 0)
+            int engageMarginFu = 0,
+            int formationDriftFu = 0,
+            int chargeDriftFu = 0,
+            int stepBackFu = 0,
+            int flankChance = 0)
         {
-            return new LaneConfig(marchSpeedFu, frontSlotOffsetFu, backSlotOffsetFu, frontReachFu, backReachFu, engageMarginFu);
+            return new LaneConfig(
+                marchSpeedFu, frontSlotOffsetFu, backSlotOffsetFu, frontReachFu, backReachFu, engageMarginFu,
+                formationDriftFu, chargeDriftFu, stepBackFu, flankChance);
+        }
+
+        /// <summary>
+        /// 실데이터(balance.json) 수치를 옮긴 이동 설정 - 자세와 침투가 실제로 맞물리는 구성을 볼 때 쓴다.
+        /// 데이터가 바뀌면 이 값도 함께 바꾼다(불변식 검증은 생성자가 한다).
+        /// </summary>
+        public static LaneConfig RealisticLane(int flankChance = 0)
+        {
+            return StaticLane(
+                marchSpeedFu: 40, frontSlotOffsetFu: 120, backSlotOffsetFu: 120, frontReachFu: 440, backReachFu: 680, engageMarginFu: 120,
+                formationDriftFu: 40, chargeDriftFu: 200, stepBackFu: 60, flankChance: flankChance);
         }
 
         public static BalanceConfig Create(

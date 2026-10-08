@@ -88,7 +88,7 @@ namespace TAoB.Combat
 
         private void Attack(UnitState actor, TargetRule rule, int powerPermille, int catalystOutput, int tick, List<BattleEvent> events)
         {
-            TargetSelector.Select(rule, actor, _unitsById, _targets);
+            TargetSelector.Select(rule, actor, _unitsById, _balance.Lane, _targets);
             if (_targets.Count == 0) return;
 
             MagitoolUse tool = UseMagitool(actor, tick, events);

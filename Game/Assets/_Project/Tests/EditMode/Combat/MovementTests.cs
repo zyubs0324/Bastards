@@ -32,8 +32,56 @@ namespace TAoB.Combat.Tests
             Assert.AreEqual(280, Lane.Distance(allyFront, enemyFront));
         }
 
+        private static readonly LaneConfig WithStances = TestBalance.StaticLane(
+            marchSpeedFu: 10, frontSlotOffsetFu: 60, backSlotOffsetFu: 40, frontReachFu: 200, backReachFu: 400, engageMarginFu: 100,
+            formationDriftFu: 30, chargeDriftFu: 90, stepBackFu: 50);
+
+        [TestCase(Stance.Hold, 1060)]
+        [TestCase(Stance.Forward, 1090)]
+        [TestCase(Stance.Charge, 1150)]
+        [TestCase(Stance.HoldBack, 1030)]
+        [TestCase(Stance.StepBack, 1010)]
+        public void AllyStance_ShiftsTheTargetAlongTheFacingDirection(Stance stance, int expected)
+        {
+            UnitState ally = TestField.Ally(1, Row.Front, stance: stance);
+
+            Assert.AreEqual(expected, Movement.TargetFu(ally, 1000, WithStances));
+        }
+
+        [TestCase(Stance.Hold, 940)]
+        [TestCase(Stance.Forward, 910)]
+        [TestCase(Stance.Charge, 850)]
+        [TestCase(Stance.HoldBack, 970)]
+        [TestCase(Stance.StepBack, 990)]
+        public void EnemyStance_ShiftsTheOtherWay_BecauseEnemiesFaceLeft(Stance stance, int expected)
+        {
+            UnitState enemy = TestField.Enemy(101, Row.Front, stance: stance);
+
+            Assert.AreEqual(expected, Movement.TargetFu(enemy, 1000, WithStances));
+        }
+
         [Test]
-        public void UnitWalksTowardItsSlot_OneStepPerCall()
+        public void SlotIgnoresTheStance_SoTheLineStaysWhereTheFormationIs()
+        {
+            // 정지선 판정은 자세가 아니라 자리를 쓴다. 자리 계산이 자세에 흔들리면 돌진한 한 명이 진형을 먼저 세운다.
+            UnitState charger = TestField.Ally(1, Row.Front, stance: Stance.Charge);
+
+            Assert.AreEqual(1060, Movement.SlotFu(charger, 1000, WithStances));
+        }
+
+        [Test]
+        public void UnitWalksToItsStanceTarget_OneStepAtATime_ThenStops()
+        {
+            UnitState charger = TestField.Ally(1, Row.Front, posX: 1060, stance: Stance.Charge);
+            UnitState[] units = TestField.ById(charger);
+
+            for (int tick = 0; tick < 20; tick++) Movement.Advance(units, 1000, 0, WithStances);
+
+            Assert.AreEqual(1150, charger.PosX, "목표(1150)에서 멈추고 넘어가 진동하지 않는다.");
+        }
+
+        [Test]
+        public void UnitWalksToItsSlot_OneStepPerCall()
         {
             UnitState ally = TestField.Ally(1, Row.Front, posX: 0);
             UnitState[] units = TestField.ById(ally);

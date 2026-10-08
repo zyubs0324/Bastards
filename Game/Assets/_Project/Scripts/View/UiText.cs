@@ -57,6 +57,24 @@ namespace TAoB.View
             }
         }
 
+        /// <summary>
+        /// 성향 표식(계획서 Phase C). 자리를 지키는 유닛은 표식이 없다 — 눈에 띄어야 하는 것은 "평소와 다르게 움직이는" 동료다.
+        /// 침투 중인 적은 같은 돌진 자세라도 따로 알아볼 수 있게 구분한다.
+        /// </summary>
+        public static string StanceTag(Stance stance, bool isFlanking)
+        {
+            if (isFlanking) return "침투";
+
+            switch (stance)
+            {
+                case Stance.Forward: return "보호";
+                case Stance.Charge: return "돌진";
+                case Stance.HoldBack: return "후방";
+                case Stance.StepBack: return "비겁";
+                default: return "";
+            }
+        }
+
         /// <summary>색 네모 위에 쓰는 직업 한 글자(수직 슬라이스 계획서 Phase 4 "색 네모 + 직업 글자").</summary>
         public static string JobGlyph(Job job)
         {
