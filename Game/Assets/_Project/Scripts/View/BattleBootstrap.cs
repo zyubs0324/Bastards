@@ -164,13 +164,16 @@ namespace TAoB.View
                 cutinText[ally.Id] = ally.Name + " 고유 기술!";
             }
 
-            _hud = BattleHud.Create(root, _font, _data.Stage.TimeLimitTicks, Seed, _setSpeed);
+            // 버튼·글자가 있는 요소는 세이프 에어리어 안의 설계 영역(1920×1080) 아래에 둔다 — 노치·제스처 바·둥근 모서리에
+            // 가리지 않게 하고, 종횡비가 달라도 좌표가 화면 밖으로 나가지 않게 한다. 배경·유닛(Field)과 팝업은 전체 화면을 쓴다.
+            RectTransform ui = SafeAreaFit.Create(root, "Ui");
+            _hud = BattleHud.Create(ui, _font, _data.Stage.TimeLimitTicks, Seed, _setSpeed);
             _hud.SetSpeed(_speed);
-            _bar = InterventionBar.Create(root, _font, allies, _submit);
+            _bar = InterventionBar.Create(ui, _font, allies, _submit);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            DebugLoadoutPanel.Create(root, _font, _data, allies, _replacements, _setReplacement, _restart);
+            DebugLoadoutPanel.Create(ui, _font, _data, allies, _replacements, _setReplacement, _restart);
 #endif
-            _result = ResultPanel.Create(root, _font, _restart);
+            _result = ResultPanel.Create(ui, _font, _restart);
 
             _screenShake = new ScreenShake(_field);
             _effects = new BattleEffects(_viewById, _screenShake, text => _hud.ShowCutin(text), cutinText);
@@ -179,13 +182,16 @@ namespace TAoB.View
             _popups.transform.SetAsLastSibling();
         }
 
-        /// <summary>스프라이트 없이 하늘·바닥 색 띠와 경계선을 그린다. 화면 흔들림 진폭보다 크게 만들어 가장자리가 드러나지 않게 한다.</summary>
+        /// <summary>
+        /// 스프라이트 없이 하늘·바닥 색 띠와 경계선을 그린다. 화면 흔들림 진폭보다 크게, 폭은 지원하는 가장 넓은 화면
+        /// (<see cref="UiFit.MaxCanvasWidth"/>) 기준으로 만들어 가로로 긴 폰에서도 가장자리가 드러나지 않게 한다.
+        /// </summary>
         private static void CreateBackground(Transform field)
         {
             float top = BattleLayout.Height / 2f;
             float bottom = -BattleLayout.Height / 2f;
             float groundTop = BattleLayout.GroundTopY;
-            float width = BattleLayout.Width + BattleLayout.BackgroundOverscan * 2f;
+            float width = UiFit.MaxCanvasWidth + BattleLayout.BackgroundOverscan * 2f;
 
             float skyHeight = top - groundTop + BattleLayout.BackgroundOverscan;
             float skyCenterY = (top + groundTop) / 2f;

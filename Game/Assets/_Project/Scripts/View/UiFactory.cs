@@ -22,7 +22,9 @@ namespace TAoB.View
             var scaler = go.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(BattleLayout.Width, BattleLayout.Height);
-            scaler.matchWidthOrHeight = 0.5f;
+
+            // 높이 기준(UiFit.ScalerMatch 의 근거 참조). 좁은 화면(4:3 등)에서 모자라는 가로는 SafeAreaFit 이 설계 영역을 줄여 맞춘다.
+            scaler.matchWidthOrHeight = UiFit.ScalerMatch;
             return canvas;
         }
 

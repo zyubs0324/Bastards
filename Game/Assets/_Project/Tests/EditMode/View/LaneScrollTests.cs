@@ -61,7 +61,7 @@ namespace TAoB.View.Tests
         {
             // LaneView 가 쓰는 합성식(층 위치 + 화면 중앙 기준 지역 X)을 같은 함수로 호출해 스크롤을 훑는다.
             // 한 주기를 여러 점으로 나눠, 랩어라운드로 묶음이 가장 많이 밀린 순간도 포함한다.
-            const float edge = BattleLayout.Width * 0.5f;
+            const float edge = UiFit.MaxCanvasWidth * 0.5f;
             for (float scroll = 0f; scroll < Spacing * 3f; scroll += Spacing / 8f)
             {
                 float left = TileScreen(scroll, 0);
@@ -77,7 +77,7 @@ namespace TAoB.View.Tests
         {
             // 옛 결함을 재현한다: 묶음을 화면 중앙이 아니라 진형 기준점에 맞추면(centerLocalX = scroll)
             // 어떤 스크롤에서 오른쪽 가장자리가 비어야 한다. 이 테스트가 깨지면 위 덮임 단언이 공허해진 것이다.
-            const float edge = BattleLayout.Width * 0.5f;
+            const float edge = UiFit.MaxCanvasWidth * 0.5f;
             bool anyBare = false;
             for (float scroll = 0f; scroll < Spacing; scroll += Spacing / 8f)
             {

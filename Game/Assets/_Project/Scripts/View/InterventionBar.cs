@@ -47,7 +47,12 @@ namespace TAoB.View
 
         private void Build(TMP_FontAsset font, IReadOnlyList<CharacterData> allies)
         {
-            UiFactory.CreateImage(transform, "Background", new Vector2(0f, -470f), new Vector2(BattleLayout.Width, 140f), BattleLayout.PanelColor);
+            // 배경 띠는 설계 영역을 넘어 화면 끝까지 — 가로로 넓은 화면의 양옆, 좁은 화면에서 설계 영역이 줄어들며 생기는
+            // 아래 빈 띠, 노치 쪽으로 치우친 가장자리를 채운다. 이 층은 축소·이동하는 컨테이너 아래라 bleed 크기로 만든다.
+            // 윗변(-400)은 그대로 두고 아래로만 늘린다.
+            const float top = -400f;
+            UiFactory.CreateImage(
+                transform, "Background", new Vector2(0f, top - UiFit.BleedSize * 0.5f), new Vector2(UiFit.BleedSize, UiFit.BleedSize), BattleLayout.PanelColor);
 
             for (int i = 0; i < allies.Count; i++)
             {

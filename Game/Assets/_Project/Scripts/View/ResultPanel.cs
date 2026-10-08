@@ -26,7 +26,7 @@ namespace TAoB.View
 
         private void Build(TMP_FontAsset font, Action restart)
         {
-            Image dim = UiFactory.CreateImage(transform, "Dim", Vector2.zero, new Vector2(BattleLayout.Width, BattleLayout.Height), BattleLayout.DimColor);
+            Image dim = UiFactory.CreateImage(transform, "Dim", Vector2.zero, new Vector2(UiFit.BleedSize, UiFit.BleedSize), BattleLayout.DimColor);
             dim.raycastTarget = true; // 뒤의 개입 바를 누르지 못하게 막는다.
 
             UiFactory.CreateImage(transform, "Panel", Vector2.zero, new Vector2(900f, 540f), BattleLayout.PanelColor);

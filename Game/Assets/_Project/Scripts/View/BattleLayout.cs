@@ -30,7 +30,10 @@ namespace TAoB.View
         /// </summary>
         public const float GroundTopY = -190f;
 
-        /// <summary>배경을 화면보다 크게 그려, 화면 흔들림 진폭 안에서는 가장자리가 드러나지 않게 한다.</summary>
+        /// <summary>
+        /// 배경을 화면보다 크게 그려, 화면 흔들림 진폭 안에서는 가장자리가 드러나지 않게 한다.
+        /// 폭은 설계 폭이 아니라 <see cref="UiFit.MaxCanvasWidth"/> 기준이다 — 가로로 긴 폰에서 가장자리가 비지 않게.
+        /// </summary>
         public const float BackgroundOverscan = 40f;
 
         /// <summary>팝업 풀 객체 이름. 플레이 스모크의 재시작 누수 검사가 이 이름 아래를 개수에서 빼므로 한 곳에서 정한다.</summary>
@@ -41,9 +44,9 @@ namespace TAoB.View
 
         // 배경 띠(계획서 Phase B) — 색 네모만 쓰는 단계라 바닥에 일정 간격의 표식을 세워 흐름을 보인다.
         // 묶음은 화면 중앙을 가운데로 펼치고 랩어라운드로 최대 한 칸 밀리므로,
-        // 반폭(간격 × (개수−1) ÷ 2)이 화면 반폭 + 한 칸 이상이어야 가장자리가 비지 않는다.
+        // 반폭(간격 × (개수−1) ÷ 2)이 지원하는 가장 넓은 화면의 반폭 + 한 칸 이상이어야 가장자리가 비지 않는다.
         public const float LaneMarkerSpacingPx = 240f;
-        public const int LaneMarkerCount = 13;
+        public const int LaneMarkerCount = 15;
         public const float LaneMarkerWidth = 10f;
         public const float LaneMarkerHeight = 70f;
         public const float LaneFarSpacingPx = 520f;
@@ -111,10 +114,10 @@ namespace TAoB.View
             return GroundTopY + LaneFarHeight * 0.5f;
         }
 
-        /// <summary>띠 묶음이 가장자리까지 덮는가. 반폭이 화면 반폭 + 한 칸(랩어라운드 밀림) 이상이어야 한다.</summary>
+        /// <summary>띠 묶음이 가장자리까지 덮는가. 반폭이 지원하는 가장 넓은 화면의 반폭 + 한 칸(랩어라운드 밀림) 이상이어야 한다.</summary>
         public static bool TilesCoverScreen(float spacingPx, int count)
         {
-            return spacingPx * (count - 1) * 0.5f >= Width * 0.5f + spacingPx;
+            return spacingPx * (count - 1) * 0.5f >= UiFit.MaxCanvasWidth * 0.5f + spacingPx;
         }
 
         public static Color JobColor(Job job, Side side)
