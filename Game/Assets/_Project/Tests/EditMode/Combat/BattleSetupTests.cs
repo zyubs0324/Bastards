@@ -29,7 +29,8 @@ namespace TAoB.Combat.Tests
                 TestUnits.OneWave(TestUnits.Enemy(101)),
                 null,
                 BattleSetup.MaxTimeLimitTicks,
-                PreconditionKind.None));
+                PreconditionKind.None,
+                new ConsumableSetup[0]));
 
             Assert.AreEqual("waveApproachFu", ex.ParamName);
         }

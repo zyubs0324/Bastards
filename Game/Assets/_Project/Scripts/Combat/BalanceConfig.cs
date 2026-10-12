@@ -31,6 +31,7 @@ namespace TAoB.Combat
             int runawayDamagePermille,
             int runawaySelfDamagePermille,
             int breakthroughMndGain,
+            int rescueTicks,
             IReadOnlyList<OverloadTier> overloadTiers,
             LaneConfig lane)
         {
@@ -58,6 +59,7 @@ namespace TAoB.Combat
             Guard.Range(runawayDamagePermille, 0, maxPermille, nameof(runawayDamagePermille));
             Guard.Range(runawaySelfDamagePermille, 0, maxPermille, nameof(runawaySelfDamagePermille));
             Guard.Range(breakthroughMndGain, 0, max, nameof(breakthroughMndGain));
+            Guard.Range(rescueTicks, 1, BattleSetup.MaxTimeLimitTicks, nameof(rescueTicks));
             ValidateTiers(overloadTiers);
             if (lane == null) throw new ArgumentNullException(nameof(lane));
 
@@ -82,6 +84,7 @@ namespace TAoB.Combat
             RunawayDamagePermille = runawayDamagePermille;
             RunawaySelfDamagePermille = runawaySelfDamagePermille;
             BreakthroughMndGain = breakthroughMndGain;
+            RescueTicks = rescueTicks;
             OverloadTiers = new List<OverloadTier>(overloadTiers).AsReadOnly();
             Lane = lane;
         }
@@ -112,7 +115,7 @@ namespace TAoB.Combat
         public int ActionGaugeMax { get; }
         public int ScatterHpLossPerTick { get; }
 
-        /// <summary>구조 행동 뒤 구조자 행동 게이지에서 추가로 빠지는 양.</summary>
+        /// <summary>구조를 마친 구조자의 행동 게이지에서 빠지는 양.</summary>
         public int RescueExtraGauge { get; }
         public int OverloadPowerPermille { get; }
         public int RunawayDamagePermille { get; }
@@ -120,6 +123,9 @@ namespace TAoB.Combat
         /// <summary>폭주 시 시전자 최대 HP 대비 자해(‰).</summary>
         public int RunawaySelfDamagePermille { get; }
         public int BreakthroughMndGain { get; }
+
+        /// <summary>구조에 걸리는 틱. 그동안 구조자는 행동하지 않고, 맞으면 처음부터 다시 센다.</summary>
+        public int RescueTicks { get; }
 
         /// <summary>초과 비율 오름차순. 마지막 구간의 상한은 int.MaxValue.</summary>
         public IReadOnlyList<OverloadTier> OverloadTiers { get; }

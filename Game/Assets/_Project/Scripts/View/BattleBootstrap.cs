@@ -99,9 +99,10 @@ namespace TAoB.View
 
             // 배경과 유닛이 같은 alpha 를 쓰므로 배속에서도 어긋나지 않는다(계획서 Phase B).
             _lane.Apply(_previous.AnchorX, _current.AnchorX, alpha);
+            bool isBattleOn = _current.Outcome == BattleOutcome.InProgress;
             for (int i = 0; i < _current.Units.Count; i++)
             {
-                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha, dt);
+                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha, dt, isBattleOn, _current.RescueTicks);
             }
 
             _hud.Apply(_current);
@@ -169,7 +170,7 @@ namespace TAoB.View
             RectTransform ui = SafeAreaFit.Create(root, "Ui");
             _hud = BattleHud.Create(ui, _font, _data.Stage.TimeLimitTicks, Seed, _setSpeed);
             _hud.SetSpeed(_speed);
-            _bar = InterventionBar.Create(ui, _font, allies, _submit);
+            _bar = InterventionBar.Create(ui, _font, allies, _data.Consumables, _submit);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             DebugLoadoutPanel.Create(ui, _font, _data, allies, _replacements, _setReplacement, _restart);
 #endif
@@ -287,6 +288,18 @@ namespace TAoB.View
                     break;
                 case BattleEventKind.Rescued:
                     _popups.ShowLabel(PositionOf(e.TargetId), "구조!", BattleLayout.RescuedColor, 1.1f);
+                    break;
+                case BattleEventKind.RescueStarted:
+                    _popups.ShowLabel(PositionOf(e.SourceId), "구조 시작", BattleLayout.RescuedColor, 0.9f);
+                    break;
+                case BattleEventKind.RescueInterrupted:
+                    _popups.ShowLabel(PositionOf(e.SourceId), "구조 끊김!", BattleLayout.RescueInterruptedColor, 1f);
+                    break;
+                case BattleEventKind.RescueCancelled:
+                    _popups.ShowLabel(PositionOf(e.SourceId), "구조 취소", BattleLayout.FallbackColor, 0.8f);
+                    break;
+                case BattleEventKind.ItemUsed:
+                    _popups.ShowNumber(PositionOf(e.TargetId), e.Value, BattleLayout.HealColor, 1.1f);
                     break;
                 case BattleEventKind.CommandFallback:
                     _popups.ShowLabel(PositionOf(e.SourceId), "명령 취소", BattleLayout.FallbackColor, 0.8f);

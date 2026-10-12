@@ -220,13 +220,14 @@ namespace TAoB.Combat.Tests
         {
             // 과부하는 공격이라 대상이 사거리 안에 있어야 나간다. 뒷열 마법사만 먼 적에 닿는 구성으로 맞춘다 —
             // 앞열은 닿지 않아 진형은 행군 중이고, 흩어짐이 그 행군을 멈추는지 본다.
+            // 교전 중이 아니라 구조는 흩어진 틱(10)에 자동으로 시작해 20틱이 걸려 29틱에 끝난다.
             LaneConfig longBackReach = TestBalance.StaticLane(marchSpeedFu: 10, frontReachFu: 50, backReachFu: 3000);
             var mage = TestUnits.Ally(2, Row.Back, Job.Mage, skill: TestUnits.Skill(canOverload: true), catalyst: new Catalyst(100));
             var sim = new BattleSimulation(
                 TestUnits.Setup(
                     new[] { TestUnits.Ally(1), mage },
                     TestUnits.OneWave(TestUnits.Enemy(101)),
-                    TestUnits.Balance(lane: longBackReach),
+                    TestUnits.Balance(lane: longBackReach, rescueTicks: 20),
                     waveApproachFu: new[] { 2000 }),
                 // 과부하 초과 500‰ 구간에서 4000 은 흩어짐이다(ScatterRescueTests 와 같은 값).
                 new FixedRandom(4000));
@@ -236,11 +237,11 @@ namespace TAoB.Combat.Tests
             Assert.AreEqual(UnitCondition.Scattered, SimRunner.Unit(sim, 2).Condition);
             int anchorWhenScattered = sim.AnchorX;
 
-            SimRunner.Run(sim, 20);
+            SimRunner.Run(sim, 18);
+            Assert.AreEqual(UnitCondition.Scattered, SimRunner.Unit(sim, 2).Condition, "28틱까지는 구조가 끝나지 않았다.");
             Assert.AreEqual(anchorWhenScattered, sim.AnchorX, "흩어진 동료를 두고 전진하면 진형이 영구히 벌어진다.");
 
-            sim.Enqueue(BattleCommand.Rescue(1, 2));
-            SimRunner.Run(sim, 20);
+            SimRunner.Run(sim, 10);
 
             Assert.AreEqual(UnitCondition.Normal, SimRunner.Unit(sim, 2).Condition);
             Assert.Greater(sim.AnchorX, anchorWhenScattered, "구조가 끝나면 다시 행군한다.");

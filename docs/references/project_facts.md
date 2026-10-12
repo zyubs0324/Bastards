@@ -83,5 +83,8 @@
 | 뒤로 서기(비겁 성향의 이동) | `StepBack` · `StepBackFu` | 횡스크롤 전환 Phase C. 사용자 명령 `Retreat`(후퇴)와 다른 개념 |
 | 진형 이탈 거리 · 돌진 거리 · 침투 확률 | `FormationDriftFu`(보호는 앞·후방은 뒤) · `ChargeDriftFu` · `FlankChance` | 횡스크롤 전환 Phase C (데이터 키는 `movement.*`) |
 | 도발 | `IsTaunting`(= `Stance.Forward`) | 횡스크롤 전환 Phase C — 동료 보호를 따르기로 한 유닛. 사거리 안이면 상대편의 단일 대상 공격이 먼저 이쪽을 향한다 |
+| 구조 캐스팅 · 구조 시간 | `RescueCasting` · `RescueTicks`(데이터 키 `rescueTicks`) · `IsRescuing` | 횡스크롤 전환 Phase D — 구조는 정해진 틱이 걸리고 구조자가 맞으면 진행이 0 으로 돌아간다 |
+| 소모품 | `ConsumableSetup`(전투 입력) · `ItemBag`(전투 중 재고와 요청) · 명령 `UseItem` | 횡스크롤 전환 Phase D — 파티 단위. 데이터 파일은 `consumables.json` |
+| 강제 발동 가능 | `UnitReadiness.CanForceSkill` | 횡스크롤 전환 Phase D — 기술 버튼 활성과 몸의 빛남이 함께 쓰는 판정 |
 | 조우 | 코드·데이터·UI 는 `Wave` 유지 | 횡스크롤 전환 D14 (개명은 Phase F-1) |
 | 제한 시간 | `TimeLimit` | 기획서 3장 |

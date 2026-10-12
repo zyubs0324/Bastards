@@ -51,6 +51,9 @@ namespace TAoB.Combat.Tests
                 formationDriftFu: 40, chargeDriftFu: 200, stepBackFu: 60, flankChance: flankChance);
         }
 
+        /// <summary>
+        /// 구조 시간의 기본값은 1틱이다 — 시작한 틱에 끝나므로 구조 캐스팅을 보지 않는 테스트가 그 길이에 묶이지 않는다.
+        /// </summary>
         public static BalanceConfig Create(
             int defenseK = 100,
             int weakAffinityPermille = 750,
@@ -73,6 +76,7 @@ namespace TAoB.Combat.Tests
             int runawayDamagePermille = 1000,
             int runawaySelfDamagePermille = 200,
             int breakthroughMndGain = 10,
+            int rescueTicks = 1,
             IReadOnlyList<OverloadTier> overloadTiers = null,
             LaneConfig lane = null)
         {
@@ -98,6 +102,7 @@ namespace TAoB.Combat.Tests
                 runawayDamagePermille,
                 runawaySelfDamagePermille,
                 breakthroughMndGain,
+                rescueTicks,
                 overloadTiers ?? DefaultTiers(),
                 lane ?? StaticLane());
         }

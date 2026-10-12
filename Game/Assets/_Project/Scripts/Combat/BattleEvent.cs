@@ -21,6 +21,8 @@ namespace TAoB.Combat
 
         /// <summary>Value = 상승 후 MND.</summary>
         Breakthrough,
+
+        /// <summary>SourceId = 구조자, TargetId = 구조 대상. 구조가 끝나 정상으로 돌아왔다.</summary>
         Rescued,
 
         /// <summary>대기 명령을 실행할 수 없어 자동 판단으로 바꿨다. Detail = 원래 <see cref="CommandKind"/>.</summary>
@@ -32,6 +34,18 @@ namespace TAoB.Combat
 
         /// <summary>Detail = <see cref="BattleOutcome"/>.</summary>
         BattleEnded,
+
+        /// <summary>SourceId = 구조자, TargetId = 구조 대상. 구조는 이때부터 정해진 틱이 걸린다.</summary>
+        RescueStarted,
+
+        /// <summary>구조자가 맞아 진행이 처음으로 돌아갔다. Value = 잃은 진행 틱.</summary>
+        RescueInterrupted,
+
+        /// <summary>구조자나 대상이 더는 구조할 수 없는 상태가 되어 구조가 끝났다.</summary>
+        RescueCancelled,
+
+        /// <summary>TargetId = 회복한 유닛, Value = 회복량, Detail = 소모품 ID.</summary>
+        ItemUsed,
     }
 
     /// <summary>한 틱에 일어난 일 하나. 표시 계층은 이것으로 연출하고 규칙을 다시 계산하지 않는다.</summary>

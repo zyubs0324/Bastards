@@ -1,7 +1,7 @@
 # 횡스크롤 이동 전투 전환 계획
 
 **Review Scope**: arch, lang, quality, security, perf, test, comments
-**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 완료**(2026-10-02, 커밋 `d8125ff`·`62bff36`·`3f4595d`). **Phase B 완료**(2026-10-06, 커밋 `c2fd6ab` — 테스트 333개 통과·`TAoB.Combat` 커버리지 99.2%·스모크 오류 0·Windows/APK 빌드 성공·자동 캡처로 등장·교전·보스·결과 화면 확인, `/plan-review --code` 반영). **1차 재미 판정**(2026-10-08, 갤럭시 S20 울트라): "움직임이 부족하다"며 Phase C 로 계속 진행 결정. **Phase C 구현·검증 완료**(2026-10-08 — 테스트 427개 통과·`TAoB.Combat` 커버리지 99%·스모크 오류 0, `/plan-review --code` 반영, 커밋 `5366ad4`). 다음 = 폰에서 성향 움직임 확인 → Phase D. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
+**Status**: 진행 중 — Phase 0 문서 정합 완료(2026-10-01, 커밋 `94c4529`·`28fb462`). **Phase A 완료**(2026-10-02, 커밋 `d8125ff`·`62bff36`·`3f4595d`). **Phase B 완료**(2026-10-06, 커밋 `c2fd6ab` — 테스트 333개 통과·`TAoB.Combat` 커버리지 99.2%·스모크 오류 0·Windows/APK 빌드 성공·자동 캡처로 등장·교전·보스·결과 화면 확인, `/plan-review --code` 반영). **1차 재미 판정**(2026-10-08, 갤럭시 S20 울트라): "움직임이 부족하다"며 Phase C 로 계속 진행 결정. **Phase C 구현·검증 완료**(2026-10-08 — 테스트 427개 통과·`TAoB.Combat` 커버리지 99%·스모크 오류 0, `/plan-review --code` 반영, 커밋 `5366ad4`). **2차 폰 확인**(2026-10-08): "움직임이 좀 부자연스럽다" — 움직임은 캐릭터 디자인을 입힌 뒤 한꺼번에 다듬기로 하고 진행. **Phase D 구현·검증 완료**(2026-10-08 — 테스트 513개 통과·`TAoB.Combat` 커버리지 99.1%·스모크 오류 0, `/plan-review --code` 반영), 커밋 대기. 다음 = 폰에서 개입 수단 확인 → Phase E. 직전 계획서는 `.claude/plans/completed/vertical-slice.plan.md`(Phase 0~5 완료, 최종 커밋 `0895f20`)
 
 ## Context
 
@@ -43,7 +43,6 @@
 앵커는 아래 중 **하나라도 참이면 전진하지 않는다**. 그 외에는 매 틱 `marchSpeedFu` 만큼 전진한다.
 1. **기준 열의 생존자 중 하나라도** 적을 **사거리에서 `engageMarginFu` 를 뺀 거리** 안에 두고 있다(교전 시작 — 경계에서 멈추면 한 걸음에 들락거리며 떨린다). 기준 열 = 아군 **앞열 생존자가 있으면 앞열, 없으면 뒷열**. 거리는 양쪽 모두 **자세 이전의 자리**(`Movement.SlotFu`)로 잰다 — 돌진·후퇴·침투로 실제 위치가 달라져도 정지선은 같다(Phase C)
 2. 흩어진 아군이 있다
-3. 구조 캐스팅이 진행 중이다(Phase D 에서 추가)
 
 정지선을 앞열이 정하는 이유: 뒷열 사거리가 더 길어 뒷열 기준으로 멈추면 앞열이 사거리 밖에 남아 "진형을 유지한 채 전투"와 반대가 된다. 폴백이 필요한 이유: 앞열이 전멸했거나 전원 뒷열 편성이면 조건 1 이 영원히 거짓이 되어 **교전 중에도 행군한다**(재리뷰 지적).
 
@@ -80,7 +79,7 @@
 - **행동 중 판정**(기술 빈도 롤·크리티컬)은 기존대로 **행동 순서**(SPD 내림차순·ID 오름차순)를 따른다. 기존 크리티컬 판정이 이미 그 순서이므로 둘을 섞으면 정본이 둘이 된다.
 
 ### D10. 해시는 Phase 마다 덧붙인다
-**이번 변경으로 추가되는** 지속 상태는 예외 없이 해시에 넣고, 그 Phase 에서 함께 갱신한다. Phase A: `PosX`·`AnchorX`·`EnemyAnchorX`. Phase C: 자세·침투 지정. Phase D: 구조 진행 틱·대상·소모품 잔량.
+**이번 변경으로 추가되는** 지속 상태는 예외 없이 해시에 넣고, 그 Phase 에서 함께 갱신한다. Phase A: `PosX`·`AnchorX`·`EnemyAnchorX`. Phase C: 자세·침투 지정. Phase D: 구조 대상·진행 틱, 소모품 잔량·대기 중인 사용 요청.
 기존에 해시에 없던 상태(대기 명령 큐·후퇴 요청)도 이번에 **함께 넣는다** — 대기 명령은 D6 으로 수명이 길어져 더 중요해진다.
 
 ### D11. 기존 226개 테스트 보호 — 테스트 픽스처를 "정지 프리셋"으로
@@ -111,13 +110,13 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 
 **변경 파일**
 - 신규 `Scripts/Combat/`: `Lane.cs`(Row 를 모르는 정수 산술), `LaneConfig.cs`(수치·범위·불변식 정본), `Movement.cs`(틱당 이동 1단계), `Engagement.cs`(사거리 쌍 술어·접근 목표), `SectionProgress.cs`(앵커 전진·정지 판정 — `BattleSimulation` 비대 방지), `Chance.cs`(확률 가드)
-- 수정 `Scripts/Combat/`: `UnitState.cs`(`PosX`), `BattleSimulation.cs`(틱 단계 삽입·스폰 위치·해시·`FillSnapshot`·`_unitsById` 필드 승격), `BattleSnapshot.cs`(`UnitSnapshot.PosX` **끝에 추가**, `BattleSnapshot.AnchorX`), `TurnRules.cs`(사거리 밖 게이지 상한·`AutoPilot` 이 난수를 받고 빈도는 `Setup.SkillChance` 에서 읽음), `ActionResolver.cs`(강제 발동만 쿨타임 설정), `BattleCommand.cs`(`IsForced`), `CommandQueue.cs`(`TryPeek` — 비파괴 조회), `Formation.cs`(`ReachFu`·`SlotOffsetFu`), `BalanceConfig.cs`(`LaneConfig` 를 **23번째 인수**로), `BattleSetup.cs`(조우별 `WaveApproachFu` + 좌표 상한), `UnitSetup.cs`(`SkillChance`), `AssemblyInfo.cs`(신규 — 테스트에 internal 공개)
+- 수정 `Scripts/Combat/`: `UnitState.cs`(`PosX`), `BattleSimulation.cs`(틱 단계 삽입·스폰 위치·해시·`FillSnapshot`·`_unitsById` 필드 승격), `BattleSnapshot.cs`(`UnitSnapshot.PosX` **끝에 추가**, `BattleSnapshot.AnchorX`), `TurnRules.cs`(사거리 밖 게이지 상한·`AutoPilot` 이 난수를 받고 빈도는 `Setup.SkillChance` 에서 읽음), `ActionResolver.cs`(강제 발동만 쿨타임 설정), `BattleCommand.cs`(`IsForced`), `CommandQueue.cs`(`TryPeek` — 비파괴 조회), `Formation.cs`(`ReachFu`·`SlotOffsetFu`), `BalanceConfig.cs`(`LaneConfig` 를 **마지막 인수**로), `BattleSetup.cs`(조우별 `WaveApproachFu` + 좌표 상한), `UnitSetup.cs`(`SkillChance`), `AssemblyInfo.cs`(신규 — 테스트에 internal 공개)
 - 수정 `Scripts/Data/`: `Dtos.cs`·`BalanceReader.cs`(`movement` 블록 + `ReadLane`), `CharacterReader.cs`(`skillChance`), `StageReader.cs`(`approachFu`·보스 위치), `GameData.cs`(조립 지점에서 파일 간 시간 예산 검증)
 - 수정 데이터: `balance.json`(`movement` — **정지 프리셋**), `characters.json`(`skillChance`), `stage_slice.json`(`approachFu` — 최소값 1)
 - 수정 테스트 지원: `TestBalance.cs`(`StaticLane`)·`TestUnits.cs`(`skillChance` 기본 0·`Approach`)·`TestJson.cs`·`Snapshots.cs`·`TestField.cs`(신규 — 좌표만 꾸민 유닛 상태)
 
 **결정**
-- **틱 순서**: `events.Clear` → 종료 확인 → `Tick++` → 후퇴 → 흩어짐 피해 → 재사용 대기 감소 → **이동(신규)** → 게이지 충전 → 행동 → 조우 전환 → 승패. 이동이 게이지 충전 앞에 와야 사거리 판정 전에 위치가 확정된다.
+- **틱 순서**: `events.Clear` → 종료 확인 → `Tick++` → 후퇴 → 소모품 사용(Phase D) → 흩어짐 피해 → 재사용 대기 감소 → **이동** → 게이지 충전 → 행동 → 구조 진행(Phase D) → 조우 전환 → 승패. 이동이 게이지 충전 앞에 와야 사거리 판정 전에 위치가 확정된다.
 - `StartWave` 는 틱 끝에 남고, **생성자에서 모든 유닛의 `PosX` 를 스폰 위치로 확정**한다(표시 계층이 직전 스냅샷의 낡은 좌표에서 미끄러지지 않게).
 - **`LaneConfig` 수치**(이름·단위·범위, 생성자가 정본):
 
@@ -146,8 +145,8 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
   | `characters.json` | `formationChance`(Phase C) | 0~10000, 누락 금지 |
   | `stage_slice.json` | `approachFu` | 1~20000, 조우마다 필수 |
   | `stage_slice.json` | 보스 | `isBoss` 캐릭터는 마지막 조우에만 |
-  | `consumables.json`(Phase D) | ID·이름·회복량·초기 수량 | 배열 ≤ 10, ID 중복 금지, 회복량 1~`CombatScale.MaxValue`, 수량 1~99 |
-  | `balance.json` | `rescueTicks`(Phase D) | 1~제한 시간 틱 — 너무 크면 자동 구조가 앵커를 제한 시간까지 묶는다 |
+  | `consumables.json`(Phase D) | `id`·`name`·`healAmount`·`count` | 배열 0~10, ID 중복 금지, 회복량 1~`CombatScale.MaxValue`, 수량 1~99 |
+  | `balance.json` | `rescueTicks`(Phase D) | 1~제한 시간 틱 — 너무 크면 구조가 끝나지 못하고 진형이 제한 시간까지 묶인다. 제한 시간은 스테이지 파일에 있어 `GameData` 조립 지점에서 본다 |
   | `stage_slice.json` + `balance.json` | 시간 예산 | `접근 거리 합 ≤ (long)marchSpeedFu × 제한 시간 틱`. 두 파일을 함께 아는 **`GameData` 조립 지점**에서 검증한다(`StageReader` 는 stage 파일만 읽으므로 `LaneConfig` 를 선택 인자로 받으면 조용히 건너뛸 수 있다) |
 
   새 DTO 정수 필드는 전부 `FieldCheck.Missing`(-1)로 초기화해 누락이 0 으로 통과하지 않게 한다.
@@ -230,28 +229,37 @@ Phase A 의 `balance.json` 도 같은 프리셋 값으로 커밋한다 — "꺼�
 - 수동 시나리오: 침투한 적이 앞으로 나와 뒷열을 때리는 모습, 비겁·후방이 뒤로 서는 모습, 성향 표식 글자
 
 ## Phase D — 개입 수단
-**목표**: 사용자가 쓰는 다섯 가지가 모두 동작한다.
+**목표**: 사용자가 쓰는 다섯 가지(기술 강제 발동·과부하·구조·소모품·퇴각)가 모두 동작한다.
 
 **변경 파일**
-- 수정 `Scripts/Combat/`: `UnitState.cs`(구조 진행 틱·대상·소모품 잔량), `ActionResolver.cs`(구조 캐스팅·피격 초기화), `BattleCommand.cs`(`UseItem`), `BattleSimulation.cs`(자동 구조·앵커 정지 조건 3번·해시 갱신)
-- 신규 데이터: `Resources/Data/consumables.json`, `ConsumableReader.cs`·`Dtos.cs`
-- 수정 `Scripts/View/`: `UnitView.cs`(강제 발동 가능 시 빛남), `InterventionBar.cs`(소모품 버튼), `BattleHud.cs`
+- 신규 `Scripts/Combat/`: `RescueCasting.cs`(구조 시작·진행·피격 초기화·취소·자동 구조), `ItemBag.cs`(소모품 재고와 사용 요청), `ConsumableSetup.cs`
+- 수정 `Scripts/Combat/`: `UnitState.cs`(구조 대상·진행 틱), `ActionResolver.cs`(구조 시작 위임·피격 알림), `TurnRules.cs`(구조 중 게이지 정지), `Engagement.cs`(`IsAnyoneEngaged`), `BattleCommand.cs`(`UseItem`·거부 사유 4종), `BattleEvent.cs`(이벤트 4종을 끝에 추가), `BalanceConfig.cs`(`rescueTicks`), `BattleSetup.cs`(소모품 목록), `BattleSnapshot.cs`(구조 상태·소모품 잔량), `BattleSimulation.cs`(틱 순서·해시)
+- 신규 데이터: `Resources/Data/consumables.json`, `Scripts/Data/ConsumableReader.cs`
+- 수정 `Scripts/Data/`: `Dtos.cs`·`BalanceReader.cs`·`GameData.cs`·`GameDataLoader.cs`, `balance.json`(`rescueTicks`)
+- 신규 `Scripts/View/`: `UnitReadiness.cs`(강제 발동 가능 판정)
+- 수정 `Scripts/View/`: `UnitView.cs`(빛남·구조 남은 시간), `InterventionBar.cs`(소모품 버튼), `RescueSelector.cs`, `BattleBootstrap.cs`(이벤트 팝업), `UiText.cs`·`BattleLayout.cs`
 
 **결정**
-- **구조 캐스팅**: `rescueTicks`(= `TicksPerSecond × 5`, 데이터 값). 규칙을 다음과 같이 못 박는다.
-  - 시작한 틱이 진행 1 로 세어진다. 진행이 `rescueTicks` 에 **도달한 틱에 완료**되고, 완료 판정은 행동 단계 **뒤**에 둔다(같은 틱 피격이 완료보다 먼저 평가되도록).
-  - 진행 중에는 **게이지를 충전하지 않고 행동도 하지 않는다**. `CanAct` 의 의미는 그대로 두고(D5), `ActionGaugeScheduler.Fill` 과 `IsReady` 가 구조 진행을 함께 본다. 완료 시 게이지는 기존 `rescueExtraGauge` 규칙을 따른다.
-  - **피격(적 공격·폭주 유탄)이면 진행 0 으로 초기화**하고, 자해·흩어짐 피해는 초기화하지 않는다.
-  - 구조자나 대상이 빈사·흩어짐이 되면 취소. 조우 전환·퇴각·제한 시간과 겹치면 취소.
-  - 기존 **즉시 구조**를 전제한 테스트(`ScatterRescueTests`, `CommandQueueTests` 의 Rescue, `DeterminismTests` 명령 스크립트, `rescueExtraGauge`)의 영향 목록을 구현 착수 때 먼저 작성한다.
-- **자동 구조**: 교전 중인 적이 없고 흩어진 아군이 있으면 후방 유지 선호 우선으로 시작하고, 완료까지 앵커가 전진하지 않는다(D2 조건 3).
-- **빛남 조건**: 순수 함수 `UiText`/`BattleLayout` 수준의 `IsSkillReady(UnitSnapshot)` 로 두고 테스트한다. `CooldownRemaining == 0 && Condition == Normal` 만으로는 **캐스팅 중·전장 밖에서도 참**이 되므로 스냅샷에 캐스팅 표시를 넣어 함께 본다.
-- **소모품**: 잔량은 로드 데이터가 아니라 **시뮬레이션이 소유**한다. 알 수 없는 ID·잔량 ≤ 0 이면 거부한다. 회복 계산은 `long` 으로 하고 최대 HP 로 제한한다. 파티 단위 대기열을 거쳐 후퇴 확인 직후에 처리한다(Phase A 틱 순서). 대상은 HP 비율 최저 아군이고 동률이면 낮은 ID, 유효 대상이 없으면 잔량을 보존한다.
+- **구조 캐스팅**: `rescueTicks`(데이터 값, 실값 50 = 5초).
+  - 시작한 틱이 진행 1 로 세어진다. 진행이 `rescueTicks` 에 **도달한 틱에 완료**되고, 진행·완료는 행동 단계 **뒤**에 센다(같은 틱 피격이 완료보다 먼저다).
+  - 진행 중에는 **게이지를 충전하지 않고 행동도 하지 않는다**. `CanAct` 의 의미는 그대로 두고(D5) `ActionGaugeScheduler` 가 `IsRescuing` 을 함께 본다. 완료 때 구조자 게이지에서 `rescueExtraGauge` 가 빠진다.
+  - **공격을 맞으면(적 공격·폭주 유탄) 진행이 0 으로 돌아간다** — 구조 자체는 이어진다. 자해·흩어짐 피해는 맞은 것이 아니다.
+  - 구조자가 행동 불가가 되거나 대상이 더는 흩어진 상태가 아니면 취소한다. 전투가 끝나면 남은 구조를 지운다.
+  - **조우가 바뀌어도 구조는 이어진다.** 전투가 일단락된 뒤 이동 전에 구조하는 것이 요구이고, 구조 중에는 진형이 멈춰 있어 다음 조우와 엉키지 않는다.
+  - 구조자는 다른 명령을 받지 않고(`RejectedBusy`), 한 동료를 둘이 구조하지 않는다.
+- **수동 구조의 시작 시점**은 그대로 구조자의 행동 차례다(위치와 무관한 대기 명령). 시작에 게이지 하나를 쓰고 그때부터 캐스팅이 돈다. 구조를 시작할 수 있는지의 판정은 `RescueCasting.CanStart` 하나를 명령 수락·실행·자동 구조가 함께 쓴다.
+- **자동 구조**: 행동할 수 있는 유닛 가운데 **아무도 상대를 사거리 안에 두지 않을 때**(`Engagement.IsAnyoneEngaged` 가 거짓) 흩어진 아군마다 구조자를 붙인다. 후방 유지 성향이 먼저고 없으면 ID 가 가장 작은 동료다. 행동 차례를 기다리지 않고 바로 시작한다. 사용자의 지시가 먼저다 — 이미 구조를 지시해 둔 대상은 건드리지 않고, 명령을 기다리는 동료는 구조자로 뽑지 않는다.
+- **빛남**: 순수 함수 `UnitReadiness.CanForceSkill(UnitSnapshot)` 하나를 기술 버튼 활성과 몸의 빛남이 함께 쓴다. 아군·전장 위·정상·재사용 대기 0·구조 중 아님. 전투가 끝나면 끈다.
+- **소모품**: 잔량은 **시뮬레이션이 소유**한다(`ItemBag`). 유닛별 대기 명령과 섞이지 않게 파티 단위 요청으로 받아 **다음 틱의 후퇴 확인 직후**에 처리한다.
+  - 대상은 HP 비율이 가장 낮은 아군(빈사·가득 찬 동료 제외), 같으면 낮은 ID. 비율 비교는 나눗셈 없이 `long` 곱으로 한다.
+  - 알 수 없는 ID·재고 없음(대기 중인 요청까지 센다)·회복할 동료 없음은 요청 때 거부한다. 처리 시점에 대상이 사라졌으면 재고를 쓰지 않는다.
+  - 실값: 회복약 1종, 회복 200, 3개.
+- **테스트 기본 구조 시간은 1틱**이다. 시작한 틱에 끝나므로 구조 캐스팅을 보지 않는 기존 테스트가 그 길이에 묶이지 않는다.
 
 **검증**
-- 신규 ~25: `Hit_Tick49_ResetsProgress` · `NoHit_Tick50_Rescued` · `TargetDownedMidCast_Cancels` · `RescuerDownedMidCast_Cancels` · 같은 틱 피격·완료 순서 · 자동 구조가 전진을 막음 · 소모품 잔량 소진·거부 · `Casting_NotSkillReady` · 해시에 구조 진행·잔량 포함
-- 수동 시나리오: 빛남이 강제 발동 가능 시에만 켜지는지, 소모품 버튼, 구조 중 피격
-- 커버리지 80%+ 측정
+- 테스트 513개 통과(Phase D 전 427개). 커버리지 `TAoB.Combat` 99.1% · `TAoB.Data` 99.2%.
+- 신규: 구조 소요 틱(시작 틱 = 진행 1) · 구조 중 행동·게이지 정지(남은 게이지가 있어도) · **완료 틱의 피격은 초기화가 먼저** · **완료 틱의 빈사는 취소가 먼저**(되살아나지 않는다) · 시작 틱 피격·폭주 유탄 · 완료 시 게이지 차감 · 대상 빈사·구조자 빈사 취소 · 같은 대상의 두 번째 명령은 폴백 · 구조 중 명령 거부·이중 구조 거부 · 교전 중 자동 구조 없음 · 전투 종료 시 정리 · 자동 구조 시작과 진형 정지 · 후방 유지 우선 · 사용자가 지시한 대상·명령을 기다리는 동료를 가로채지 않음 · 흩어진 동료 둘·구조자 없음·적만 닿는 교전 · 소모품 틱 순서(흩어짐 피해 앞·후퇴 뒤)·2종 · 소모품 대상 선택(비율·동률·상한·재선택) · 재고·요청 거부 · 대상 소멸 시 재고 보존 · 대기 명령과 분리 · 해시에 구조 상태·재고·요청 포함 · 데이터 검증(누락·범위·중복·종류 수·구조 시간 > 제한 시간) · `UnitReadiness` · `RescueSelector`
+- 수동 시나리오: 빛남이 강제 발동 가능할 때만 켜지는지, 소모품 버튼과 남은 개수, 과부하로 흩어진 뒤 구조(남은 시간 표시·피격 시 "구조 끊김")
 
 ## Phase E — 60초 밸런스와 심리스 다듬기 (재미 판정 2차)
 **목표**: 한 판이 60초(600틱) 안에 끝나고 이동-전투 경계가 느껴지지 않는다.
@@ -279,6 +287,7 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
 - `PlayModeSmoke` 가 계층 경로를 하드코딩하므로 `Lane` 도입과 같은 커밋에서 고친다.
 - 안드로이드 빌드는 URP 에셋·`m_BuildTargetBatching` 을 자동으로 다시 쓴다.
 - `UnitSnapshot` 은 `int` 인수가 연속이라 새 필드를 중간에 끼우면 순서가 뒤바뀌어도 컴파일된다 → **끝에 추가**한다.
+- 소모품 버튼은 구조 버튼 왼쪽으로 한 줄에 놓인다. 3종을 넘기면 아군 버튼과 겹치므로 그 전에 배치를 바꿔야 한다(규칙 상한은 10종).
 
 ## 결정 로그
 - 2026-09-29: 사용자가 "전투 진행이 생각과 다르다 — 횡스크롤 이동 전투"로 판단. 레퍼런스 블루 아카이브·트릭컬 리바이브. 수직 슬라이스는 폰 재미 판정 없이 종료.
@@ -334,6 +343,20 @@ Live2D, 픽셀아트, 사운드, 덱세팅 화면, 거점, 부활, 저장, 스�
   - LOW(arch·quality): 선호 `None` 도 규율 롤로 난수를 썼고 "난수열 동일" 주석이 거짓이었다 → 선호가 없으면 굴리지 않는다.
   - 주석 11건(거짓이 된 "사거리 필터는 Phase C 에서"·"자리 쪽으로"·색 서술·도발 방향 등)과 문서 8건(D2·D6 미갱신, Phase A·B 의 옛 수치, Status)을 고쳤다.
   - 기각: `LaneConfig` 생성자 `Require` 도우미(검증 메서드 3개로 쪼개는 것으로 충분) · `default:` 분기가 새 열거값을 삼킨다는 지적(표시 계층은 새 값에 빈 표식이 맞고 규칙 쪽은 `UnitSetup` 이 열거형 정의 여부를 이미 막는다) · `Stances` 이름 변경과 `IsReachableOpponent` 통합(동작 변화 없이 변경만 키운다).
+- 2026-10-08 **2차 폰 확인**: "움직임이 좀 부자연스럽다. 여전히 사각형이라 그런가." 사용자 결정 — 움직임(가속·감속, 걷는 흔들림, 자세 전환)은 캐릭터 디자인을 입힌 뒤 **한꺼번에** 다듬고, 지금은 Phase D 로 진행한다. 규칙(어디에 서는가)은 표시와 분리돼 있어 그림이 바뀌어도 그대로 간다.
+- 2026-10-08 **Phase D 구현 중 결정**(계획에 없던 것만):
+  - 초안의 "조우 전환과 겹치면 구조 취소"를 버렸다. 전투가 끝난 틱에 다음 조우가 바로 시작되므로, 취소하면 전투 막바지에 시작한 구조가 버려지고 자동 구조가 처음부터 다시 돈다.
+  - 초안의 앵커 정지 조건 3(구조 캐스팅 중)을 두지 않았다. 구조 중에는 대상이 흩어진 상태라 조건 2 가 이미 막는다(D2).
+  - 초안의 빛남 판정 위치(`UiText`/`BattleLayout`)를 `UnitReadiness` 로 옮겼다. 문구도 배치도 아닌 판정이고 기술 버튼 활성과 같은 함수여야 한다.
+  - 계획에 없던 규칙 셋을 더했다(결정은 Phase D 절): 자동 구조는 행동 차례를 기다리지 않는다(기다리는 동안 흩어진 동료가 HP 를 잃는다) / 사용자의 지시가 자동 구조보다 먼저다 / 소모품은 요청 때도 거른다(다음 틱에 조용히 버려지면 사용자는 이유를 알 수 없다).
+  - **밸런스 관찰(Phase E 소관)**: 흩어진 동료는 틱당 5 를 잃어 구조 5초 동안 250 을 잃는다. 마법사(HP 380)는 구조가 한 번 끊기면 살아남기 어렵다. 마지막 적이 쓰러진 틱에 흩어져 있으면 구조가 시작돼도 전투 종료로 빈사가 확정된다.
+- 2026-10-08 **`/plan-review --code` Phase D (코드 7 scope + 자산·문서 1 — CRITICAL 0 · HIGH 2 · MEDIUM 12, security·perf 발견 없음)** 반영:
+  - HIGH(arch): 자동 구조가 사용자 명령을 기다리는 동료를 다른 대상의 구조자로 뽑았다. 흩어진 동료가 둘이고 구조 명령이 대기 중이면 지시한 구조가 떨어진다 → 명령을 기다리는 동료는 뽑지 않는다.
+  - HIGH(test): 취소가 완료보다 먼저라는 순서가 완료 틱 경계에서 검증되지 않아, 순서를 뒤집으면 HP 0 인 동료가 되살아나는데도 통과했다 → 완료 틱에 대상·구조자가 쓰러지는 테스트 추가. 두 HIGH 모두 수정을 되돌려 새 테스트 네 개만 실패하는 것을 확인했다.
+  - MEDIUM(test) 9건 보강: 완료 시 게이지 차감 / 폭주 유탄·시작 틱 피격 / 남은 게이지로 구조 중 행동 / 자동 구조(둘 흩어짐·구조자 없음·적만 닿는 교전) / 같은 대상의 두 번째 명령 폴백 / 소모품 틱 순서·2종·거부 순서 / 결정론 스크립트에 구조 시간과 소모품 / 경계값.
+  - MEDIUM(quality): `UnitView.Apply` 가 71줄 → 글자 갱신을 `UpdateTexts` 로 분리. LOW: 구조 시작 판정을 `RescueCasting.CanStart` 로 모음(arch) · 소비처 없는 `FindConsumable` 삭제 · 개입 바의 행 좌표 상수와 활성 토글 도우미 · 빛남이 `Pulse` 를 억지로 쓰던 것을 `Wave01` 로.
+  - 주석 4건(자동 구조가 생겨 거짓이 된 "구조는 사용자 개입 전용" 등)과 문서 6건(틱 순서 정본에 소모품·구조 진행 누락, D10, 로그 순서)을 고쳤다.
+  - 기각: 해시에서 구조 대상과 진행을 **따로** 가르는 테스트(다른 해시 대상 상태를 건드리지 않고는 둘을 따로 바꿀 수 없다 — 구조 상태 전체가 들어가는지는 `WhoIsRescuing_IsInTheHash` 가 본다) · `BattleSimulation.cs`(467줄)·`DataValidationTests.cs`(758줄) 분리(800줄 한도 안이고 분리하려면 공용 도우미 추출이 먼저다) · 구조자가 받을 수 없는 자해·흩어짐 피해의 비초기화 테스트(구조자는 행동하지 않고 정상 상태라 그 피해가 닿는 경로가 없다).
 - 2026-10-06 **폰 보고: 하단 기술 버튼이 잘린다 — 해상도 대응**(Phase B 커밋 이후 수정):
   - 원인: UI 전체가 1920×1080 중앙 기준 절대 좌표인데 스케일러가 `match 0.5` 라 19.5:9 이상 폰에서 캔버스 높이가 978(19.5:9)~966(20:9)~943(21:9)으로 줄어 하단 버튼(−512)과 상단 HUD(+520)가 화면 밖으로 나갔다(계산으로 확인). 프로젝트가 `androidRenderOutsideSafeArea` 라 노치·제스처 바 밑까지 그려지는 문제가 겹친다. 4:3·16:10 은 반대로 좌우가 모자랐다.
   - 결정: 스케일러를 **높이 기준(1)**으로 고정해 캔버스 높이를 늘 1080 으로 두고(`UiFit.ScalerMatch`), 버튼·글자가 있는 요소(HUD·개입 바·디버그 패널·결과 화면)를 `SafeAreaFit` 컨테이너 아래에 둔다 — 1920×1080 설계 영역을 `Screen.safeArea` 안으로 옮기고 필요할 때만 줄인다(순수 계산 `UiFit.Fit`). 배경·유닛·팝업은 전체 화면을 쓴다.

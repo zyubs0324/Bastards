@@ -33,7 +33,9 @@ namespace TAoB.Combat
             bool isBoss,
             int posX,
             Stance stance,
-            bool isFlanking)
+            bool isFlanking,
+            int rescueTargetId,
+            int rescueProgress)
         {
             Id = id;
             Side = side;
@@ -54,6 +56,8 @@ namespace TAoB.Combat
             PosX = posX;
             Stance = stance;
             IsFlanking = isFlanking;
+            RescueTargetId = rescueTargetId;
+            RescueProgress = rescueProgress;
         }
 
         public int Id { get; }
@@ -87,6 +91,27 @@ namespace TAoB.Combat
 
         /// <summary>측면 침투 중인 적인가.</summary>
         public bool IsFlanking { get; }
+
+        /// <summary>구조하고 있는 대상. 구조 중이 아니면 <see cref="BattleEvent.NoUnit"/>.</summary>
+        public int RescueTargetId { get; }
+
+        /// <summary>구조 진행 틱. 다 차는 값은 <see cref="BattleSnapshot.RescueTicks"/>.</summary>
+        public int RescueProgress { get; }
+
+        public bool IsRescuing => RescueTargetId != BattleEvent.NoUnit;
+    }
+
+    /// <summary>소모품 한 종류의 남은 개수.</summary>
+    public readonly struct ItemSnapshot
+    {
+        public ItemSnapshot(int id, int remaining)
+        {
+            Id = id;
+            Remaining = remaining;
+        }
+
+        public int Id { get; }
+        public int Remaining { get; }
     }
 
     /// <summary>
@@ -96,13 +121,17 @@ namespace TAoB.Combat
     {
         private readonly UnitSnapshot[] _units;
         private readonly ReadOnlyCollection<UnitSnapshot> _readOnlyUnits;
+        private readonly ItemSnapshot[] _items;
+        private readonly ReadOnlyCollection<ItemSnapshot> _readOnlyItems;
 
-        internal BattleSnapshot(BattleSimulation owner, int unitCount)
+        internal BattleSnapshot(BattleSimulation owner, int unitCount, int itemKindCount)
         {
             Owner = owner;
             _units = new UnitSnapshot[unitCount];
             // 배열을 그대로 내주면 형변환으로 내부 버퍼를 덮어쓸 수 있어 읽기 전용 래퍼를 한 번만 만들어 둔다.
             _readOnlyUnits = Array.AsReadOnly(_units);
+            _items = new ItemSnapshot[itemKindCount];
+            _readOnlyItems = Array.AsReadOnly(_items);
         }
 
         internal BattleSimulation Owner { get; }
@@ -119,9 +148,20 @@ namespace TAoB.Combat
         public int EnemyAnchorX { get; internal set; }
         public IReadOnlyList<UnitSnapshot> Units => _readOnlyUnits;
 
+        /// <summary>구조가 끝나는 진행 틱(밸런스 값). 남은 시간을 구하는 데 쓴다.</summary>
+        public int RescueTicks { get; internal set; }
+
+        /// <summary>파티 소모품. 순서는 전투 설정의 순서 그대로다.</summary>
+        public IReadOnlyList<ItemSnapshot> Items => _readOnlyItems;
+
         internal void SetUnit(int index, UnitSnapshot unit)
         {
             _units[index] = unit;
+        }
+
+        internal void SetItem(int index, ItemSnapshot item)
+        {
+            _items[index] = item;
         }
     }
 }

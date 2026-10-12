@@ -43,6 +43,10 @@ namespace TAoB.View
                 case Combat.CommandResult.RejectedCooldown: return "재사용 대기 중";
                 case Combat.CommandResult.RejectedCannotOverload: return "과부하 불가";
                 case Combat.CommandResult.RejectedInvalidTarget: return "구조 대상이 아닙니다";
+                case Combat.CommandResult.RejectedBusy: return "구조하는 중입니다";
+                case Combat.CommandResult.RejectedUnknownItem: return "없는 소모품";
+                case Combat.CommandResult.RejectedNoStock: return "남은 소모품이 없습니다";
+                case Combat.CommandResult.RejectedNoHealTarget: return "회복할 동료가 없습니다";
                 default: return "거부";
             }
         }

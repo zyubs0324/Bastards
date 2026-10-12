@@ -70,7 +70,10 @@ namespace TAoB.Combat.Tests
                 new AffinityEntry(Job.Knight, Job.Perceptive, AffinityLevel.Strong),
                 new AffinityEntry(Job.Mage, Job.Perceptive, AffinityLevel.Weak),
             });
-            return TestUnits.Setup(allies, waves, TestBalance.Create(lane: lane), MaxTicks, PreconditionKind.None, affinity, waveApproachFu);
+            // 구조에 시간이 걸리고 소모품을 쓰는 구성 — 여러 틱에 걸친 구조 상태와 재고가 같은 시드·배속에서 같아야 한다.
+            return TestUnits.Setup(
+                allies, waves, TestBalance.Create(lane: lane, rescueTicks: 20), MaxTicks, PreconditionKind.None, affinity, waveApproachFu,
+                new[] { new ConsumableSetup(1, 150, 3) });
         }
 
         /// <summary>틱 번호(이미 처리된 마지막 틱) → 그 직후 넣을 명령.</summary>
@@ -78,8 +81,10 @@ namespace TAoB.Combat.Tests
         {
             { 5, new[] { BattleCommand.Overload(2) } },
             { 30, new[] { BattleCommand.UseSkill(1) } },
+            { 45, new[] { BattleCommand.UseItem(1) } },
             { 60, new[] { BattleCommand.UseSkill(3), BattleCommand.Overload(2) } },
             { 90, new[] { BattleCommand.Rescue(1, 2) } },
+            { 120, new[] { BattleCommand.UseItem(1), BattleCommand.UseItem(1) } },
             { 150, new[] { BattleCommand.Overload(2), BattleCommand.UseSkill(1) } },
         };
 

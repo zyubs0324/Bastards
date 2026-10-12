@@ -149,7 +149,7 @@ namespace TAoB.Data.Tests
         [Test]
         public void EveryBalanceKey_MatchesConstructorParameterName()
         {
-            // 로더는 BalanceConfig 생성자 예외의 매개변수 이름을 JSON 키로 되돌려 준다. 그 이름 규약이 21개 전부에서 성립하는지 고정한다.
+            // 로더는 BalanceConfig 생성자 예외의 매개변수 이름을 JSON 키로 되돌려 준다. 그 이름 규약이 22개 전부에서 성립하는지 고정한다.
             var ctor = typeof(BalanceConfig).GetConstructors()[0];
             int checkedCount = 0;
 
@@ -165,7 +165,7 @@ namespace TAoB.Data.Tests
                 checkedCount++;
             }
 
-            Assert.AreEqual(21, checkedCount);
+            Assert.AreEqual(22, checkedCount);
         }
 
         /// <summary>상한이 있는 구간 <paramref name="boundedCount"/>개를 픽스처의 첫 구간 자리에 넣는다(마지막 무상한 구간은 픽스처 것을 그대로 둠).</summary>
@@ -655,6 +655,111 @@ namespace TAoB.Data.Tests
         {
             Assert.Throws<System.InvalidOperationException>(() => TestJson.Swap("ab", "x", "y"));
             Assert.Throws<System.InvalidOperationException>(() => TestJson.Swap("aa", "a", "b"));
+        }
+
+        // ---- 소모품·구조 시간(계획서 Phase D) ----
+
+        [Test]
+        public void Consumables_AreLoaded_AndGoIntoTheBattleSetup()
+        {
+            GameData data = GameDataLoader.Parse(TestJson.Files());
+
+            Assert.AreEqual(1, data.Consumables.Count);
+            Assert.AreEqual(1, data.Consumables[0].Id);
+            Assert.AreEqual("회복약", data.Consumables[0].Name);
+            ConsumableSetup inBattle = data.CreateBattleSetup().Consumables[0];
+            Assert.AreEqual(1, inBattle.Id);
+            Assert.AreEqual(100, inBattle.HealAmount);
+            Assert.AreEqual(2, inBattle.Count);
+        }
+
+        [Test]
+        public void NoConsumables_IsAllowed_ButTheArrayMustBePresent()
+        {
+            GameData empty = GameDataLoader.Parse(TestJson.Files(consumables: @"{ ""consumables"": [] }"));
+            var missing = Fails(TestJson.Files(consumables: "{ }"));
+
+            Assert.IsEmpty(empty.Consumables);
+            AssertLocation(missing, DataFiles.Consumables, "consumables");
+        }
+
+        [TestCase(@"""id"": 1, ", "id")]
+        [TestCase(@"""name"": ""회복약"", ", "name")]
+        [TestCase(@"""healAmount"": 100, ", "healAmount")]
+        [TestCase(@", ""count"": 2", "count")]
+        public void ConsumableMissingAField_IsRejected(string piece, string field)
+        {
+            var ex = Fails(TestJson.Files(consumables: TestJson.Swap(TestJson.Consumables, piece, "")));
+
+            AssertLocation(ex, DataFiles.Consumables, "consumables[0]." + field);
+        }
+
+        [TestCase(@"""healAmount"": 100", @"""healAmount"": 0", "healAmount")]
+        [TestCase(@"""count"": 2", @"""count"": 0", "count")]
+        [TestCase(@"""count"": 2", @"""count"": 100", "count")]
+        public void ConsumableValueOutOfRange_IsRejected(string from, string to, string field)
+        {
+            var ex = Fails(TestJson.Files(consumables: TestJson.Swap(TestJson.Consumables, from, to)));
+
+            AssertLocation(ex, DataFiles.Consumables, "consumables[0]." + field);
+        }
+
+        [Test]
+        public void ConsumableCountAtItsMaximum_IsAccepted()
+        {
+            string json = TestJson.Swap(TestJson.Consumables, @"""count"": 2", @"""count"": 99");
+
+            Assert.AreEqual(99, GameDataLoader.Parse(TestJson.Files(consumables: json)).Consumables[0].Setup.Count);
+        }
+
+        [Test]
+        public void DuplicateConsumableId_IsRejected()
+        {
+            const string item = @"{ ""id"": 1, ""name"": ""회복약"", ""healAmount"": 100, ""count"": 2 }";
+            var ex = Fails(TestJson.Files(consumables: TestJson.Swap(TestJson.Consumables, item, item + ", " + item)));
+
+            AssertLocation(ex, DataFiles.Consumables, "consumables[1].id");
+        }
+
+        private static string ConsumablesOfKinds(int kinds)
+        {
+            var items = new System.Text.StringBuilder();
+            for (int i = 0; i < kinds; i++)
+            {
+                if (i > 0) items.Append(", ");
+                items.Append(@"{ ""id"": " + i + @", ""name"": ""약"", ""healAmount"": 10, ""count"": 1 }");
+            }
+
+            return @"{ ""consumables"": [" + items + "] }";
+        }
+
+        [Test]
+        public void MoreConsumableKindsThanTheLimit_AreRejected_AndExactlyTheLimitIsAccepted()
+        {
+            var ex = Fails(TestJson.Files(consumables: ConsumablesOfKinds(BattleSetup.MaxConsumableKinds + 1)));
+            GameData exact = GameDataLoader.Parse(TestJson.Files(consumables: ConsumablesOfKinds(BattleSetup.MaxConsumableKinds)));
+
+            AssertLocation(ex, DataFiles.Consumables, "consumables");
+            Assert.AreEqual(BattleSetup.MaxConsumableKinds, exact.CreateBattleSetup().Consumables.Count);
+        }
+
+        [Test]
+        public void RescueLongerThanTheBattle_IsRejected_AndExactlyTheTimeLimitIsAccepted()
+        {
+            // 제한 시간은 60초 = 600틱이다. 구조 한 번이 그보다 길면 끝나지 못하고 진형이 묶인다.
+            var ex = Fails(TestJson.Files(balance: TestJson.Swap(TestJson.Balance, @"""rescueTicks"": 50", @"""rescueTicks"": 601")));
+            GameData exact = GameDataLoader.Parse(TestJson.Files(balance: TestJson.Swap(TestJson.Balance, @"""rescueTicks"": 50", @"""rescueTicks"": 600")));
+
+            AssertLocation(ex, DataFiles.Balance, "rescueTicks");
+            Assert.AreEqual(600, exact.Balance.RescueTicks);
+        }
+
+        [Test]
+        public void MissingRescueTicks_IsRejected()
+        {
+            var ex = Fails(TestJson.Files(balance: TestJson.Swap(TestJson.Balance, @" ""rescueTicks"": 50,", "")));
+
+            AssertLocation(ex, DataFiles.Balance, "rescueTicks");
         }
     }
 }

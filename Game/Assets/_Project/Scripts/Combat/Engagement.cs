@@ -36,6 +36,17 @@ namespace TAoB.Combat
             return false;
         }
 
+        /// <summary>행동할 수 있는 유닛 가운데 누구라도 상대를 사거리 안에 두고 있는가. 자동 구조가 "전투가 일단락됐는가"를 보는 데 쓴다.</summary>
+        public static bool IsAnyoneEngaged(UnitState[] units, LaneConfig lane)
+        {
+            for (int i = 0; i < units.Length; i++)
+            {
+                if (units[i].CanAct && HasReachableOpponent(units[i], units, lane)) return true;
+            }
+
+            return false;
+        }
+
         /// <summary>거리를 빼고 상대가 전장에 남아 있는가. "사거리 밖"과 "상대가 아예 없음"을 구분하는 데 쓴다.</summary>
         public static bool HasOpponentOnField(UnitState actor, UnitState[] units)
         {

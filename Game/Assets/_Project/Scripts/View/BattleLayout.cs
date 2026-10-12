@@ -86,6 +86,11 @@ namespace TAoB.View
         public static readonly Color RescuedColor = new Color(0.5f, 1f, 0.6f);
         public static readonly Color FallbackColor = new Color(0.8f, 0.8f, 0.8f);
         public static readonly Color MagitoolColor = new Color(0.9f, 0.8f, 0.6f);
+        public static readonly Color HealColor = new Color(0.45f, 1f, 0.55f);
+        public static readonly Color RescueInterruptedColor = new Color(1f, 0.55f, 0.35f);
+
+        /// <summary>기술을 강제 발동할 수 있는 동료의 몸 뒤에서 빛나는 테두리 색(계획서 Phase D).</summary>
+        public static readonly Color SkillReadyGlowColor = new Color(1f, 0.95f, 0.55f);
 
         /// <summary>
         /// 같은 진영·같은 열 안에서 위에서 아래로 <paramref name="slot"/> 번째 자리의 Y.

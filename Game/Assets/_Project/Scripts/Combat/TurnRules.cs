@@ -12,7 +12,8 @@ namespace TAoB.Combat
             for (int i = 0; i < units.Length; i++)
             {
                 UnitState unit = units[i];
-                if (unit.CanAct)
+                // 구조 중에는 게이지가 멈춘다 — 구조자는 그동안 전투에서 빠진다(계획서 Phase D).
+                if (unit.CanAct && !unit.IsRescuing)
                 {
                     long filled = (long)unit.ActionGauge + unit.Setup.Stats.Spd;
                     long cap = Cap(unit, unitsById, balance);
@@ -35,7 +36,7 @@ namespace TAoB.Combat
 
         public static bool IsReady(UnitState unit, BalanceConfig balance)
         {
-            return unit.CanAct && unit.ActionGauge >= balance.ActionGaugeMax;
+            return unit.CanAct && !unit.IsRescuing && unit.ActionGauge >= balance.ActionGaugeMax;
         }
 
         /// <summary>넘친 게이지는 남겨 빠른 유닛의 이득을 보존한다.</summary>
@@ -63,7 +64,7 @@ namespace TAoB.Combat
         /// <summary>
         /// 기술은 숨은 빈도 스탯(<see cref="UnitSetup.SkillChance"/>)으로 나가고 재사용 대기를 보지도 걸지도 않는다.
         /// 재사용 대기는 사용자의 강제 발동 전용이라 자동 사용이 그것을 소모하면 개입의 가치가 사라진다.
-        /// 과부하·구조는 사용자 개입 전용으로 남긴다.
+        /// 과부하는 사용자 개입 전용으로 남긴다. 구조는 사용자 명령 외에 교전이 없을 때 <see cref="RescueCasting"/> 이 시작한다(이 경로를 거치지 않는다).
         /// </summary>
         public static BattleCommand Choose(UnitState unit, IRandom random)
         {

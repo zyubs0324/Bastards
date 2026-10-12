@@ -134,6 +134,20 @@ namespace TAoB.Data
         }
     }
 
+    /// <summary>소모품 한 종류의 표시 이름과 전투 입력.</summary>
+    public sealed class ConsumableData
+    {
+        internal ConsumableData(string name, ConsumableSetup setup)
+        {
+            Name = name;
+            Setup = setup;
+        }
+
+        public int Id => Setup.Id;
+        public string Name { get; }
+        public ConsumableSetup Setup { get; }
+    }
+
     public sealed class StageData
     {
         internal StageData(
@@ -164,14 +178,22 @@ namespace TAoB.Data
     /// <summary>검증을 통과한 데이터 전체. 로더만 만든다.</summary>
     public sealed class GameData
     {
-        internal GameData(BalanceConfig balance, AffinityTable affinity, EquipmentCatalog equipment, IReadOnlyList<CharacterData> characters, StageData stage)
+        internal GameData(
+            BalanceConfig balance,
+            AffinityTable affinity,
+            EquipmentCatalog equipment,
+            IReadOnlyList<CharacterData> characters,
+            StageData stage,
+            IReadOnlyList<ConsumableData> consumables)
         {
             RejectUnreachableStage(balance, stage);
+            RejectRescueLongerThanTheBattle(balance, stage);
             Balance = balance;
             Affinity = affinity;
             Equipment = equipment;
             Characters = characters;
             Stage = stage;
+            Consumables = consumables;
         }
 
         public BalanceConfig Balance { get; }
@@ -179,6 +201,20 @@ namespace TAoB.Data
         public EquipmentCatalog Equipment { get; }
         public IReadOnlyList<CharacterData> Characters { get; }
         public StageData Stage { get; }
+        public IReadOnlyList<ConsumableData> Consumables { get; }
+
+        /// <summary>
+        /// 구조 한 번이 전투보다 길면 구조가 끝나지 못하고 진형이 제한 시간까지 묶인다. 구조 시간은 밸런스 파일,
+        /// 제한 시간은 스테이지 파일에 있어 이 조립 지점에서 본다.
+        /// </summary>
+        private static void RejectRescueLongerThanTheBattle(BalanceConfig balance, StageData stage)
+        {
+            if (balance.RescueTicks > stage.TimeLimitTicks)
+            {
+                throw new GameDataException(DataFiles.Balance, "rescueTicks",
+                    $"구조 시간 {balance.RescueTicks}틱이 제한 시간 {stage.TimeLimitTicks}틱보다 깁니다.");
+            }
+        }
 
         /// <summary>
         /// 행군으로 닿을 수 없는 거리를 거부한다. 접근 거리는 스테이지 파일, 행군 속도는 밸런스 파일에 있어
@@ -225,8 +261,15 @@ namespace TAoB.Data
                 waves.Add(ToUnits(Stage.Waves[i], replacements));
             }
 
+            var consumables = new List<ConsumableSetup>(Consumables.Count);
+            for (int i = 0; i < Consumables.Count; i++)
+            {
+                consumables.Add(Consumables[i].Setup);
+            }
+
             return new BattleSetup(
-                Balance, Affinity, ToUnits(Stage.AllyIds, replacements), waves, Stage.WaveApproachFu, Stage.TimeLimitTicks, Stage.Precondition);
+                Balance, Affinity, ToUnits(Stage.AllyIds, replacements), waves, Stage.WaveApproachFu, Stage.TimeLimitTicks, Stage.Precondition,
+                consumables);
         }
 
         /// <summary>편성에 실제로 들어가는 캐릭터(교체본이 있으면 그것).</summary>

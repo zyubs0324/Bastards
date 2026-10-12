@@ -1,0 +1,5 @@
+{
+  "consumables": [
+    { "id": 1, "name": "회복약", "healAmount": 200, "count": 3 }
+  ]
+}

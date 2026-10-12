@@ -27,6 +27,9 @@ namespace TAoB.Combat
         /// </summary>
         public const int MaxFieldSpanFu = 10000000;
 
+        /// <summary>들고 갈 수 있는 소모품 종류 수.</summary>
+        public const int MaxConsumableKinds = 10;
+
         public BattleSetup(
             BalanceConfig balance,
             AffinityTable affinity,
@@ -34,7 +37,8 @@ namespace TAoB.Combat
             IReadOnlyList<IReadOnlyList<UnitSetup>> waves,
             IReadOnlyList<int> waveApproachFu,
             int timeLimitTicks,
-            PreconditionKind precondition)
+            PreconditionKind precondition,
+            IReadOnlyList<ConsumableSetup> consumables)
         {
             Balance = balance ?? throw new ArgumentNullException(nameof(balance));
             Affinity = affinity ?? throw new ArgumentNullException(nameof(affinity));
@@ -58,6 +62,7 @@ namespace TAoB.Combat
             WaveApproachFu = ValidateApproach(waveApproachFu, waveCopies.Count);
             TimeLimitTicks = timeLimitTicks;
             Precondition = precondition;
+            Consumables = ValidateConsumables(consumables);
         }
 
         public BalanceConfig Balance { get; }
@@ -69,6 +74,28 @@ namespace TAoB.Combat
         public IReadOnlyList<int> WaveApproachFu { get; }
         public int TimeLimitTicks { get; }
         public PreconditionKind Precondition { get; }
+
+        /// <summary>파티가 들고 들어가는 소모품. 없으면 빈 목록이다.</summary>
+        public IReadOnlyList<ConsumableSetup> Consumables { get; }
+
+        private static IReadOnlyList<ConsumableSetup> ValidateConsumables(IReadOnlyList<ConsumableSetup> consumables)
+        {
+            const string name = "consumables";
+            if (consumables == null) throw new ArgumentNullException(name);
+            if (consumables.Count > MaxConsumableKinds)
+            {
+                throw new ArgumentException($"소모품이 {consumables.Count}종입니다. {MaxConsumableKinds}종 이하여야 합니다.", name);
+            }
+
+            var ids = new HashSet<int>();
+            foreach (ConsumableSetup item in consumables)
+            {
+                if (item == null) throw new ArgumentException("소모품 목록에 빈 항목이 있습니다.", name);
+                if (!ids.Add(item.Id)) throw new ArgumentException($"소모품 ID {item.Id} 가 중복됩니다.", name);
+            }
+
+            return new List<ConsumableSetup>(consumables).AsReadOnly();
+        }
 
         private static IReadOnlyList<int> ValidateApproach(IReadOnlyList<int> approach, int waveCount)
         {

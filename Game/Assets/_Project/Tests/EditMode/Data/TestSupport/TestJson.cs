@@ -18,7 +18,7 @@ namespace TAoB.Data.Tests
   ""mndPenaltyPerShortfallPermille"": 25, ""minMndEffectPermille"": 200,
   ""actionGaugeMax"": 1000, ""scatterHpLossPerTick"": 5, ""rescueExtraGauge"": 200,
   ""overloadPowerPermille"": 1500, ""runawayDamagePermille"": 1000, ""runawaySelfDamagePermille"": 200,
-  ""breakthroughMndGain"": 10,
+  ""breakthroughMndGain"": 10, ""rescueTicks"": 50,
   ""overloadTiers"": [
     { ""maxExcessPermille"": 1000, ""successChance"": 4000, ""scatterChance"": 3000, ""runawayChance"": 2000, ""breakthroughChance"": 1000 },
     { ""successChance"": 1000, ""scatterChance"": 4500, ""runawayChance"": 4400, ""breakthroughChance"": 100 }
@@ -80,9 +80,15 @@ namespace TAoB.Data.Tests
             return Swap(Characters, @"""LowestHp"", ""cooldownTicks"": 50 } }", @"""LowestHp"", ""cooldownTicks"": 50 } }" + extra);
         }
 
-        public static GameDataFiles Files(string balance = Balance, string equipment = Equipment, string characters = Characters, string stage = Stage)
+        public const string Consumables = @"{
+  ""consumables"": [ { ""id"": 1, ""name"": ""회복약"", ""healAmount"": 100, ""count"": 2 } ]
+}";
+
+        public static GameDataFiles Files(
+            string balance = Balance, string equipment = Equipment, string characters = Characters, string stage = Stage,
+            string consumables = Consumables)
         {
-            return new GameDataFiles(balance, equipment, characters, stage);
+            return new GameDataFiles(balance, equipment, characters, stage, consumables);
         }
 
         /// <summary>정확히 한 번 나오는 조각을 바꾼다. 없으면 테스트가 잘못된 것이므로 실패시킨다.</summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using TAoB.Combat;
 using UnityEngine;
@@ -13,23 +14,26 @@ namespace TAoB.Data
         public const string Equipment = "equipment.json";
         public const string Characters = "characters.json";
         public const string Stage = "stage_slice.json";
+        public const string Consumables = "consumables.json";
     }
 
-    /// <summary>네 파일의 본문. 파일 접근과 해석을 나눠, 테스트가 문자열만으로 로더를 돌릴 수 있게 한다.</summary>
+    /// <summary>데이터 파일들의 본문. 파일 접근과 해석을 나눠, 테스트가 문자열만으로 로더를 돌릴 수 있게 한다.</summary>
     public sealed class GameDataFiles
     {
-        public GameDataFiles(string balance, string equipment, string characters, string stage)
+        public GameDataFiles(string balance, string equipment, string characters, string stage, string consumables)
         {
             Balance = balance;
             Equipment = equipment;
             Characters = characters;
             Stage = stage;
+            Consumables = consumables;
         }
 
         public string Balance { get; }
         public string Equipment { get; }
         public string Characters { get; }
         public string Stage { get; }
+        public string Consumables { get; }
     }
 
     /// <summary>
@@ -44,7 +48,8 @@ namespace TAoB.Data
                 ReadResource(DataFiles.Balance),
                 ReadResource(DataFiles.Equipment),
                 ReadResource(DataFiles.Characters),
-                ReadResource(DataFiles.Stage)));
+                ReadResource(DataFiles.Stage),
+                ReadResource(DataFiles.Consumables)));
         }
 
         public static GameData Parse(GameDataFiles files)
@@ -65,7 +70,10 @@ namespace TAoB.Data
             StageData stage = StageReader.Read(
                 DataFiles.Stage, FieldCheck.FromJson<StageDto>(DataFiles.Stage, files.Stage), characters);
 
-            return new GameData(balance, affinity, equipment, characters, stage);
+            IReadOnlyList<ConsumableData> consumables = ConsumableReader.Read(
+                DataFiles.Consumables, FieldCheck.FromJson<ConsumablesDto>(DataFiles.Consumables, files.Consumables));
+
+            return new GameData(balance, affinity, equipment, characters, stage, consumables);
         }
 
         private static string ReadResource(string fileName)

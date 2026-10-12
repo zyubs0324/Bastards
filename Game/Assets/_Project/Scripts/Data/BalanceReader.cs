@@ -44,6 +44,7 @@ namespace TAoB.Data
                     Required(file, nameof(dto.runawayDamagePermille), dto.runawayDamagePermille),
                     Required(file, nameof(dto.runawaySelfDamagePermille), dto.runawaySelfDamagePermille),
                     Required(file, nameof(dto.breakthroughMndGain), dto.breakthroughMndGain),
+                    Required(file, nameof(dto.rescueTicks), dto.rescueTicks),
                     tiers,
                     lane);
             }

@@ -65,6 +65,18 @@ namespace TAoB.View.Tests
         }
 
         [Test]
+        public void Wave01_StaysBetweenZeroAndOne_AndStartsInTheMiddle()
+        {
+            Assert.AreEqual(0.5f, MotionCurves.Wave01(0f, 5f), 1e-6f);
+            for (float t = 0f; t < 3f; t += 0.01f)
+            {
+                float v = MotionCurves.Wave01(t, 5f);
+                Assert.GreaterOrEqual(v, 0f);
+                Assert.LessOrEqual(v, 1f);
+            }
+        }
+
+        [Test]
         public void Pulse_RiskZeroOrBelow_IsAlwaysOne()
         {
             for (float t = 0f; t < 3f; t += 0.3f)

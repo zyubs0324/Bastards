@@ -196,7 +196,7 @@ namespace TAoB.Combat.Tests
         {
             // TestBalance.Create 는 빠진 값을 정지 프리셋으로 채우므로, 누락을 보려면 생성자를 직접 부른다.
             var ex = Assert.Throws<ArgumentNullException>(() => new BalanceConfig(
-                100, 750, 1000, 1250, 1000, 800, 500, 20, 1500, 1, 2, 20, 25, 200, 1000, 5, 200, 1500, 1000, 200, 10,
+                100, 750, 1000, 1250, 1000, 800, 500, 20, 1500, 1, 2, 20, 25, 200, 1000, 5, 200, 1500, 1000, 200, 10, 1,
                 TestBalance.DefaultTiers(),
                 null));
 

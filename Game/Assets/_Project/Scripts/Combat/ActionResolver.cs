@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace TAoB.Combat
 {
     /// <summary>
-    /// 한 유닛의 행동(공격·기술·과부하·구조)과 피해 적용을 처리한다. 틱 진행 순서는 <see cref="BattleSimulation"/> 이 정한다.
+    /// 한 유닛의 행동(공격·기술·과부하·구조 시작)과 피해 적용을 처리한다. 틱 진행 순서는 <see cref="BattleSimulation"/> 이 정한다.
     /// 확률 판정은 <see cref="Chance.Roll"/> 만 쓴다 — 가드를 복제하면 난수 소비 규약이 두 곳으로 갈린다(계획서 D8).
     /// </summary>
     internal sealed class ActionResolver
@@ -15,6 +15,7 @@ namespace TAoB.Combat
         private readonly UnitState[] _unitsById;
         private readonly Dictionary<int, UnitState> _byId;
         private readonly CommandQueue _queue;
+        private readonly RescueCasting _rescues;
 
         // 틱마다 할당하지 않으려고 재사용한다.
         private readonly List<UnitState> _targets = new List<UnitState>();
@@ -26,7 +27,8 @@ namespace TAoB.Combat
             IRandom random,
             UnitState[] unitsById,
             Dictionary<int, UnitState> byId,
-            CommandQueue queue)
+            CommandQueue queue,
+            RescueCasting rescues)
         {
             _balance = balance;
             _affinity = affinity;
@@ -34,6 +36,7 @@ namespace TAoB.Combat
             _unitsById = unitsById;
             _byId = byId;
             _queue = queue;
+            _rescues = rescues;
         }
 
         public void Execute(UnitState actor, BattleCommand command, int tick, List<BattleEvent> events)
@@ -55,7 +58,7 @@ namespace TAoB.Combat
                     break;
 
                 case CommandKind.Rescue:
-                    Rescue(actor, _byId[command.TargetId], tick, events);
+                    _rescues.Start(actor, _byId[command.TargetId], tick, events);
                     break;
 
                 default:
@@ -166,15 +169,6 @@ namespace TAoB.Combat
             ApplyDamage(actor, CombatScale.ClampToInt(selfDamage), actor.Id, BattleEventKind.SelfDamage, 0, tick, events);
         }
 
-        private void Rescue(UnitState rescuer, UnitState target, int tick, List<BattleEvent> events)
-        {
-            target.Condition = UnitCondition.Normal;
-            target.ActionGauge = 0;
-            // 게이지가 음수로 내려가도 두는 것이 의도 — 구조자의 다음 행동이 그만큼 늦어진다(수직 슬라이스 계획서 Phase 2 결정 로그).
-            rescuer.ActionGauge -= _balance.RescueExtraGauge;
-            events.Add(new BattleEvent(BattleEventKind.Rescued, tick, rescuer.Id, target.Id, 0, 0));
-        }
-
         private MagitoolUse UseMagitool(UnitState actor, int tick, List<BattleEvent> events)
         {
             Magitool tool = actor.Setup.Magitool;
@@ -198,6 +192,8 @@ namespace TAoB.Combat
             target.Hp = Math.Max(0, target.Hp - amount);
             events.Add(new BattleEvent(kind, tick, sourceId, target.Id, amount, detail));
             if (target.Hp == 0) Down(target, tick, events);
+            // 공격을 맞은 구조자는 진행을 잃는다(적의 공격과 폭주 유탄). 자해와 흩어짐 피해는 맞은 것이 아니다.
+            else if (kind == BattleEventKind.Damage) _rescues.Interrupt(target, tick, events);
         }
 
         private void Down(UnitState unit, int tick, List<BattleEvent> events)

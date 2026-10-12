@@ -17,6 +17,7 @@ namespace TAoB.Combat
             Mnd = setup.Stats.Mnd;
             MagitoolDurability = setup.Magitool != null ? setup.Magitool.MaxDurability : 0;
             Condition = UnitCondition.Normal;
+            RescueTargetId = BattleEvent.NoUnit;
             // 아군(-1)과 첫 웨이브(0)는 전투 시작부터 전장에 있고, 뒤 웨이브는 앞 웨이브가 정리되면 들어온다.
             IsOnField = waveIndex <= 0;
         }
@@ -49,6 +50,15 @@ namespace TAoB.Combat
         public int MagitoolDurability { get; set; }
         public UnitCondition Condition { get; set; }
         public bool IsOnField { get; set; }
+
+        /// <summary>구조하고 있는 대상. 구조 중이 아니면 <see cref="BattleEvent.NoUnit"/>(<see cref="RescueCasting"/>).</summary>
+        public int RescueTargetId { get; set; }
+
+        /// <summary>구조 진행 틱. 구조자가 맞으면 0 으로 돌아간다.</summary>
+        public int RescueProgress { get; set; }
+
+        /// <summary>구조 중에는 게이지를 채우지도 행동하지도 않는다. <see cref="CanAct"/> 의 뜻은 그대로 둔다(계획서 D5).</summary>
+        public bool IsRescuing => RescueTargetId != BattleEvent.NoUnit;
 
         public bool CanAct => IsOnField && Condition == UnitCondition.Normal;
 

@@ -14,10 +14,12 @@ namespace TAoB.Combat.Tests
             int resSelfDamagePerShortfall = 2,
             int equipBlockResShortfall = 20,
             int critBaseChance = 0,
-            LaneConfig lane = null)
+            LaneConfig lane = null,
+            int rescueTicks = 1)
         {
             return TestBalance.Create(
                 lane: lane,
+                rescueTicks: rescueTicks,
                 critBaseChance: critBaseChance,
                 critChancePerSpd: 0,
                 frontDamageTakenPermille: 1000,
@@ -86,7 +88,8 @@ namespace TAoB.Combat.Tests
             int timeLimitTicks = BattleSetup.MaxTimeLimitTicks,
             PreconditionKind precondition = PreconditionKind.None,
             AffinityTable affinity = null,
-            int[] waveApproachFu = null)
+            int[] waveApproachFu = null,
+            ConsumableSetup[] consumables = null)
         {
             return new BattleSetup(
                 balance ?? Balance(),
@@ -95,7 +98,8 @@ namespace TAoB.Combat.Tests
                 waves,
                 waveApproachFu ?? Approach(waves.Length),
                 timeLimitTicks,
-                precondition);
+                precondition,
+                consumables ?? new ConsumableSetup[0]);
         }
 
         /// <summary>조우마다 최소 접근 거리. 정지 프리셋에서는 사거리가 전장보다 커서 이 거리가 행동을 바꾸지 않는다.</summary>

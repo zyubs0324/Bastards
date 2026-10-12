@@ -77,5 +77,32 @@ namespace TAoB.View.Tests
             Assert.IsFalse(RescueSelector.CanRescue(Snapshots.List()));
             Assert.IsFalse(RescueSelector.CanRescue(null));
         }
+
+        [Test]
+        public void SkipsAlliesAlreadyRescuing_AndAlliesAlreadyBeingRescued()
+        {
+            // 2 번이 1 번을 구조하는 중이다. 구조 버튼은 남은 흩어진 동료(3)를 남은 정상 동료(4)에게 맡긴다.
+            IReadOnlyList<UnitSnapshot> units = Snapshots.List(
+                Snapshots.Unit(1, condition: UnitCondition.Scattered),
+                Snapshots.Unit(2, rescueTargetId: 1, rescueProgress: 3),
+                Snapshots.Unit(3, condition: UnitCondition.Scattered),
+                Snapshots.Unit(4));
+
+            RescuePair pair = RescueSelector.Select(units);
+
+            Assert.AreEqual(3, pair.TargetId);
+            Assert.AreEqual(4, pair.RescuerId);
+        }
+
+        [Test]
+        public void OnlyTargetAlreadyBeingRescued_LeavesNothingToRescue()
+        {
+            IReadOnlyList<UnitSnapshot> units = Snapshots.List(
+                Snapshots.Unit(1, condition: UnitCondition.Scattered),
+                Snapshots.Unit(2, rescueTargetId: 1),
+                Snapshots.Unit(3));
+
+            Assert.IsFalse(RescueSelector.CanRescue(units));
+        }
     }
 }

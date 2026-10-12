@@ -91,11 +91,12 @@ namespace TAoB.Combat.Tests
         public void VictoryWithScatteredAlly_IsReEvaluatedAfterDowningThem(PreconditionKind precondition, BattleOutcome expected)
         {
             // 10틱: 마법사(1)가 흩어진 직후 기사(2)가 HP 50 인 마지막 적을 쓰러뜨린다.
+            // 교전이 끝나 자동 구조가 그 틱에 시작되지만 구조에는 시간이 걸리므로 끝나지 못한 채 전투가 끝난다.
             var mage = TestUnits.Ally(1, Row.Back, Job.Mage, skill: TestUnits.Skill(canOverload: true), catalyst: new Catalyst(100));
             var knight = TestUnits.Ally(2, Row.Front, Job.Knight);
             var enemy = TestUnits.Enemy(101, stats: TestUnits.MakeStats(hp: 50, spd: TestUnits.NeverActs));
             var sim = new BattleSimulation(
-                TestUnits.Setup(new[] { mage, knight }, TestUnits.OneWave(enemy), precondition: precondition),
+                TestUnits.Setup(new[] { mage, knight }, TestUnits.OneWave(enemy), TestUnits.Balance(rescueTicks: 50), precondition: precondition),
                 new FixedRandom(4000));
             sim.Enqueue(BattleCommand.Overload(1));
 

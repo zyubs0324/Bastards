@@ -20,6 +20,7 @@ namespace TAoB.View
 
     /// <summary>
     /// 구조 버튼이 누구를 누구로 구조할지 고른다(수직 슬라이스 계획서 Phase 4: 구조자 = 정상 상태인 첫 아군, 대상 = 흩어진 첫 아군).
+    /// 이미 구조하고 있는 동료와 구조받고 있는 동료는 건너뛴다(계획서 Phase D — 구조는 시간이 걸린다).
     /// 선택 UI 가 없는 프로토타입용 규칙이라 표시 계층에 두지만, 순수 함수로 빼 두어 테스트로 고정한다.
     /// </summary>
     public static class RescueSelector
@@ -35,11 +36,27 @@ namespace TAoB.View
                 UnitSnapshot unit = units[i];
                 if (unit.Side != Side.Ally || !unit.IsOnField) continue;
 
-                if (target == BattleEvent.NoUnit && unit.Condition == UnitCondition.Scattered) target = unit.Id;
-                else if (rescuer == BattleEvent.NoUnit && unit.Condition == UnitCondition.Normal) rescuer = unit.Id;
+                if (unit.Condition == UnitCondition.Scattered)
+                {
+                    if (target == BattleEvent.NoUnit && !IsBeingRescued(units, unit.Id)) target = unit.Id;
+                }
+                else if (rescuer == BattleEvent.NoUnit && unit.Condition == UnitCondition.Normal && !unit.IsRescuing)
+                {
+                    rescuer = unit.Id;
+                }
             }
 
             return new RescuePair(rescuer, target);
+        }
+
+        private static bool IsBeingRescued(IReadOnlyList<UnitSnapshot> units, int targetId)
+        {
+            for (int i = 0; i < units.Count; i++)
+            {
+                if (units[i].RescueTargetId == targetId) return true;
+            }
+
+            return false;
         }
 
         /// <summary>구조 버튼을 누를 수 있는 상태인지. 활성 조건과 실제 선택이 갈리지 않도록 같은 함수를 쓴다.</summary>

@@ -7,12 +7,15 @@ using UnityEngine.UI;
 namespace TAoB.View
 {
     /// <summary>
-    /// 유닛 한 명의 표시: 색 네모 + 직업 글자, 이름, HP·행동 게이지 막대, 상태·과부하 위험·내구력 글자.
+    /// 유닛 한 명의 표시: 색 네모 + 직업 글자, 이름, HP·행동 게이지 막대, 상태·과부하 위험·내구력 글자, 강제 발동 가능 표시(빛남).
     /// 연출(수직 슬라이스 계획서 Phase 4.5)은 박스(<see cref="_box"/>)의 위치·회전·배율·색만 바꾼다 — 막대·글자는 고정한다.
     /// </summary>
     internal sealed class UnitView : MonoBehaviour
     {
         private const float BarWidth = 150f;
+
+        /// <summary>구조 중이 아닐 때 기억해 두는 진행 값. 실제 진행(0 이상)과 겹치지 않는다.</summary>
+        private const int NotRescuing = -1;
 
         private const float LungeDuration = 0.18f;
         private const float LungeDistance = 40f;
@@ -30,6 +33,10 @@ namespace TAoB.View
         private const float DownedDuration = 0.4f;
         private const float DownedTiltDegrees = -12f;
         private const float DownedSinkDistance = 14f;
+        private const float GlowSize = 134f;
+        private const float GlowFrequency = 5f;
+        private const float GlowMinAlpha = 0.25f;
+        private const float GlowMaxAlpha = 0.9f;
 
         // 위상을 어긋내 여러 유닛·축이 같은 박자로 움직이지 않게 하는 계수. 값 자체에 의미는 없다(무리수에 가까운 배수일 뿐).
         private const float BreathePhaseIdMultiplier = 0.9137f;
@@ -47,6 +54,7 @@ namespace TAoB.View
         /// <summary>자리로 정해지는 Y. X 는 매 프레임 <c>PosX</c> 보간으로 덮어쓴다.</summary>
         private float _baseY;
         private Image _box;
+        private Image _glow;
         private Vector2 _boxBasePosition;
         private TMP_Text _hp;
         private TMP_Text _status;
@@ -69,6 +77,8 @@ namespace TAoB.View
         private float _lastHpRatio = -1f;
         private float _lastGaugeRatio = -1f;
         private UnitCondition _lastCondition = UnitCondition.Normal;
+        private int _lastRescueProgress = NotRescuing;
+        private bool _wasGlowing;
         private bool _wasOnField = true;
 
         // 연출 타이머. 음수는 비활성.
@@ -80,6 +90,7 @@ namespace TAoB.View
         private float _breatheElapsed;
         private float _pulseElapsed;
         private float _downedElapsed = -1f;
+        private float _glowElapsed;
 
         public int Id { get; private set; }
 
@@ -115,6 +126,8 @@ namespace TAoB.View
                 UiFactory.CreateImage(transform, "BossFrame", _boxBasePosition, new Vector2(124f, 124f), BattleLayout.BossFrameColor);
             }
 
+            // 빛남은 박스보다 먼저 만들어 뒤에 깔린다. 처음에는 보이지 않는다.
+            _glow = UiFactory.CreateImage(transform, "Glow", _boxBasePosition, new Vector2(GlowSize, GlowSize), Color.clear);
             _box = UiFactory.CreateImage(transform, "Box", _boxBasePosition, new Vector2(110f, 110f), _baseColor);
             UiFactory.CreateText(_box.transform, "Glyph", font, UiText.JobGlyph(character.Job), 56f, Color.white, Vector2.zero, new Vector2(110f, 110f));
 
@@ -168,7 +181,9 @@ namespace TAoB.View
         }
 
         /// <summary>직전·현재 스냅샷 사이를 <paramref name="alpha"/> 로 보간해 막대를 그리고, 바뀐 값만 글자를 갱신한다.</summary>
-        public void Apply(in UnitSnapshot previous, in UnitSnapshot current, float alpha, float dt)
+        /// <param name="isBattleOn">전투가 끝나면 강제 발동 표시(빛남)를 끈다.</param>
+        /// <param name="rescueTicks">구조가 끝나는 진행 틱. 남은 시간을 적는 데 쓴다.</param>
+        public void Apply(in UnitSnapshot previous, in UnitSnapshot current, float alpha, float dt, bool isBattleOn, int rescueTicks)
         {
             if (current.IsOnField != _wasOnField)
             {
@@ -197,6 +212,14 @@ namespace TAoB.View
                 UiFactory.SetBarFill(_gaugeFill, BarWidth, gaugeRatio);
             }
 
+            UpdateTexts(current, rescueTicks);
+            UpdateBoxMotion(current, dt);
+            UpdateSkillGlow(isBattleOn && UnitReadiness.CanForceSkill(current), dt);
+        }
+
+        /// <summary>바뀐 값만 글자를 갱신한다(UI 재구성 최소화). 구조자는 상태 글자 자리에 남은 시간을 적는다.</summary>
+        private void UpdateTexts(in UnitSnapshot current, int rescueTicks)
+        {
             if (current.Hp != _lastHp || current.MaxHp != _lastMaxHp)
             {
                 _lastHp = current.Hp;
@@ -204,10 +227,15 @@ namespace TAoB.View
                 _hp.SetText("{0} / {1}", current.Hp, current.MaxHp);
             }
 
-            if (current.Condition != _lastCondition)
+            int rescueProgress = current.IsRescuing ? current.RescueProgress : NotRescuing;
+            if (current.Condition != _lastCondition || rescueProgress != _lastRescueProgress)
             {
                 _lastCondition = current.Condition;
-                _status.text = UiText.Condition(current.Condition);
+                _lastRescueProgress = rescueProgress;
+
+                // 구조자는 남은 시간을 적는다. 정상 상태라 상태 글자와 겹치지 않는다.
+                if (current.IsRescuing) _status.SetText("구조 {0:1}", (float)(rescueTicks - current.RescueProgress) / BattleSimulation.TicksPerSecond);
+                else _status.text = UiText.Condition(current.Condition);
             }
 
             if (current.Stance != _lastStance || current.IsFlanking != _lastFlanking)
@@ -230,8 +258,6 @@ namespace TAoB.View
                 _lastDurability = current.MagitoolDurability;
                 _tool.SetText("내구 {0} / {1}", current.MagitoolDurability, current.MagitoolMaxDurability);
             }
-
-            UpdateBoxMotion(current, dt);
         }
 
         /// <summary>
@@ -255,6 +281,32 @@ namespace TAoB.View
             _box.rectTransform.anchoredPosition = _boxBasePosition + offset;
             _box.rectTransform.localScale = new Vector3(scale, scale, 1f);
             _box.rectTransform.localRotation = Quaternion.Euler(0f, 0f, rotation);
+        }
+
+        /// <summary>
+        /// 기술을 강제 발동할 수 있는 동안 박스 뒤의 테두리가 맥동한다(계획서 Phase D). 박스를 따라 움직여 어긋나지 않게 한다.
+        /// 켜져 있는 동안은 매 프레임 색을 쓰고(재사용 대기가 없는 동료는 늘 켜져 있다), 꺼질 때 한 번 지운 뒤로는 쓰지 않는다.
+        /// </summary>
+        private void UpdateSkillGlow(bool isReady, float dt)
+        {
+            if (!isReady)
+            {
+                if (_wasGlowing)
+                {
+                    _wasGlowing = false;
+                    _glowElapsed = 0f;
+                    _glow.color = Color.clear;
+                }
+
+                return;
+            }
+
+            _wasGlowing = true;
+            _glowElapsed += dt;
+            Color color = BattleLayout.SkillReadyGlowColor;
+            color.a = Mathf.Lerp(GlowMinAlpha, GlowMaxAlpha, MotionCurves.Wave01(_glowElapsed, GlowFrequency));
+            _glow.color = color;
+            _glow.rectTransform.anchoredPosition = _box.rectTransform.anchoredPosition;
         }
 
         /// <summary>돌진: 가해자가 상대 진영 쪽으로 갔다가 돌아온다.</summary>

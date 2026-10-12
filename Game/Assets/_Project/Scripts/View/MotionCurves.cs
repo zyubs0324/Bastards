@@ -37,8 +37,13 @@ namespace TAoB.View
         {
             if (riskLevel <= 0) return 1f;
             float frequency = baseFrequency + riskLevel * frequencyStep;
-            float wave = (Mathf.Sin(t * frequency) + 1f) * 0.5f;
-            return 1f + wave * amplitude;
+            return 1f + Wave01(t, frequency) * amplitude;
+        }
+
+        /// <summary>0 과 1 사이를 오가는 물결. t = 0 에서 가운데(0.5)다. 밝기·배율처럼 범위가 정해진 값을 맥동시키는 데 쓴다.</summary>
+        public static float Wave01(float t, float frequency)
+        {
+            return (Mathf.Sin(t * frequency) + 1f) * 0.5f;
         }
 
         /// <summary>

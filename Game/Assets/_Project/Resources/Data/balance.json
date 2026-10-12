@@ -20,6 +20,7 @@
   "runawayDamagePermille": 1000,
   "runawaySelfDamagePermille": 200,
   "breakthroughMndGain": 10,
+  "rescueTicks": 50,
   "overloadTiers": [
     { "maxExcessPermille": 500, "successChance": 4000, "scatterChance": 3000, "runawayChance": 2000, "breakthroughChance": 1000 },
     { "maxExcessPermille": 1000, "successChance": 3000, "scatterChance": 3000, "runawayChance": 3000, "breakthroughChance": 1000 },

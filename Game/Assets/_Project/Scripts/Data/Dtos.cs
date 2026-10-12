@@ -30,6 +30,7 @@ namespace TAoB.Data
         public int runawayDamagePermille = FieldCheck.Missing;
         public int runawaySelfDamagePermille = FieldCheck.Missing;
         public int breakthroughMndGain = FieldCheck.Missing;
+        public int rescueTicks = FieldCheck.Missing;
         public OverloadTierDto[] overloadTiers;
         public AffinityDto[] affinities;
         public MovementDto movement;
@@ -165,5 +166,22 @@ namespace TAoB.Data
 
         /// <summary>이 조우를 만나기까지 행군하는 거리(fu).</summary>
         public int approachFu = FieldCheck.Missing;
+    }
+
+    [Serializable]
+    internal sealed class ConsumablesDto
+    {
+        public ConsumableDto[] consumables;
+    }
+
+    [Serializable]
+    internal sealed class ConsumableDto
+    {
+        public int id = FieldCheck.Missing;
+        public string name;
+        public int healAmount = FieldCheck.Missing;
+
+        /// <summary>전투 시작 때 들고 있는 개수.</summary>
+        public int count = FieldCheck.Missing;
     }
 }

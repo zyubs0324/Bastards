@@ -28,6 +28,8 @@ namespace TAoB.Combat
         private readonly Dictionary<int, UnitState> _byId = new Dictionary<int, UnitState>();
         private readonly CommandQueue _queue = new CommandQueue();
         private readonly ActionResolver _resolver;
+        private readonly RescueCasting _rescues;
+        private readonly ItemBag _items;
 
         public BattleSimulation(BattleSetup setup, IRandom random)
         {
@@ -60,7 +62,9 @@ namespace TAoB.Combat
             _unitsById = (UnitState[])_units.Clone();
             Array.Sort(_unitsById, (a, b) => a.Id.CompareTo(b.Id));
             _actionOrder = ActionGaugeScheduler.BuildActionOrder(_units);
-            _resolver = new ActionResolver(_balance, setup.Affinity, random, _unitsById, _byId, _queue);
+            _rescues = new RescueCasting(_balance, _unitsById, _byId, _queue);
+            _resolver = new ActionResolver(_balance, setup.Affinity, random, _unitsById, _byId, _queue, _rescues);
+            _items = new ItemBag(setup.Consumables);
 
             _waveAnchorX = BuildWaveAnchors(setup);
             EnemyAnchorX = _waveAnchorX[0];
@@ -92,12 +96,16 @@ namespace TAoB.Combat
                 return CommandResult.Accepted;
             }
 
+            // 소모품은 유닛이 아니라 파티가 쓴다 — 유닛별 대기 명령과 섞이지 않게 따로 받는다.
+            if (command.Kind == CommandKind.UseItem) return _items.Request(command.ItemId, _unitsById);
+
             if (!_byId.TryGetValue(command.ActorId, out UnitState actor)) return CommandResult.RejectedUnknownUnit;
             if (actor.Side != Side.Ally || command.Kind == CommandKind.BasicAttack) return CommandResult.RejectedNotControllable;
             // 큐는 사용자 경로 전용이다 — 자동 판단이 만든 명령은 그 틱에 바로 실행되고 큐를 거치지 않는다(계획서 D7).
             // 이 가드가 있어 큐에서 나온 기술은 항상 강제 발동이고, 재사용 대기 검사를 따로 갈라 둘 필요가 없다.
             if (!command.IsForced) return CommandResult.RejectedNotControllable;
             if (actor.Condition != UnitCondition.Normal) return CommandResult.RejectedIncapacitated;
+            if (actor.IsRescuing) return CommandResult.RejectedBusy;
 
             switch (command.Kind)
             {
@@ -111,7 +119,7 @@ namespace TAoB.Combat
                     break;
 
                 case CommandKind.Rescue:
-                    if (!IsRescueTarget(actor, command.TargetId)) return CommandResult.RejectedInvalidTarget;
+                    if (!_rescues.CanStart(actor, command.TargetId)) return CommandResult.RejectedInvalidTarget;
                     break;
             }
 
@@ -132,12 +140,15 @@ namespace TAoB.Combat
                 return;
             }
 
+            _items.UseRequested(_unitsById, Tick, events);
             _resolver.ApplyScatterLoss(Tick, events);
             AdvanceCooldowns();
             // 이동이 게이지 충전보다 앞에 와야 사거리 판정 전에 이번 틱의 위치가 확정된다.
             AdvanceSection();
             ActionGaugeScheduler.Fill(_units, _unitsById, _balance);
             ResolveActions(events);
+            // 구조 진행은 행동 뒤에 센다 — 같은 틱에 맞은 구조자는 완료보다 초기화가 먼저다(계획서 Phase D).
+            _rescues.Advance(Tick, events);
 
             bool waveCleared = IsWaveCleared(CurrentWave);
             bool finalWaveCleared = waveCleared && CurrentWave == WaveCount - 1;
@@ -154,7 +165,7 @@ namespace TAoB.Combat
 
         public BattleSnapshot CreateSnapshotBuffer()
         {
-            return new BattleSnapshot(this, _units.Length);
+            return new BattleSnapshot(this, _units.Length, _items.KindCount);
         }
 
         public void FillSnapshot(BattleSnapshot target)
@@ -168,6 +179,12 @@ namespace TAoB.Combat
             target.WaveCount = WaveCount;
             target.AnchorX = AnchorX;
             target.EnemyAnchorX = EnemyAnchorX;
+            target.RescueTicks = _balance.RescueTicks;
+            for (int i = 0; i < _items.KindCount; i++)
+            {
+                target.SetItem(i, new ItemSnapshot(_items.IdAt(i), _items.RemainingAt(i)));
+            }
+
             for (int i = 0; i < _units.Length; i++)
             {
                 UnitState unit = _units[i];
@@ -191,7 +208,9 @@ namespace TAoB.Combat
                     unit.Setup.IsBoss,
                     unit.PosX,
                     unit.Stance,
-                    unit.IsFlanking));
+                    unit.IsFlanking,
+                    unit.RescueTargetId,
+                    unit.RescueProgress));
             }
         }
 
@@ -238,7 +257,7 @@ namespace TAoB.Combat
         /// <summary>
         /// 지금 자리에서 행동이 성립하는가. 사거리 안에 상대가 있으면 성립한다.
         /// 상대가 전장에 아예 없으면(같은 틱에 마지막 적이 쓰러진 경우) 기존처럼 행동한다 — 사거리 때문에 건너뛰는 것과 구분한다.
-        /// 위치와 무관한 대기 명령(구조)은 사거리를 보지 않는다.
+        /// 위치와 무관한 대기 명령(구조 시작)은 사거리를 보지 않는다.
         /// </summary>
         private bool CanActFromHere(UnitState unit)
         {
@@ -267,7 +286,7 @@ namespace TAoB.Combat
             {
                 case CommandKind.UseSkill: return unit.Cooldown == 0;
                 case CommandKind.Overload: return unit.Cooldown == 0 && CanOverload(unit);
-                case CommandKind.Rescue: return IsRescueTarget(unit, command.TargetId);
+                case CommandKind.Rescue: return _rescues.CanStart(unit, command.TargetId);
                 default: return false;
             }
         }
@@ -275,15 +294,6 @@ namespace TAoB.Combat
         private static bool CanOverload(UnitState unit)
         {
             return OverloadResolver.CanOverload(unit.Setup.Catalyst, unit.Setup.Skill);
-        }
-
-        private bool IsRescueTarget(UnitState rescuer, int targetId)
-        {
-            return targetId != rescuer.Id
-                && _byId.TryGetValue(targetId, out UnitState target)
-                && target.Side == rescuer.Side
-                && target.IsOnField
-                && target.Condition == UnitCondition.Scattered;
         }
 
         private int OverloadRisk(UnitState unit)
@@ -373,7 +383,9 @@ namespace TAoB.Combat
 
         private void FinishBattle(bool retreatProcessed, bool finalWaveCleared, List<BattleEvent> events)
         {
-            // 흩어진 채 끝나면 빈사로 확정한 뒤 다시 판정한다. 빈사자가 늘기만 하므로 이미 성립한 종료 조건은 사라지지 않는다.
+            // 끝난 전투에 구조가 남지 않게 지운다. 흩어진 채 끝나면 빈사로 확정한 뒤 다시 판정한다 —
+            // 빈사자가 늘기만 하므로 이미 성립한 종료 조건은 사라지지 않는다.
+            _rescues.CancelAll();
             _resolver.DownScatteredUnits(Tick, events);
             Outcome = EvaluateOutcome(retreatProcessed, finalWaveCleared);
             events.Add(new BattleEvent(BattleEventKind.BattleEnded, Tick, BattleEvent.NoUnit, BattleEvent.NoUnit, 0, (int)Outcome));
@@ -410,6 +422,7 @@ namespace TAoB.Combat
             hasher.Add(AnchorX);
             hasher.Add(EnemyAnchorX);
             hasher.Add(_queue.RetreatRequested ? 1 : 0);
+            _items.AddTo(hasher);
             foreach (UnitState unit in _units)
             {
                 hasher.Add(unit.Id);
@@ -423,6 +436,8 @@ namespace TAoB.Combat
                 hasher.Add(unit.ActionGauge);
                 hasher.Add(unit.Cooldown);
                 hasher.Add(unit.MagitoolDurability);
+                hasher.Add(unit.RescueTargetId);
+                hasher.Add(unit.RescueProgress);
                 // 대기 명령은 사거리 판정으로 수명이 길어졌으므로 해시에 넣는다.
                 // 딕셔너리를 순회하지 않고 유닛 순서대로 조회해 순서를 고정한다.
                 bool hasPending = _queue.TryPeek(unit.Id, out BattleCommand pending);

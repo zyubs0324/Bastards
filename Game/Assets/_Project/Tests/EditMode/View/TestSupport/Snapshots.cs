@@ -17,12 +17,15 @@ namespace TAoB.View.Tests
             bool isBoss = false,
             int posX = 0,
             Stance stance = Stance.Hold,
-            bool isFlanking = false)
+            bool isFlanking = false,
+            int cooldown = 0,
+            int rescueTargetId = BattleEvent.NoUnit,
+            int rescueProgress = 0)
         {
             return new UnitSnapshot(
                 id, side, row, isOnField, condition,
-                hp, 100, 0, 1000, 0,
-                overloadRisk, 50, false, 0, 0, isBoss, posX, stance, isFlanking);
+                hp, 100, 0, 1000, cooldown,
+                overloadRisk, 50, false, 0, 0, isBoss, posX, stance, isFlanking, rescueTargetId, rescueProgress);
         }
 
         public static IReadOnlyList<UnitSnapshot> List(params UnitSnapshot[] units)
