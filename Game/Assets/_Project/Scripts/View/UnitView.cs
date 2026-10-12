@@ -33,6 +33,12 @@ namespace TAoB.View
         private const float DownedDuration = 0.4f;
         private const float DownedTiltDegrees = -12f;
         private const float DownedSinkDistance = 14f;
+        /// <summary>
+        /// 빈사가 된 적을 화면에 남겨 두는 시간(게임 시간 초). 1배속에서는 쓰러지는 연출(<see cref="DownedDuration"/>)이 끝난 직후다 —
+        /// 마지막 적이 쓰러지면 진형이 바로 전진하므로, 더 오래 두면 그 자리를 지나는 아군과 겹친다.
+        /// 배속에서는 진형도 빨리 전진하므로 게임 시간으로 센다(연출이 끝나기 전에 사라져도 겹치는 것보다 낫다).
+        /// </summary>
+        private const float DownedEnemyLingerSeconds = 0.5f;
         private const float GlowSize = 134f;
         private const float GlowFrequency = 5f;
         private const float GlowMinAlpha = 0.25f;
@@ -79,7 +85,9 @@ namespace TAoB.View
         private UnitCondition _lastCondition = UnitCondition.Normal;
         private int _lastRescueProgress = NotRescuing;
         private bool _wasGlowing;
-        private bool _wasOnField = true;
+        private bool _wasShown = true;
+        private bool _isEnemy;
+        private float _downedEnemyElapsed;
 
         // 연출 타이머. 음수는 비활성.
         private float _lungeElapsed = -1f;
@@ -116,6 +124,7 @@ namespace TAoB.View
             _rect = (RectTransform)transform;
             _baseColor = BattleLayout.JobColor(character.Job, character.Side);
             _lungeDirection = character.Side == Side.Ally ? 1f : -1f;
+            _isEnemy = character.Side == Side.Enemy;
 
             // 위상을 유닛마다 달리해 여러 유닛이 같은 박자로 숨쉬지 않게 한다.
             _breathePhase = (character.Id * BreathePhaseIdMultiplier) % (Mathf.PI * 2f);
@@ -168,7 +177,7 @@ namespace TAoB.View
             _hitShakeMagnitude = 0f;
         }
 
-        /// <summary>빈사: 기울며 가라앉고 그 자세로 남는다. 이미 재생 중이면 다시 트리거하지 않는다.</summary>
+        /// <summary>빈사: 기울며 가라앉는다. 아군은 그 자세로 남고 적은 잠시 뒤 치워진다. 이미 재생 중이면 다시 트리거하지 않는다.</summary>
         public void PlayDowned()
         {
             if (_downedElapsed < 0f) _downedElapsed = 0f;
@@ -180,18 +189,25 @@ namespace TAoB.View
             _downedElapsed = -1f;
         }
 
-        /// <summary>직전·현재 스냅샷 사이를 <paramref name="alpha"/> 로 보간해 막대를 그리고, 바뀐 값만 글자를 갱신한다.</summary>
-        /// <param name="isBattleOn">전투가 끝나면 강제 발동 표시(빛남)를 끈다.</param>
-        /// <param name="rescueTicks">구조가 끝나는 진행 틱. 남은 시간을 적는 데 쓴다.</param>
-        public void Apply(in UnitSnapshot previous, in UnitSnapshot current, float alpha, float dt, bool isBattleOn, int rescueTicks)
+        /// <summary>직전·현재 스냅샷 사이를 보간해 막대를 그리고, 바뀐 값만 글자를 갱신한다.</summary>
+        public void Apply(in UnitSnapshot previous, in UnitSnapshot current, in ViewFrame frame)
         {
-            if (current.IsOnField != _wasOnField)
+            // 빈사가 된 적은 잠시 뒤 치운다 — 남겨 두면 진형이 전진하면서 아군과 겹쳐 글자가 뒤엉킨다.
+            // 빈사가 된 아군은 사용자가 알아야 하는 정보라 그대로 둔다.
+            // 한번 치우면 되돌리지 않는다: 적의 빈사는 끝난 상태다(규칙상 구조는 흩어진 유닛만 되살린다).
+            bool isShown = current.IsOnField && _downedEnemyElapsed < DownedEnemyLingerSeconds;
+            if (isShown != _wasShown)
             {
-                _wasOnField = current.IsOnField;
-                gameObject.SetActive(current.IsOnField);
+                _wasShown = isShown;
+                gameObject.SetActive(isShown);
             }
 
-            if (!current.IsOnField) return;
+            if (!isShown) return;
+
+            if (_isEnemy && current.Condition == UnitCondition.Downed) _downedEnemyElapsed += frame.GameDt;
+
+            float alpha = frame.Alpha;
+            float dt = frame.Dt;
 
             // 등장하는 틱에는 보간하지 않는다 — 직전 스냅샷의 좌표에서 미끄러져 오면 순간이동처럼 보인다.
             float posX = previous.IsOnField ? Mathf.Lerp(previous.PosX, current.PosX, alpha) : current.PosX;
@@ -212,9 +228,9 @@ namespace TAoB.View
                 UiFactory.SetBarFill(_gaugeFill, BarWidth, gaugeRatio);
             }
 
-            UpdateTexts(current, rescueTicks);
+            UpdateTexts(current, frame.RescueTicks);
             UpdateBoxMotion(current, dt);
-            UpdateSkillGlow(isBattleOn && UnitReadiness.CanForceSkill(current), dt);
+            UpdateSkillGlow(frame.IsBattleOn && UnitReadiness.CanForceSkill(current), dt);
         }
 
         /// <summary>바뀐 값만 글자를 갱신한다(UI 재구성 최소화). 구조자는 상태 글자 자리에 남은 시간을 적는다.</summary>
@@ -364,7 +380,7 @@ namespace TAoB.View
             scale = MotionCurves.Pulse(_pulseElapsed, overloadRisk, PulseBaseFrequency, PulseFrequencyStep, PulseAmplitude);
         }
 
-        /// <summary>빈사: 한 번만 기울며 가라앉고 그 자세로 남는다(구조되면 <see cref="ResetDownedPose"/> 가 되돌린다).</summary>
+        /// <summary>빈사: 한 번만 기울며 가라앉고 그 자세로 남는다(구조되면 <see cref="ResetDownedPose"/> 가 되돌린다). 적은 <see cref="DownedEnemyLingerSeconds"/> 뒤 치워진다.</summary>
         private void ApplyDowned(ref Vector2 offset, ref float rotation, float dt)
         {
             if (_downedElapsed < 0f) return;

@@ -167,7 +167,7 @@ namespace TAoB.Combat.Tests
             UnitState[] marching = TestField.ById(TestField.Ally(2, Row.Front, stance: stance), TestField.Enemy(102, Row.Front, stance: stance));
 
             Assert.AreEqual(0, SectionProgress.AdvanceFu(stopped, lane, 0, 560));
-            Assert.AreEqual(40, SectionProgress.AdvanceFu(marching, lane, 0, 561));
+            Assert.AreEqual(lane.MarchSpeedFu, SectionProgress.AdvanceFu(marching, lane, 0, 561));
         }
     }
 }

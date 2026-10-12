@@ -14,7 +14,7 @@
   "mndPenaltyPerShortfallPermille": 25,
   "minMndEffectPermille": 200,
   "actionGaugeMax": 1000,
-  "scatterHpLossPerTick": 5,
+  "scatterHpLossPerTick": 2,
   "rescueExtraGauge": 200,
   "overloadPowerPermille": 1500,
   "runawayDamagePermille": 1000,
@@ -22,13 +22,13 @@
   "breakthroughMndGain": 10,
   "rescueTicks": 50,
   "overloadTiers": [
-    { "maxExcessPermille": 500, "successChance": 4000, "scatterChance": 3000, "runawayChance": 2000, "breakthroughChance": 1000 },
-    { "maxExcessPermille": 1000, "successChance": 3000, "scatterChance": 3000, "runawayChance": 3000, "breakthroughChance": 1000 },
-    { "maxExcessPermille": 2000, "successChance": 2000, "scatterChance": 4000, "runawayChance": 3500, "breakthroughChance": 500 },
-    { "successChance": 1000, "scatterChance": 4500, "runawayChance": 4400, "breakthroughChance": 100 }
+    { "maxExcessPermille": 500, "successChance": 6500, "scatterChance": 1500, "runawayChance": 1000, "breakthroughChance": 1000 },
+    { "maxExcessPermille": 1000, "successChance": 6000, "scatterChance": 2000, "runawayChance": 1000, "breakthroughChance": 1000 },
+    { "maxExcessPermille": 2000, "successChance": 4000, "scatterChance": 3000, "runawayChance": 2500, "breakthroughChance": 500 },
+    { "successChance": 2000, "scatterChance": 4000, "runawayChance": 3800, "breakthroughChance": 200 }
   ],
   "movement": {
-    "marchSpeedFu": 40,
+    "marchSpeedFu": 60,
     "frontSlotOffsetFu": 120,
     "backSlotOffsetFu": 120,
     "frontReachFu": 440,

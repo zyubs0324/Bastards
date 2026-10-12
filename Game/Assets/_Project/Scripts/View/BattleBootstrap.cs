@@ -99,10 +99,10 @@ namespace TAoB.View
 
             // 배경과 유닛이 같은 alpha 를 쓰므로 배속에서도 어긋나지 않는다(계획서 Phase B).
             _lane.Apply(_previous.AnchorX, _current.AnchorX, alpha);
-            bool isBattleOn = _current.Outcome == BattleOutcome.InProgress;
+            var frame = new ViewFrame(alpha, dt, _speed, _current.Outcome == BattleOutcome.InProgress, _current.RescueTicks);
             for (int i = 0; i < _current.Units.Count; i++)
             {
-                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], alpha, dt, isBattleOn, _current.RescueTicks);
+                _viewById[_current.Units[i].Id].Apply(_previous.Units[i], _current.Units[i], frame);
             }
 
             _hud.Apply(_current);

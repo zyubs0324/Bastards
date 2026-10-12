@@ -47,7 +47,7 @@ namespace TAoB.Combat.Tests
         public static LaneConfig RealisticLane(int flankChance = 0)
         {
             return StaticLane(
-                marchSpeedFu: 40, frontSlotOffsetFu: 120, backSlotOffsetFu: 120, frontReachFu: 440, backReachFu: 680, engageMarginFu: 120,
+                marchSpeedFu: 60, frontSlotOffsetFu: 120, backSlotOffsetFu: 120, frontReachFu: 440, backReachFu: 680, engageMarginFu: 120,
                 formationDriftFu: 40, chargeDriftFu: 200, stepBackFu: 60, flankChance: flankChance);
         }
 

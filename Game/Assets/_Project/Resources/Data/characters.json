@@ -20,37 +20,55 @@
     },
     {
       "id": 101, "skillChance": 3400, "preference": "Charger", "formationChance": 6000, "name": "들개", "side": "Enemy", "job": "Perceptive", "row": "Front",
-      "stats": { "atk": 30, "def": 10, "hp": 260, "spd": 110, "mnd": 10, "res": 10 },
+      "stats": { "atk": 20, "def": 10, "hp": 420, "spd": 110, "mnd": 10, "res": 10 },
       "skill": { "powerPermille": 1300, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 50 },
       "catalystId": "", "magitoolId": ""
     },
     {
       "id": 102, "skillChance": 2600, "preference": "Guardian", "formationChance": 6000, "name": "탈영병", "side": "Enemy", "job": "Knight", "row": "Front",
-      "stats": { "atk": 34, "def": 20, "hp": 320, "spd": 85, "mnd": 10, "res": 30 },
+      "stats": { "atk": 22, "def": 20, "hp": 510, "spd": 85, "mnd": 10, "res": 30 },
       "skill": { "powerPermille": 1500, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
       "catalystId": "", "magitoolId": ""
     },
     {
       "id": 103, "skillChance": 1200, "preference": "Rearguard", "formationChance": 8000, "name": "떠돌이 주술사", "side": "Enemy", "job": "Mage", "row": "Back",
-      "stats": { "atk": 42, "def": 8, "hp": 220, "spd": 95, "mnd": 60, "res": 10 },
+      "stats": { "atk": 27, "def": 8, "hp": 350, "spd": 95, "mnd": 60, "res": 10 },
       "skill": { "powerPermille": 1500, "targetRule": "All", "canOverload": false, "cooldownTicks": 90 },
       "catalystId": "cat_rough", "magitoolId": ""
     },
     {
       "id": 104, "skillChance": 3400, "preference": "Charger", "formationChance": 4000, "name": "굶주린 들개", "side": "Enemy", "job": "Perceptive", "row": "Front",
-      "stats": { "atk": 32, "def": 10, "hp": 280, "spd": 115, "mnd": 10, "res": 10 },
+      "stats": { "atk": 21, "def": 10, "hp": 450, "spd": 115, "mnd": 10, "res": 10 },
       "skill": { "powerPermille": 1300, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 50 },
       "catalystId": "", "magitoolId": ""
     },
     {
       "id": 105, "skillChance": 2600, "preference": "Coward", "formationChance": 5000, "name": "낙오병", "side": "Enemy", "job": "Knight", "row": "Front",
-      "stats": { "atk": 36, "def": 22, "hp": 340, "spd": 85, "mnd": 10, "res": 30 },
+      "stats": { "atk": 23, "def": 22, "hp": 540, "spd": 85, "mnd": 10, "res": 30 },
       "skill": { "powerPermille": 1500, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
       "catalystId": "", "magitoolId": ""
     },
     {
+      "id": 106, "skillChance": 3400, "preference": "Charger", "formationChance": 6000, "name": "늙은 들개", "side": "Enemy", "job": "Perceptive", "row": "Front",
+      "stats": { "atk": 20, "def": 10, "hp": 420, "spd": 110, "mnd": 10, "res": 10 },
+      "skill": { "powerPermille": 1300, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 50 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
+      "id": 107, "skillChance": 2600, "preference": "Guardian", "formationChance": 6000, "name": "탈영 고참병", "side": "Enemy", "job": "Knight", "row": "Front",
+      "stats": { "atk": 22, "def": 20, "hp": 510, "spd": 85, "mnd": 10, "res": 30 },
+      "skill": { "powerPermille": 1500, "targetRule": "FrontFirst", "canOverload": false, "cooldownTicks": 60 },
+      "catalystId": "", "magitoolId": ""
+    },
+    {
+      "id": 108, "skillChance": 1200, "preference": "Rearguard", "formationChance": 8000, "name": "주술사의 제자", "side": "Enemy", "job": "Mage", "row": "Back",
+      "stats": { "atk": 27, "def": 8, "hp": 350, "spd": 95, "mnd": 60, "res": 10 },
+      "skill": { "powerPermille": 1500, "targetRule": "All", "canOverload": false, "cooldownTicks": 90 },
+      "catalystId": "cat_rough", "magitoolId": ""
+    },
+    {
       "id": 201, "skillChance": 1400, "preference": "Guardian", "formationChance": 9000, "name": "반역 기사단장", "side": "Enemy", "job": "Knight", "row": "Front", "isBoss": true,
-      "stats": { "atk": 60, "def": 40, "hp": 1500, "spd": 80, "mnd": 30, "res": 80 },
+      "stats": { "atk": 60, "def": 40, "hp": 900, "spd": 80, "mnd": 30, "res": 80 },
       "skill": { "powerPermille": 2000, "targetRule": "LowestHp", "canOverload": false, "cooldownTicks": 70 },
       "catalystId": "", "magitoolId": "tool_captain_blade"
     }

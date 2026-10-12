@@ -3,9 +3,9 @@
   "precondition": "None",
   "allyIds": [1, 2, 3],
   "waves": [
-    { "enemyIds": [101], "approachFu": 2000 },
-    { "enemyIds": [102, 104], "approachFu": 2000 },
-    { "enemyIds": [103, 105], "approachFu": 2000 },
+    { "enemyIds": [101, 104], "approachFu": 2000 },
+    { "enemyIds": [102, 106, 103], "approachFu": 2000 },
+    { "enemyIds": [105, 107, 108], "approachFu": 2000 },
     { "enemyIds": [201], "approachFu": 2000 }
   ]
 }
